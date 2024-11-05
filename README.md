@@ -1,10 +1,5 @@
-# ML-Project-Template
-Python template for machine learning
+# GenTs: A library for generative time series analysis
 
-## Usage
-Before you begin a new ML project, create a repo from this template.
-
-Hit the button **Use this template** on the webpage to create a repo.
 
 ## Stuctrue
 ```
@@ -24,6 +19,3 @@ Hit the button **Use this template** on the webpage to create a repo.
 │   └── __init__.py
 └── tests
 ```
-
-## TODO
-- [ ] training, model
