@@ -1,8 +1,8 @@
 import setuptools
 
 setuptools.setup(
-    name='FreqDiff',
+    name='GenTS',
     packages=setuptools.find_packages(),
-    version='0.0.0',
+    version='0.0.1',
     author='Chenxi Wang',
 )

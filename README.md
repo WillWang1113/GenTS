@@ -1,21 +1,32 @@
-# GenTs: A library for generative time series analysis
+# GenTS: A library for generative time series analysis
 
 
-## Stuctrue
-```
-./
-├── configs
-│   ├── json_config.json
-│   └── yaml_config.yaml
-├── LICENSE
-├── notebooks
-│   └── my_notebook.ipynb
-├── README.md
-├── run.sh
-├── scripts
-│   └── my_experiments.py
-├── setup.py
-├── src
-│   └── __init__.py
-└── tests
-```
+## Installation
+Python: 3.10
+
+
+## Features
+
+### Tasks included
+|      Task       |      Conditional on      |
+| :-------------: | :----------------------: |
+|    Synthesis    | NA / high-level features |
+|   Imputation    |      Observed data       |
+|   Forecasting   |     Look-back window     |
+| Superresolution |   Low-resolution data    |
+
+### Models included
+|      Name       |   Type    | Capability  | Link  |
+| :-------------: | :-------: | :---------: | :---: |
+|     TimeGAN     |    GAN    |  Synthesis  | Link  |
+|     TimeVAE     |    VAE    |  Synthesis  | Link  |
+|    TimeGrad     | Diffusion | Forecasting | Link  |
+| Superresolution |   Flow    | Forecasting | Link  |
+| Superresolution |    DE     |  Synthesis  | Link  |
+
+
+## Custormization
+
+### Conditions
+
+### Models
