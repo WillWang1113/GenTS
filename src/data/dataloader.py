@@ -26,6 +26,7 @@ class TSDataset(Dataset):
 class TSDataModule(LightningDataModule):
     def __init__(self, data_dir: str, batch_size: int, seq_len: int, condition=None):
         super().__init__()
+        # self.data = data
         self.data_dir = data_dir
         self.seq_len = seq_len
         self.condition = condition

@@ -18,8 +18,8 @@ Python: 3.10
 ### Models included
 |      Name       |   Type    | Capability  | Link  |
 | :-------------: | :-------: | :---------: | :---: |
-|     TimeGAN     |    GAN    |  Synthesis  | Link  |
 |     TimeVAE     |    VAE    |  Synthesis  | Link  |
+|     TimeGAN     |    GAN    |  Synthesis  | Link  |
 |    TimeGrad     | Diffusion | Forecasting | Link  |
 | Superresolution |   Flow    | Forecasting | Link  |
 | Superresolution |    DE     |  Synthesis  | Link  |
@@ -30,3 +30,11 @@ Python: 3.10
 ### Conditions
 
 ### Models
+
+
+## TODO
+- [x] TimeVAE
+- [ ] TimeGAN
+- [ ] TimeGrad
+- [ ] condition data loader
+- [ ] benchmark datasets
