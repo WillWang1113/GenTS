@@ -32,6 +32,7 @@ class VanillaVAE(BaseVAE):
         self.fc_logvar = MLP(latent_dim, [latent_dim])
 
     def encode(self, x, c=None):
+        x = x.permute(0, 2, 1)
         latents = self.encoder(x)
         mu = self.fc_mu(latents)
         logvar = self.fc_logvar(latents)
@@ -40,67 +41,12 @@ class VanillaVAE(BaseVAE):
     def decode(self, z, c=None):
         return self.decoder(z).permute(0, 2, 1)
 
-    # def training_step(self, batch, batch_idx):
-    #     x = batch["seq"]
-    #     x = x.permute(0, 2, 1)
-
-    #     # encode
-    #     latents, mu, logvar = self.encode(x)
-
-    #     # reparameterize
-    #     std = torch.exp(0.5 * logvar)
-    #     eps = torch.randn_like(std)
-    #     z = eps * std + mu
-
-    #     # decode
-    #     x_hat = self.decode(z)
-    #     x = x.permute(0, 2, 1)
-
-    #     # loss
-    #     loss = self._get_loss(x, x_hat, mu, logvar)
-
-    #     self.log_dict({"train_loss": loss}, on_epoch=True, on_step=False)
-
-    #     return loss
-
-    # def validation_step(self, batch, batch_idx):
-    #     x = batch["seq"]
-    #     x = x.permute(0, 2, 1)
-
-    #     # encode
-    #     latents, mu, logvar = self.encode(x)
-
-    #     # reparameterize
-    #     std = torch.exp(0.5 * logvar)
-    #     eps = torch.randn_like(std)
-    #     z = eps * std + mu
-
-    #     # decode
-    #     x_hat = self.decode(z)
-    #     x = x.permute(0, 2, 1)
-
-    #     # loss
-    #     loss = self._get_loss(x, x_hat, mu, logvar)
-    #     self.log_dict({"val_loss": loss})
-
-    #     return loss
 
     def sample(self, n_sample):
         z = torch.randn((n_sample, self.hparams_initial.latent_dim))
         x_hat = self.decode(z)
         return x_hat
 
-    # def _get_loss(self, x, x_hat, mu, logvar):
-    #     recons_loss = F.mse_loss(x_hat, x)
-    #     kld_loss = torch.mean(
-    #         0.5
-    #         * torch.sum(
-    #             -self.hparams_initial.latent_dim - logvar + mu**2 + logvar.exp(), dim=1
-    #         ),
-    #         dim=0,
-    #     )
-    #     loss = recons_loss + self.hparams_initial.beta * kld_loss
-    #     return loss
 
     def configure_optimizers(self):
         return torch.optim.Adam(

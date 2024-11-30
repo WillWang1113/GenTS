@@ -21,10 +21,10 @@ class BaseVAE(ABC, LightningModule):
 
     def training_step(self, batch, batch_idx):
         x = batch["seq"]
-        x = x.permute(0, 2, 1)
+        c = batch.get("c", None)
 
         # encode
-        latents, mu, logvar = self.encode(x)
+        latents, mu, logvar = self.encode(x, c)
 
         # reparameterize
         std = torch.exp(0.5 * logvar)
@@ -32,8 +32,7 @@ class BaseVAE(ABC, LightningModule):
         z = eps * std + mu
 
         # decode
-        x_hat = self.decode(z)
-        x = x.permute(0, 2, 1)
+        x_hat = self.decode(z, c)
 
         # loss
         loss = self._get_loss(x, x_hat, mu, logvar)
@@ -44,10 +43,10 @@ class BaseVAE(ABC, LightningModule):
 
     def validation_step(self, batch, batch_idx):
         x = batch["seq"]
-        x = x.permute(0, 2, 1)
+        c = batch.get("c", None)
 
         # encode
-        latents, mu, logvar = self.encode(x)
+        latents, mu, logvar = self.encode(x, c)
 
         # reparameterize
         std = torch.exp(0.5 * logvar)
@@ -55,8 +54,7 @@ class BaseVAE(ABC, LightningModule):
         z = eps * std + mu
 
         # decode
-        x_hat = self.decode(z)
-        x = x.permute(0, 2, 1)
+        x_hat = self.decode(z, c)
 
         # loss
         loss = self._get_loss(x, x_hat, mu, logvar)
@@ -65,6 +63,73 @@ class BaseVAE(ABC, LightningModule):
         return loss
 
     def _get_loss(self, x, x_hat, mu, logvar):
+        assert x.shape == x_hat.shape
+        recons_loss = F.mse_loss(x_hat, x)
+        kld_loss = torch.mean(
+            0.5
+            * torch.sum(
+                -self.hparams_initial.latent_dim - logvar + mu**2 + logvar.exp(), dim=1
+            ),
+            dim=0,
+        )
+        loss = recons_loss + self.hparams_initial.beta * kld_loss
+        return loss
+
+
+class BaseGAN(ABC, LightningModule):
+    @abstractmethod
+    def encode(self, x, c=None):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def decode(self, z, c=None):
+        raise NotImplementedError()
+
+    def training_step(self, batch, batch_idx):
+        x = batch["seq"]
+        c = batch.get("c", None)
+
+        # encode
+        latents, mu, logvar = self.encode(x, c)
+
+        # reparameterize
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        z = eps * std + mu
+
+        # decode
+        x_hat = self.decode(z, c)
+
+        # loss
+        loss = self._get_loss(x, x_hat, mu, logvar)
+
+        self.log_dict({"train_loss": loss}, on_epoch=True, on_step=False)
+
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        x = batch["seq"]
+        c = batch.get("c", None)
+
+        # encode
+        latents, mu, logvar = self.encode(x, c)
+
+        # reparameterize
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        z = eps * std + mu
+
+        # decode
+        x_hat = self.decode(z, c)
+
+        # loss
+        loss = self._get_loss(x, x_hat, mu, logvar)
+        self.log_dict({"val_loss": loss})
+
+        return loss
+
+    def _get_loss(self, x, x_hat, mu, logvar):
+        assert x.shape == x_hat.shape
         recons_loss = F.mse_loss(x_hat, x)
         kld_loss = torch.mean(
             0.5

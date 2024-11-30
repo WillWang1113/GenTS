@@ -185,6 +185,7 @@ class TimeVAE(BaseVAE):
         )
 
     def encode(self, x, c=None):
+        x = x.permute(0, 2, 1)
         latents = self.encoder(x)
         mu = self.fc_mu(latents)
         logvar = self.fc_logvar(latents)
