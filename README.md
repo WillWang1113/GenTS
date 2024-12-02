@@ -5,24 +5,25 @@
 Python: 3.10
 
 
-## Features
+## Models 
 
-### Tasks included
+<!-- ### Tasks included
 |      Task       |      Conditional on      |
 | :-------------: | :----------------------: |
 |    Synthesis    | NA / high-level features |
 |   Imputation    |      Observed data       |
 |   Forecasting   |     Look-back window     |
-| Superresolution |   Low-resolution data    |
+| Superresolution |   Low-resolution data    | --> |
 
-### Models included
-|      Name       |   Type    | Capability  | Link  |
-| :-------------: | :-------: | :---------: | :---: |
-|     TimeVAE     |    VAE    |  Synthesis  | Link  |
-|     TimeGAN     |    GAN    |  Synthesis  | Link  |
-|    TimeGrad     | Diffusion | Forecasting | Link  |
-| Superresolution |   Flow    | Forecasting | Link  |
-| Superresolution |    DE     |  Synthesis  | Link  |
+<!-- ### Models included -->
+|     Name     |   Type    |       Capability       |
+| :----------: | :-------: | :--------------------: |
+|   TimeVAE    |    VAE    |       Synthesis        |
+|   TimeGAN    |    GAN    |       Synthesis        |
+|   TimeGrad   | Diffusion |      Forecasting       |
+| Fourier Flow |   Flow    |       Synthesis        |
+|  Neural ODE  |    DE     | Synthesis, Forecasting |
+
 
 
 ## Custormization
@@ -34,7 +35,9 @@ Python: 3.10
 
 ## TODO
 - [x] TimeVAE
-- [ ] TimeGAN
+- [x] TimeGAN
 - [ ] TimeGrad
-- [ ] condition data loader
+- [ ] Fourier Flow
+- [ ] Neural ODE
 - [ ] benchmark datasets
+- [ ] condition data loader
