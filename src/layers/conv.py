@@ -1,11 +1,13 @@
 import copy
 import torch
 from torch import nn
-from torchvision.ops import MLP
+# from torchvision.ops import MLP
 
 
 class ConvEncoder(nn.Module):
-    def __init__(self, seq_len, seq_dim, latent_dim, hidden_size_list=[64, 128, 256], **kwargs):
+    def __init__(
+        self, seq_len, seq_dim, latent_dim, hidden_size_list=[64, 128, 256], **kwargs
+    ):
         super().__init__()
         current_seq_len = seq_len
         in_dim = seq_dim
@@ -39,16 +41,21 @@ class ConvEncoder(nn.Module):
 
 
 class ConvDecoder(nn.Module):
-    def __init__(self, seq_len, seq_dim, latent_dim, hidden_size_list=[256, 128, 64], **kwargs):
+    def __init__(
+        self,
+        seq_len,
+        seq_dim,
+        latent_dim,
+        hidden_size_list = [256, 128, 64],
+        **kwargs,
+    ):
         super().__init__()
         latent_seq_len = copy.deepcopy(seq_len)
         for i in range(len(hidden_size_list)):
             latent_seq_len = latent_seq_len // 2
         self.latent_seq_len = latent_seq_len
 
-        self.decoder_input = nn.Linear(
-            latent_dim, hidden_size_list[0] * latent_seq_len
-        )
+        self.decoder_input = nn.Linear(latent_dim, hidden_size_list[0] * latent_seq_len)
         self.hidden_size_list = hidden_size_list
 
         modules = []

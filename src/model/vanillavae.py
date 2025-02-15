@@ -5,7 +5,7 @@ import torch
 from torch.nn import functional as F
 from torchvision.ops import MLP
 
-from .layers import ConvDecoder, ConvEncoder
+from src.layers.conv import ConvDecoder, ConvEncoder
 from .base import BaseVAE
 
 
@@ -23,7 +23,7 @@ class VanillaVAE(BaseVAE):
     ):
         super().__init__()
         self.save_hyperparameters()
-        print(self.hparams)
+        # print(self.hparams)
         self.encoder = ConvEncoder(**self.hparams)
         self.hparams.hidden_size_list.reverse()
         self.decoder = ConvDecoder(**self.hparams)
@@ -41,12 +41,51 @@ class VanillaVAE(BaseVAE):
     def decode(self, z, c=None):
         return self.decoder(z).permute(0, 2, 1)
 
+    def reparam(self, mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        z = eps * std + mu
+        return z
 
-    def sample(self, n_sample):
-        z = torch.randn((n_sample, self.hparams_initial.latent_dim))
-        x_hat = self.decode(z)
+    def _get_loss(self, batch):
+        x = batch["seq"]
+        c = batch.get("c", None)
+
+        # encode
+        latents, mu, logvar = self.encode(x, c)
+
+        # reparameterize
+        z = self.reparam(mu, logvar)
+
+        # decode
+        x_hat = self.decode(z, c)
+
+        assert x.shape == x_hat.shape
+
+        # reconstruction loss
+        recons_loss = F.mse_loss(x_hat, x)
+
+        # KL divergence loss
+        kld_loss = torch.mean(
+            0.5
+            * torch.sum(
+                -self.hparams_initial.latent_dim - logvar + mu**2 + logvar.exp(), dim=1
+            ),
+            dim=0,
+        )
+
+        loss_dict = dict(
+            recon_loss=recons_loss,
+            kl_loss=self.hparams_initial.beta * kld_loss,
+            loss=recons_loss + self.hparams_initial.beta * kld_loss,
+        )
+        return loss_dict
+    
+    @torch.no_grad()
+    def sample(self, n_sample, condition=None):
+        z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
+        x_hat = self.decode(z, condition)
         return x_hat
-
 
     def configure_optimizers(self):
         return torch.optim.Adam(
@@ -54,3 +93,17 @@ class VanillaVAE(BaseVAE):
             self.hparams_initial.lr,
             weight_decay=self.hparams_initial.weight_decay,
         )
+
+    def training_step(self, batch, batch_idx):
+        loss_dict = self._get_loss(batch)
+        prefix = "train_"
+        loss_dict = {prefix + key: value for key, value in loss_dict.items()}
+        self.log_dict(loss_dict, on_step=True, on_epoch=False, logger=True)
+        return loss_dict[prefix+"loss"]
+
+    def validation_step(self, batch, batch_idx):
+        loss_dict = self._get_loss(batch)
+        prefix = "val_"
+        loss_dict = {prefix + key: value for key, value in loss_dict.items()}
+        self.log_dict(loss_dict, on_step=True, on_epoch=False, logger=True)
+        return loss_dict[prefix+"loss"]

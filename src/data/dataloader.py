@@ -23,6 +23,7 @@ class TSDataset(Dataset):
     def __len__(self):
         return len(self.data) - self.seq_len + 1
 
+
 class TSDataModule(LightningDataModule):
     def __init__(self, data_dir: str, batch_size: int, seq_len: int, condition=None):
         super().__init__()
@@ -36,7 +37,9 @@ class TSDataModule(LightningDataModule):
         # Load, scale, condition
 
         # ! TO BE DELETED
-        data = torch.randn((1000, 3)).float()
+        t = torch.linspace(0, 32 * torch.pi, 1024 * 2).float()
+        data = torch.cos(t) + torch.sin(2 * t) + torch.randn_like(t) * 0.01
+        data = data.reshape(-1, 1)
         os.makedirs(self.data_dir, exist_ok=True)
         file_path = os.path.join(self.data_dir, "test.ckpt")
         if not os.path.exists(file_path):
@@ -59,26 +62,24 @@ class TSDataModule(LightningDataModule):
         # border2s = [num_train, num_train + num_vali, len(self.data)]
 
         if stage == "fit":
-            train_data = data[starts["fit"]:ends["fit"]]
-            val_data = data[starts["validate"]:ends["validate"]]
+            train_data = data[starts["fit"] : ends["fit"]]
+            val_data = data[starts["validate"] : ends["validate"]]
             self.train_ds = TSDataset(train_data, self.seq_len)
             self.val_ds = TSDataset(val_data, self.seq_len)
 
         if stage == "predict":
-            test_data = data[starts["test"]:ends["test"]]
+            test_data = data[starts["test"] : ends["test"]]
             self.pred_ds = TSDataset(test_data, self.seq_len)
 
         if stage == "test":
-            test_data = data[starts["test"]:ends["test"]]
+            test_data = data[starts["test"] : ends["test"]]
             self.test_ds = TSDataset(test_data, self.seq_len)
 
     def train_dataloader(self):
         return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=True)
 
     def val_dataloader(self):
-        return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(self.train_ds, batch_size=self.batch_size)
 
     def predict_dataloader(self):
-        return DataLoader(
-            self.train_ds, batch_size=max(self.batch_size, 512), shuffle=False
-        )
+        return DataLoader(self.train_ds, batch_size=max(self.batch_size, 512))
