@@ -67,11 +67,7 @@ class VanillaVAE(BaseVAE):
 
         # KL divergence loss
         kld_loss = torch.mean(
-            0.5
-            * torch.sum(
-                -self.hparams_initial.latent_dim - logvar + mu**2 + logvar.exp(), dim=1
-            ),
-            dim=0,
+            -0.5 * torch.sum(1 + logvar - mu**2 - logvar.exp(), dim=1), dim=0
         )
 
         loss_dict = dict(
@@ -83,6 +79,7 @@ class VanillaVAE(BaseVAE):
     
     @torch.no_grad()
     def sample(self, n_sample, condition=None):
+        self.eval()
         z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
         x_hat = self.decode(z, condition)
         return x_hat
@@ -98,12 +95,12 @@ class VanillaVAE(BaseVAE):
         loss_dict = self._get_loss(batch)
         prefix = "train_"
         loss_dict = {prefix + key: value for key, value in loss_dict.items()}
-        self.log_dict(loss_dict, on_step=True, on_epoch=False, logger=True)
+        self.log_dict(loss_dict, on_step=True, on_epoch=False, logger=True, prog_bar=True)
         return loss_dict[prefix+"loss"]
 
     def validation_step(self, batch, batch_idx):
         loss_dict = self._get_loss(batch)
         prefix = "val_"
         loss_dict = {prefix + key: value for key, value in loss_dict.items()}
-        self.log_dict(loss_dict, on_step=True, on_epoch=False, logger=True)
+        self.log_dict(loss_dict, on_step=True, on_epoch=False, logger=True, prog_bar=True)
         return loss_dict[prefix+"loss"]

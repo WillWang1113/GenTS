@@ -23,3 +23,9 @@ class BaseVAE(BaseModel):
 
 class BaseGAN(BaseModel):
     pass
+
+
+class BaseDiffusion(BaseModel):
+    @abstractmethod
+    def degrade(self, x):
+        raise NotImplementedError()

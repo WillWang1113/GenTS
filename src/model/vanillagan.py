@@ -2,6 +2,7 @@ from pkg_resources import non_empty_lines
 import torch
 from torch import nn
 from src.layers.conv import ConvEncoder, ConvDecoder
+from src.layers.mlp import MLPDecoder, MLPEncoder
 from src.model.base import BaseGAN
 from src.utils.check import _condition_shape_check
 
@@ -11,7 +12,8 @@ class Generator(nn.Module):
         self, seq_len, seq_dim, latent_dim, hidden_size_list=[256, 128, 64], **kwargs
     ):
         super().__init__()
-        self.dec = ConvDecoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
+        self.dec = MLPDecoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
+        # self.dec = ConvDecoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
 
     def forward(self, z, c=None):
         return self.dec(z).permute(0, 2, 1)
@@ -28,7 +30,8 @@ class Discriminator(nn.Module):
         **kwargs,
     ):
         super().__init__()
-        self.enc = ConvEncoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
+        self.enc = MLPEncoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
+        # self.enc = ConvEncoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
         self.out_mlp = nn.Sequential(
             nn.Linear(latent_dim, latent_dim),
             nn.LeakyReLU(),
@@ -96,9 +99,9 @@ class VanillaGAN(BaseGAN):
 
             # adversarial loss is binary cross-entropy
             g_loss = -torch.mean(self.discriminator(self.generator(z, c), c))
+            optimizer_g.zero_grad()
             self.manual_backward(g_loss)
             optimizer_g.step()
-            optimizer_g.zero_grad()
             self.untoggle_optimizer(optimizer_g)
             loss_dict = {"g_loss": g_loss}
             self.log_dict(loss_dict)
@@ -113,8 +116,8 @@ class VanillaGAN(BaseGAN):
             d_loss = -torch.mean(self.discriminator(x, c)) + torch.mean(
                 self.discriminator(self.generator(z, c), c)
             )
-            self.manual_backward(d_loss)
             optimizer_d.zero_grad()
+            self.manual_backward(d_loss)
             optimizer_d.step()
             self.untoggle_optimizer(optimizer_d)
 
@@ -177,6 +180,7 @@ class VanillaGAN(BaseGAN):
 
     @torch.no_grad()
     def sample(self, n_sample, condition=None):
+        self.eval()
         z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
         # if condition is not None:
         #     _condition_shape_check(n_sample, condition)
