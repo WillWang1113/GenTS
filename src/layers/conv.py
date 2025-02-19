@@ -35,7 +35,7 @@ class ConvEncoder(nn.Module):
         self.linear = nn.Linear(hidden_size_list[-1] * current_seq_len, latent_dim)
 
     def forward(self, x):
-        x = self.encoder(x)
+        x = self.encoder(x.permute(0, 2, 1))
         x = self.linear(x.flatten(start_dim=1))
         return x
 
@@ -100,4 +100,4 @@ class ConvDecoder(nn.Module):
         x = x.view(-1, self.hidden_size_list[0], self.latent_seq_len)
         x = self.decoder(x)
         x = self.final_layer(x)
-        return x
+        return x.permute(0, 2, 1)

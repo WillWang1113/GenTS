@@ -5,7 +5,8 @@ import torch
 from torch.nn import functional as F
 from torchvision.ops import MLP
 
-from src.layers.conv import ConvDecoder, ConvEncoder
+from src.layers.mlp import MLPEncoder, MLPDecoder
+# from src.layers.conv import ConvDecoder, ConvEncoder
 from .base import BaseVAE
 
 
@@ -24,22 +25,22 @@ class VanillaVAE(BaseVAE):
         super().__init__()
         self.save_hyperparameters()
         # print(self.hparams)
-        self.encoder = ConvEncoder(**self.hparams)
+        self.encoder = MLPEncoder(**self.hparams)
         self.hparams.hidden_size_list.reverse()
-        self.decoder = ConvDecoder(**self.hparams)
+        self.decoder = MLPDecoder(**self.hparams)
 
         self.fc_mu = MLP(latent_dim, [latent_dim])
         self.fc_logvar = MLP(latent_dim, [latent_dim])
 
     def encode(self, x, c=None):
-        x = x.permute(0, 2, 1)
+        # x = x
         latents = self.encoder(x)
         mu = self.fc_mu(latents)
         logvar = self.fc_logvar(latents)
         return latents, mu, logvar
 
     def decode(self, z, c=None):
-        return self.decoder(z).permute(0, 2, 1)
+        return self.decoder(z)
 
     def reparam(self, mu, logvar):
         std = torch.exp(0.5 * logvar)

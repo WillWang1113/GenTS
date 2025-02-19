@@ -1,10 +1,8 @@
-from pkg_resources import non_empty_lines
 import torch
 from torch import nn
-from src.layers.conv import ConvEncoder, ConvDecoder
+
 from src.layers.mlp import MLPDecoder, MLPEncoder
 from src.model.base import BaseGAN
-from src.utils.check import _condition_shape_check
 
 
 class Generator(nn.Module):
@@ -13,10 +11,9 @@ class Generator(nn.Module):
     ):
         super().__init__()
         self.dec = MLPDecoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
-        # self.dec = ConvDecoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
 
     def forward(self, z, c=None):
-        return self.dec(z).permute(0, 2, 1)
+        return self.dec(z)
 
 
 class Discriminator(nn.Module):
@@ -31,21 +28,16 @@ class Discriminator(nn.Module):
     ):
         super().__init__()
         self.enc = MLPEncoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
-        # self.enc = ConvEncoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
         self.out_mlp = nn.Sequential(
             nn.Linear(latent_dim, latent_dim),
             nn.LeakyReLU(),
             nn.Linear(latent_dim, 1),
-            # nn.Sigmoid(),
         )
         if last_sigmoid:
             self.out_mlp.append(nn.Sigmoid())
 
     def forward(self, x, c=None):
-        # emb_cond = self.cond_embed(cond).reshape(-1, 1, self.seq_len)
-
-        # concat_input = torch.concat([img, emb_cond], dim=1)
-        latents = self.enc(x.permute(0, 2, 1))
+        latents = self.enc(x)
         validity = self.out_mlp(latents)
         return validity
 
@@ -74,9 +66,6 @@ class VanillaGAN(BaseGAN):
         self.generator = Generator(**self.hparams)
         self.criterionSource = nn.BCELoss()
 
-    # def forward(self, z, cond):
-    #     return self.generator(z, cond)
-
     def training_step(self, batch):
         x = batch["seq"]
         c = batch.get("c", None)
@@ -91,11 +80,6 @@ class VanillaGAN(BaseGAN):
 
             # generate images
             self.generated_imgs = self.generator(z, c)
-
-            # ground truth result (ie: all fake)
-            # put on GPU because we created this tensor inside training_loop
-            # valid = torch.ones(x.size(0), 1).type_as(x)
-            # valid = valid
 
             # adversarial loss is binary cross-entropy
             g_loss = -torch.mean(self.discriminator(self.generator(z, c), c))
@@ -149,40 +133,10 @@ class VanillaGAN(BaseGAN):
         )
         return [g_optim, d_optim], []
 
-    # def on_validation_epoch_end(self):
-    #     # Get sample reconstruction image
-    #     test_input, test_label = next(iter(self.trainer.val_dataloaders))
-    #     test_input = test_input.to(self.device)
-    #     test_label = test_label.to(self.device)
-
-    #     if test_label.shape[1] > 12:
-    #         show_num = 3
-    #     else:
-    #         show_num = test_label.shape[1]
-
-    #     fig, axs = plt.subplots(3, 3, figsize=[6.4 * 2, 4.8 * 2])
-    #     axs = axs.flatten()
-    #     z = self.vis_z.type_as(test_input)
-
-    #     for i in range(len(axs)):
-    #         choose = random.randint(0, len(test_input) - 1)
-    #         samples = self(z[i], test_label[[choose]].repeat(10, 1))
-
-    #         axs[i].plot(test_input[choose, 0, :].cpu(), c="red", label="data")
-    #         axs[i].plot(samples[:, 0, :].T.cpu(), c="grey", alpha=0.5)
-    #         axs[i].legend()
-    #         axs[i].set(title=f"cond on: {test_label[choose].cpu().numpy()[:show_num]}")
-    #     fig.tight_layout()
-    #     fig.savefig(
-    #         os.path.join(self.trainer.log_dir, f"valid_{self.current_epoch}.png")
-    #     )
-    #     plt.close()
 
     @torch.no_grad()
     def sample(self, n_sample, condition=None):
         self.eval()
         z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
-        # if condition is not None:
-        #     _condition_shape_check(n_sample, condition)
         samples = self.generator(z, condition)
         return samples
