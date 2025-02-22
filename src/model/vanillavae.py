@@ -1,16 +1,14 @@
-from typing import List
-
-import lightning as L
 import torch
 from torch.nn import functional as F
 from torchvision.ops import MLP
 
-from src.layers.mlp import MLPEncoder, MLPDecoder
+from src.layers.mlp import MLPDecoder, MLPEncoder
+
 # from src.layers.conv import ConvDecoder, ConvEncoder
-from .base import BaseVAE
+from .base import BaseModel
 
 
-class VanillaVAE(BaseVAE):
+class VanillaVAE(BaseModel):
     def __init__(
         self,
         seq_len: int,
@@ -25,9 +23,10 @@ class VanillaVAE(BaseVAE):
         super().__init__()
         self.save_hyperparameters()
         # print(self.hparams)
-        self.encoder = MLPEncoder(**self.hparams)
-        self.hparams.hidden_size_list.reverse()
-        self.decoder = MLPDecoder(**self.hparams)
+        self.hiddens = hidden_size_list.copy()
+        self.encoder = MLPEncoder(seq_len, seq_dim, latent_dim, self.hiddens, **kwargs)
+        self.hiddens.reverse()
+        self.decoder = MLPDecoder(seq_len, seq_dim, latent_dim, self.hiddens, **kwargs)
 
         self.fc_mu = MLP(latent_dim, [latent_dim])
         self.fc_logvar = MLP(latent_dim, [latent_dim])
@@ -78,19 +77,10 @@ class VanillaVAE(BaseVAE):
         )
         return loss_dict
     
-    @torch.no_grad()
-    def sample(self, n_sample, condition=None):
-        self.eval()
+    def _sample_impl(self, n_sample, condition=None):
         z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
         x_hat = self.decode(z, condition)
         return x_hat
-
-    def configure_optimizers(self):
-        return torch.optim.Adam(
-            self.parameters(),
-            self.hparams_initial.lr,
-            weight_decay=self.hparams_initial.weight_decay,
-        )
 
     def training_step(self, batch, batch_idx):
         loss_dict = self._get_loss(batch)
@@ -105,3 +95,10 @@ class VanillaVAE(BaseVAE):
         loss_dict = {prefix + key: value for key, value in loss_dict.items()}
         self.log_dict(loss_dict, on_step=True, on_epoch=False, logger=True, prog_bar=True)
         return loss_dict[prefix+"loss"]
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(
+            self.parameters(),
+            lr=self.hparams_initial.lr,
+            weight_decay=self.hparams_initial.weight_decay,
+        )

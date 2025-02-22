@@ -164,3 +164,5 @@ cython_debug/
 test_data/
 lightning_logs/
 *.png
+misc/
+notebooks/

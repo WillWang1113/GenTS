@@ -2,12 +2,20 @@ import torch
 from torch import nn
 from torchvision.ops import MLP
 
-from src.model.base import BaseVAE
-
-from .layers import ConvDecoder, ConvEncoder
+from src.layers.conv import ConvDecoder, ConvEncoder
+from src.model.vanillavae import VanillaVAE
 
 
 class TrendLayer(nn.Module):
+    """
+    The TrendLayer class is a neural network module that models the trend component of a time series.
+    
+    Args:
+        latent_dim (int): Dimensionality of the latent space.
+        feat_dim (int): Dimensionality of the feature space.
+        trend_poly (int): The order of the polynomial used to model the trend.
+        seq_len (int): The length of the input sequence.
+    """
     def __init__(self, latent_dim, feat_dim, trend_poly, seq_len):
         super(TrendLayer, self).__init__()
         self.feat_dim = feat_dim
@@ -135,18 +143,20 @@ class TrendSeasonalDecoder(nn.Module):
         return z_trend + z_seasonal
 
 
-class TimeVAE(BaseVAE):
+# TODO：Implement TimeVAE BUG inherent
+class TimeVAE(VanillaVAE):
     def __init__(
         self,
         seq_len: int,
         seq_dim: int,
         latent_dim: int,
         hidden_size_list=[64, 128, 256],
+        beta: float = 1e-3,
+        lr: float = 1e-3,
+        weight_decay: float = 1e-5,
         trend_poly=0,
         custom_seas=None,
         use_residual_conn=True,
-        lr: float = 1e-3,
-        weight_decay: float = 1e-5,
         **kwargs,
     ):
         """
@@ -159,37 +169,21 @@ class TimeVAE(BaseVAE):
         trend, generic and custom seasonalities.
         """
 
-        super().__init__()
-
+        super().__init__(
+            seq_len, seq_dim, latent_dim, hidden_size_list, beta, lr, weight_decay
+        )
         self.save_hyperparameters()
-        self.hidden_layer_sizes = hidden_size_list
-        self.trend_poly = trend_poly
-        self.custom_seas = custom_seas
-        self.use_residual_conn = use_residual_conn
-
         # encoding
-        self.encoder = ConvEncoder(**self.hparams)
-        self.fc_mu = MLP(latent_dim, [latent_dim])
-        self.fc_logvar = MLP(latent_dim, [latent_dim])
-
-        # decoding
-        self.hparams.hidden_size_list.reverse()
-        self.base_dec = ConvDecoder(**self.hparams)
+        self.encoder = ConvEncoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
+        hidden_size_list.reverse()
+        self.decoder = ConvDecoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
         self.trend_season_dec = TrendSeasonalDecoder(**self.hparams_initial)
 
-    def configure_optimizers(self):
-        return torch.optim.Adam(
-            self.parameters(),
-            self.hparams_initial.lr,
-            weight_decay=self.hparams_initial.weight_decay,
-        )
-
     def encode(self, x, c=None):
-        x = x.permute(0, 2, 1)
         latents = self.encoder(x)
         mu = self.fc_mu(latents)
         logvar = self.fc_logvar(latents)
         return latents, mu, logvar
 
     def decode(self, z, c=None):
-        return self.base_dec(z).permute(0, 2, 1) + self.trend_season_dec(z)
+        return self.decoder(z) + self.trend_season_dec(z)

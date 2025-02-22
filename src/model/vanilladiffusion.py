@@ -7,7 +7,7 @@ from torchvision.ops import MLP
 
 from src.layers.embed import TimestepEmbed
 from src.layers.mlp import MLPDecoder, MLPEncoder
-from src.model.base import BaseDiffusion
+from src.model.base import BaseModel
 from typing import Tuple, Union, List, Dict, Any
 
 
@@ -97,7 +97,7 @@ class Denoiser(nn.Module):
         return self.dec(x)
 
 
-class VanillaDDPM(BaseDiffusion):
+class VanillaDDPM(BaseModel):
     """VanillaDDPM model with MLP backbone.
 
     Args:
@@ -123,8 +123,8 @@ class VanillaDDPM(BaseDiffusion):
         self.backbone = Denoiser(**self.hparams)
         self.seq_length = seq_len
         # self.norm = norm
-        self.lr = lr
-        self.weight_decay = weight_decay
+        # self.lr = lr
+        # self.weight_decay = weight_decay
         self.loss_fn = F.mse_loss
         self.T = T
         self.pred_x0 = pred_x0
@@ -144,7 +144,9 @@ class VanillaDDPM(BaseDiffusion):
 
     def configure_optimizers(self):
         return torch.optim.Adam(
-            self.parameters(), lr=self.lr, weight_decay=self.weight_decay
+            self.parameters(),
+            lr=self.hparams_initial.lr,
+            weight_decay=self.hparams_initial.weight_decay,
         )
 
     @torch.no_grad
@@ -168,12 +170,10 @@ class VanillaDDPM(BaseDiffusion):
         log_dict = {
             "val_loss": loss,
         }
-
         self.log_dict(log_dict, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
-    @torch.no_grad()
-    def sample(self, n_sample, condition=None):
+    def _sample_impl(self, n_sample, condition=None):
         x = torch.randn(
             (n_sample, self.hparams_initial.seq_len, self.hparams_initial.seq_dim)
         ).type_as(next(iter(self.parameters())))

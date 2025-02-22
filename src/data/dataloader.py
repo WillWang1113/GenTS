@@ -37,7 +37,7 @@ class TSDataModule(LightningDataModule):
         # Load, scale, condition
 
         # ! TO BE DELETED
-        t = torch.linspace(0, 64 * torch.pi, 1024 * 2).float()
+        t = torch.linspace(0, 64 * torch.pi, 1024 * 2//4).float()
         data = torch.cos(t) + torch.sin(2 * t)
         data = data.reshape(-1, 1)
         os.makedirs(self.data_dir, exist_ok=True)

@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 from src.layers.mlp import MLPDecoder, MLPEncoder
-from src.model.base import BaseGAN
+from src.model.base import BaseModel
 
 
 class Generator(nn.Module):
@@ -42,7 +42,7 @@ class Discriminator(nn.Module):
         return validity
 
 
-class VanillaGAN(BaseGAN):
+class VanillaGAN(BaseModel):
     def __init__(
         self,
         seq_len: int,
@@ -134,9 +134,8 @@ class VanillaGAN(BaseGAN):
         return [g_optim, d_optim], []
 
 
-    @torch.no_grad()
-    def sample(self, n_sample, condition=None):
-        self.eval()
+    # @torch.no_grad()
+    def _sample_impl(self, n_sample, condition=None):
         z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
         samples = self.generator(z, condition)
         return samples

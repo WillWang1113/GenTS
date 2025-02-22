@@ -4,34 +4,11 @@ from torch import nn
 from torch.nn import functional as F
 from torchvision.ops import MLP
 
-
-class GRULayer(nn.Module):
-    def __init__(
-        self,
-        in_dim: int,
-        hidden_size=128,
-        out_dim=128,
-        num_layers=1,
-        dropout=0.0,
-        **kwargs,
-    ):
-        super().__init__()
-        self.gru = nn.GRU(
-            in_dim,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
-            batch_first=True,
-            dropout=dropout,
-        )
-        self.proj = MLP(hidden_size, [out_dim])
-
-    def forward(self, x):
-        h, _ = self.gru(x)
-        emb = self.proj(h)
-        return emb
+from src.model.base import BaseModel
+from src.layers.rnn import GRULayer
 
 
-class TimeGAN(L.LightningModule):
+class TimeGAN(BaseModel):
     def __init__(
         self,
         seq_len: int,
@@ -50,15 +27,30 @@ class TimeGAN(L.LightningModule):
         self.save_hyperparameters()
         self.automatic_optimization = False
 
-        self.embedder = GRULayer(seq_dim, hidden_size, latent_dim, num_layers, **kwargs)
-        self.recovery = GRULayer(latent_dim, hidden_size, seq_dim, num_layers, **kwargs)
-        self.generator = GRULayer(
-            seq_dim, hidden_size, latent_dim, num_layers, **kwargs
+        self.embedder = nn.Sequential(
+            GRULayer(seq_dim, hidden_size, latent_dim, num_layers, **kwargs),
+            # nn.Sigmoid(),
         )
-        self.supervisor = GRULayer(
-            latent_dim, hidden_size, latent_dim, num_layers, **kwargs
+        self.recovery = nn.Sequential(
+            GRULayer(latent_dim, hidden_size, seq_dim, num_layers, **kwargs),
+            # nn.Sigmoid(),
         )
-        self.discriminator = GRULayer(latent_dim, hidden_size, 1, num_layers, **kwargs)
+
+        # Notice that the generator only produce latents,
+        # and supervisor aims to supervise the mapping from t-1 to t
+        self.generator = nn.Sequential(
+            GRULayer(seq_dim, hidden_size, latent_dim, num_layers, **kwargs),
+            # nn.Sigmoid(),
+        )
+        self.supervisor = nn.Sequential(
+            GRULayer(latent_dim, hidden_size, latent_dim, num_layers, **kwargs),
+            # nn.Sigmoid(),
+        )
+
+        self.discriminator = nn.Sequential(
+            GRULayer(latent_dim, hidden_size, 1, num_layers, **kwargs),
+            nn.Sigmoid(),
+        )
 
     def configure_optimizers(self):
         e0_optim = torch.optim.Adam(
@@ -74,11 +66,11 @@ class TimeGAN(L.LightningModule):
             lr=self.hparams.lr,
         )
         g_optim = torch.optim.Adam(
-            list(self.generator.parameters()) + list(self.discriminator.parameters()),
+            list(self.generator.parameters()) + list(self.supervisor.parameters()),
             lr=self.hparams.lr,
         )
         gs_optim = torch.optim.Adam(
-            list(self.generator.parameters()) + list(self.discriminator.parameters()),
+            list(self.embedder.parameters()) + list(self.supervisor.parameters()),
             lr=self.hparams.lr,
         )
 
@@ -87,6 +79,7 @@ class TimeGAN(L.LightningModule):
     def training_step(self, batch, batch_idx):
         max_epoch = self.trainer.max_epochs
         x = batch["seq"]
+        # x = self._norm(batch["seq"], mode="norm")
         e0_optim, e_optim, d_optim, g_optim, gs_optim = self.optimizers()
 
         if (self.current_epoch >= 0) and (self.current_epoch < int(1 / 3 * max_epoch)):
@@ -94,7 +87,7 @@ class TimeGAN(L.LightningModule):
             self.toggle_optimizer(e0_optim)
             h = self.embedder(x)
             x_tilde = self.recovery(h)
-            loss = F.mse_loss(x_tilde, x)
+            loss = 10 * F.mse_loss(x_tilde, x).sqrt()
             e0_optim.zero_grad()
             self.manual_backward(loss)
             e0_optim.step()
@@ -106,7 +99,7 @@ class TimeGAN(L.LightningModule):
         ):
             # 2. Training only with supervised loss
             self.toggle_optimizer(gs_optim)
-            z = torch.randn_like(x)  # ! original code: uniform distrib.
+            # z = torch.randn_like(x)  # ! original code: uniform distrib.
             h = self.embedder(x)
             h_hat_supervise = self.supervisor(h)
             loss = F.mse_loss(h[:, 1:], h_hat_supervise[:, :-1])
@@ -118,43 +111,50 @@ class TimeGAN(L.LightningModule):
 
         else:
             # 3. Joint Training
-            z = torch.randn_like(x)
+            z = torch.rand_like(x)
 
             # Generator loss
             # 1. Adversarial loss
             self.toggle_optimizer(g_optim)
             h = self.embedder(x)
             h_hat_supervise = self.supervisor(h)
+
             e_hat = self.generator(z)
             h_hat = self.supervisor(e_hat)
-            y_fake = self.discriminator(h_hat)
-            y_fake_e = self.discriminator(e_hat)
+
+            y_fake = self.discriminator(h_hat).flatten(1)
+            y_fake_e = self.discriminator(e_hat).flatten(1)
+
             x_hat = self.recovery(h_hat)
 
-            g_loss_u = F.binary_cross_entropy_with_logits(
-                y_fake, torch.ones_like(y_fake)
-            )
-            g_loss_u_e = F.binary_cross_entropy_with_logits(
-                y_fake_e, torch.ones_like(y_fake_e)
-            )
+            g_loss_u = F.binary_cross_entropy(y_fake, torch.ones_like(y_fake))
+            g_loss_u_e = F.binary_cross_entropy(y_fake_e, torch.ones_like(y_fake_e))
 
             # 2. Supervised loss
             g_loss_s = F.mse_loss(h[:, 1:], h_hat_supervise[:, :-1])
 
             # 3. Moment loss
-            g_loss_v1 = torch.mean(torch.abs(x_hat.mean(dim=0) - x.mean(dim=0)))
+            g_loss_v1 = torch.mean(
+                torch.abs((torch.mean(x_hat, [0])) - (torch.mean(x, [0])))
+            )
             g_loss_v2 = torch.mean(
                 torch.abs(
-                    torch.sqrt(torch.var(x_hat, dim=0) + 1e-6)
-                    - torch.sqrt(torch.var(x, dim=0) + 1e-6)
+                    torch.sqrt(torch.std(x_hat, [0]) + 1e-6)
+                    - torch.sqrt(torch.std(x, [0]) + 1e-6)
                 )
             )
+            # g_loss_v1 = torch.mean(torch.abs(x_hat.mean(dim=0) - x.mean(dim=0)))
+            # g_loss_v2 = torch.mean(
+            #     torch.abs(
+            #         torch.sqrt(torch.var(x_hat, dim=0) + 1e-6)
+            #         - torch.sqrt(torch.var(x, dim=0) + 1e-6)
+            #     )
+            # )
             g_loss_v = g_loss_v1 + g_loss_v2
             g_loss = (
                 g_loss_u
                 + g_loss_u_e * self.hparams_initial.gamma
-                + (torch.sqrt(g_loss_s)
-                + g_loss_v) * self.hparams_initial.eta
+                + (torch.sqrt(g_loss_s) + g_loss_v) * self.hparams_initial.eta
             )
 
             # UPDATE generator
@@ -166,8 +166,10 @@ class TimeGAN(L.LightningModule):
             # UPDATE embedder
             self.toggle_optimizer(e_optim)
             h = self.embedder(x)
+            # h_hat_supervise = self.supervisor(h)
             x_tilde = self.recovery(h)
-            e_loss = F.mse_loss(x_tilde, x)
+            e_loss = 10 * F.mse_loss(x_tilde, x).sqrt()
+            e_loss = e_loss + 0.1 * F.mse_loss(h[:, 1:], h_hat_supervise[:, :-1].detach())
             e_optim.zero_grad()
             self.manual_backward(e_loss)
             e_optim.step()
@@ -178,18 +180,17 @@ class TimeGAN(L.LightningModule):
             if update_flag:
                 self.toggle_optimizer(d_optim)
 
-                y_real = self.discriminator(h.detach())
-                y_fake = self.discriminator(h_hat.detach())
-                y_fake_e = self.discriminator(e_hat.detach())
+                y_real = self.discriminator(h.detach()).flatten(1)
+                y_fake = self.discriminator(h_hat.detach()).flatten(1)
+                y_fake_e = self.discriminator(e_hat.detach()).flatten(1)
 
-                D_loss_real = F.binary_cross_entropy_with_logits(
-                    torch.ones_like(y_real), y_real
+                D_loss_real = F.binary_cross_entropy(y_real, torch.ones_like(y_real))
+                D_loss_fake = F.binary_cross_entropy(
+                    y_fake,
+                    torch.zeros_like(y_fake),
                 )
-                D_loss_fake = F.binary_cross_entropy_with_logits(
-                    torch.zeros_like(y_fake), y_fake
-                )
-                D_loss_fake_e = F.binary_cross_entropy_with_logits(
-                    torch.zeros_like(y_fake_e), y_fake_e
+                D_loss_fake_e = F.binary_cross_entropy(
+                    y_fake_e, torch.zeros_like(y_fake_e)
                 )
                 d_loss = (
                     D_loss_real
@@ -197,10 +198,10 @@ class TimeGAN(L.LightningModule):
                     + D_loss_fake_e * self.hparams_initial.gamma
                 )
 
-                # if d_loss > 0.15:
-                d_optim.zero_grad()
-                self.manual_backward(d_loss)
-                d_optim.step()
+                if d_loss > 0.15:
+                    d_optim.zero_grad()
+                    self.manual_backward(d_loss)
+                    d_optim.step()
                 self.untoggle_optimizer(d_optim)
 
             self.log_dict(
@@ -216,10 +217,25 @@ class TimeGAN(L.LightningModule):
     def validation_step(self, batch, batch_idx):
         pass
 
-    # def sample(self, num_samples, current_device, **kwargs):
-    #     cond = kwargs.get("condition")
-    #     z = torch.randn(num_samples, self.hparams.latent_dim)
-    #     z = z.to(current_device)
+    def _sample_impl(self, n_sample: int, condition: torch.Tensor = None):
+        z = torch.rand(
+            (n_sample, self.hparams_initial.seq_len, self.hparams_initial.seq_dim)
+        ).to(next(self.parameters()))
+        e_hat = self.generator(z)
+        h_hat = self.supervisor(e_hat)
+        samples = self.recovery(h_hat)
+        return samples
+        # return self._norm(samples, mode="denorm")
 
-    #     samples = self(z, cond)
-    #     return samples
+    def on_fit_start(self):
+        train_dl = self.trainer.datamodule.train_dataloader()
+        all_x = torch.concat([batch["seq"] for batch in train_dl])
+        self.min_x = all_x.min(dim=0).values.min(dim=0).values.to(self.device)
+        self.max_x = all_x.max(dim=0).values.max(dim=0).values.to(self.device)
+
+    # def _norm(self, x, mode="norm"):
+    #     return (
+    #         (x - self.min_x) / (self.max_x - self.min_x)
+    #         if mode == "norm"
+    #         else (x * (self.max_x - self.min_x)) + (self.min_x)
+    #     )

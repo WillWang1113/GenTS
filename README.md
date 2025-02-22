@@ -18,11 +18,15 @@ Python: 3.10
 <!-- ### Models included -->
 |     Name     |   Type    |       Capability       |
 | :----------: | :-------: | :--------------------: |
+|  VanillaVAE  |    VAE    |       Synthesis        |
+|  VanillaGAN  |    GAN    |       Synthesis        |
+|  VanillaMAF  |   Flow    |       Synthesis        |
+| VanillaDDPM  | Diffusion |       Synthesis        |
 |   TimeVAE    |    VAE    |       Synthesis        |
 |   TimeGAN    |    GAN    |       Synthesis        |
-|   TimeGrad   | Diffusion |      Forecasting       |
-| Fourier Flow |   Flow    |       Synthesis        |
-|  Neural ODE  |    DE     | Synthesis, Forecasting |
+<!-- |   TimeGrad   | Diffusion |      Forecasting       | -->
+<!-- | Fourier Flow |   Flow    |       Synthesis        | -->
+<!-- |  Neural ODE  |    DE     | Synthesis, Forecasting | -->
 
 
 
