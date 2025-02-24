@@ -16,17 +16,16 @@ Python: 3.10
 | Superresolution |   Low-resolution data    | --> |
 
 <!-- ### Models included -->
-|     Name     |   Type    |       Capability       |
-| :----------: | :-------: | :--------------------: |
-|  VanillaVAE  |    VAE    |       Synthesis        |
-|  VanillaGAN  |    GAN    |       Synthesis        |
-|  VanillaMAF  |   Flow    |       Synthesis        |
-| VanillaDDPM  | Diffusion |       Synthesis        |
-|   TimeVAE    |    VAE    |       Synthesis        |
-|   TimeGAN    |    GAN    |       Synthesis        |
-<!-- |   TimeGrad   | Diffusion |      Forecasting       | -->
-<!-- | Fourier Flow |   Flow    |       Synthesis        | -->
-<!-- |  Neural ODE  |    DE     | Synthesis, Forecasting | -->
+|    Name     | Model Type | Condition |            Application             | Finish? |
+| :---------: | :--------: | :-------: | :--------------------------------: | :---------: |
+| VanillaVAE  |    VAE     |     -     |             Synthesis              |   :white_check_mark: |
+| VanillaGAN  |    GAN     |     -     |             Synthesis              |  Synthesis  |
+| VanillaMAF  |    Flow    |     -     |             Synthesis              |  Synthesis  |
+| VanillaDDPM | Diffusion  |     -     |             Synthesis              |  Synthesis  |
+|   TimeVAE   |    VAE     |     -     |             Synthesis              |  Synthesis  |
+|   TimeGAN   |    GAN     |     -     |             Synthesis              |  Synthesis  |
+| Neural ODE  | Diff. Eq.  |     -     | Synthesis, Forecasting, Imputation |  Synthesis  |
+| Neural ODE  | Diff. Eq.  |     -     |             Synthesis              |  Synthesis  |
 
 
 

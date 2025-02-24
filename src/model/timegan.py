@@ -112,103 +112,105 @@ class TimeGAN(BaseModel):
         else:
             # 3. Joint Training
             z = torch.rand_like(x)
+            
+            for _ in range(self.hparams.n_critic):
 
-            # Generator loss
-            # 1. Adversarial loss
-            self.toggle_optimizer(g_optim)
-            h = self.embedder(x)
-            h_hat_supervise = self.supervisor(h)
+                # Generator loss
+                # 1. Adversarial loss
+                self.toggle_optimizer(g_optim)
+                h = self.embedder(x)
+                h_hat_supervise = self.supervisor(h)
 
-            e_hat = self.generator(z)
-            h_hat = self.supervisor(e_hat)
+                e_hat = self.generator(z)
+                h_hat = self.supervisor(e_hat)
 
-            y_fake = self.discriminator(h_hat).flatten(1)
-            y_fake_e = self.discriminator(e_hat).flatten(1)
+                y_fake = self.discriminator(h_hat).flatten(1)
+                y_fake_e = self.discriminator(e_hat).flatten(1)
 
-            x_hat = self.recovery(h_hat)
+                x_hat = self.recovery(h_hat)
 
-            g_loss_u = F.binary_cross_entropy(y_fake, torch.ones_like(y_fake))
-            g_loss_u_e = F.binary_cross_entropy(y_fake_e, torch.ones_like(y_fake_e))
+                g_loss_u = F.binary_cross_entropy(y_fake, torch.ones_like(y_fake))
+                g_loss_u_e = F.binary_cross_entropy(y_fake_e, torch.ones_like(y_fake_e))
 
-            # 2. Supervised loss
-            g_loss_s = F.mse_loss(h[:, 1:], h_hat_supervise[:, :-1])
+                # 2. Supervised loss
+                g_loss_s = F.mse_loss(h[:, 1:], h_hat_supervise[:, :-1])
 
-            # 3. Moment loss
-            g_loss_v1 = torch.mean(
-                torch.abs((torch.mean(x_hat, [0])) - (torch.mean(x, [0])))
-            )
-            g_loss_v2 = torch.mean(
-                torch.abs(
-                    torch.sqrt(torch.std(x_hat, [0]) + 1e-6)
-                    - torch.sqrt(torch.std(x, [0]) + 1e-6)
+                # 3. Moment loss
+                g_loss_v1 = torch.mean(
+                    torch.abs((torch.mean(x_hat, [0])) - (torch.mean(x, [0])))
                 )
-            )
-            # g_loss_v1 = torch.mean(torch.abs(x_hat.mean(dim=0) - x.mean(dim=0)))
-            # g_loss_v2 = torch.mean(
-            #     torch.abs(
-            #         torch.sqrt(torch.var(x_hat, dim=0) + 1e-6)
-            #         - torch.sqrt(torch.var(x, dim=0) + 1e-6)
-            #     )
-            # )
-            g_loss_v = g_loss_v1 + g_loss_v2
-            g_loss = (
-                g_loss_u
-                + g_loss_u_e * self.hparams_initial.gamma
-                + (torch.sqrt(g_loss_s) + g_loss_v) * self.hparams_initial.eta
-            )
+                g_loss_v2 = torch.mean(
+                    torch.abs(
+                        torch.sqrt(torch.var(x_hat, [0]) + 1e-6)
+                        - torch.sqrt(torch.var(x, [0]) + 1e-6)
+                    )
+                )
+                # g_loss_v1 = torch.mean(torch.abs(x_hat.mean(dim=0) - x.mean(dim=0)))
+                # g_loss_v2 = torch.mean(
+                #     torch.abs(
+                #         torch.sqrt(torch.var(x_hat, dim=0) + 1e-6)
+                #         - torch.sqrt(torch.var(x, dim=0) + 1e-6)
+                #     )
+                # )
+                g_loss_v = g_loss_v1 + g_loss_v2
+                g_loss = (
+                    g_loss_u
+                    + g_loss_u_e * self.hparams_initial.gamma
+                    + (torch.sqrt(g_loss_s) + g_loss_v) * self.hparams_initial.eta
+                )
 
-            # UPDATE generator
-            g_optim.zero_grad()
-            self.manual_backward(g_loss)
-            g_optim.step()
-            self.untoggle_optimizer(g_optim)
+                # UPDATE generator
+                g_optim.zero_grad()
+                self.manual_backward(g_loss)
+                g_optim.step()
+                self.untoggle_optimizer(g_optim)
 
-            # UPDATE embedder
-            self.toggle_optimizer(e_optim)
-            h = self.embedder(x)
-            # h_hat_supervise = self.supervisor(h)
-            x_tilde = self.recovery(h)
-            e_loss = 10 * F.mse_loss(x_tilde, x).sqrt()
-            e_loss = e_loss + 0.1 * F.mse_loss(h[:, 1:], h_hat_supervise[:, :-1].detach())
-            e_optim.zero_grad()
-            self.manual_backward(e_loss)
-            e_optim.step()
-            self.untoggle_optimizer(e_optim)
+                # UPDATE embedder
+                self.toggle_optimizer(e_optim)
+                h = self.embedder(x)
+                # h_hat_supervise = self.supervisor(h)
+                x_tilde = self.recovery(h)
+                e_loss = 10 * F.mse_loss(x_tilde, x).sqrt()
+                e_loss = e_loss + 0.1 * F.mse_loss(h[:, 1:], h_hat_supervise[:, :-1].detach())
+                e_optim.zero_grad()
+                self.manual_backward(e_loss)
+                e_optim.step()
+                self.untoggle_optimizer(e_optim)
 
             # UPDATE discriminator
-            update_flag = (batch_idx + 1) % self.hparams_initial.n_critic == 0
-            if update_flag:
-                self.toggle_optimizer(d_optim)
+            # update_flag = (batch_idx + 1) % self.hparams_initial.n_critic == 0
+            # if update_flag:
+            self.toggle_optimizer(d_optim)
 
-                y_real = self.discriminator(h.detach()).flatten(1)
-                y_fake = self.discriminator(h_hat.detach()).flatten(1)
-                y_fake_e = self.discriminator(e_hat.detach()).flatten(1)
+            y_real = self.discriminator(h.detach()).flatten(1)
+            y_fake = self.discriminator(h_hat.detach()).flatten(1)
+            y_fake_e = self.discriminator(e_hat.detach()).flatten(1)
 
-                D_loss_real = F.binary_cross_entropy(y_real, torch.ones_like(y_real))
-                D_loss_fake = F.binary_cross_entropy(
-                    y_fake,
-                    torch.zeros_like(y_fake),
-                )
-                D_loss_fake_e = F.binary_cross_entropy(
-                    y_fake_e, torch.zeros_like(y_fake_e)
-                )
-                d_loss = (
-                    D_loss_real
-                    + D_loss_fake
-                    + D_loss_fake_e * self.hparams_initial.gamma
-                )
+            D_loss_real = F.binary_cross_entropy(y_real, torch.ones_like(y_real))
+            D_loss_fake = F.binary_cross_entropy(
+                y_fake,
+                torch.zeros_like(y_fake),
+            )
+            D_loss_fake_e = F.binary_cross_entropy(
+                y_fake_e, torch.zeros_like(y_fake_e)
+            )
+            d_loss = (
+                D_loss_real
+                + D_loss_fake
+                + D_loss_fake_e * self.hparams_initial.gamma
+            )
 
-                if d_loss > 0.15:
-                    d_optim.zero_grad()
-                    self.manual_backward(d_loss)
-                    d_optim.step()
-                self.untoggle_optimizer(d_optim)
+            if d_loss > 0.15:
+                d_optim.zero_grad()
+                self.manual_backward(d_loss)
+                d_optim.step()
+            self.untoggle_optimizer(d_optim)
 
             self.log_dict(
                 {
                     "stage3-g_loss": g_loss,
                     "stage3-e_loss": e_loss,
-                    "stage3-d_loss": d_loss if update_flag else 0.0,
+                    "stage3-d_loss": d_loss,
                 },
                 on_epoch=True,
                 on_step=False,
