@@ -31,14 +31,14 @@ class VanillaVAE(BaseModel):
         self.fc_mu = MLP(latent_dim, [latent_dim])
         self.fc_logvar = MLP(latent_dim, [latent_dim])
 
-    def encode(self, x, c=None):
+    def encode(self, x: torch.Tensor, c: torch.Tensor = None, **kwargs):
         # x = x
         latents = self.encoder(x)
         mu = self.fc_mu(latents)
         logvar = self.fc_logvar(latents)
         return latents, mu, logvar
 
-    def decode(self, z, c=None):
+    def decode(self, z: torch.Tensor, c: torch.Tensor = None, **kwargs):
         return self.decoder(z)
 
     def reparam(self, mu, logvar):
@@ -52,13 +52,13 @@ class VanillaVAE(BaseModel):
         c = batch.get("c", None)
 
         # encode
-        latents, mu, logvar = self.encode(x, c)
+        latents, mu, logvar = self.encode(x, **batch)
 
         # reparameterize
         z = self.reparam(mu, logvar)
 
         # decode
-        x_hat = self.decode(z, c)
+        x_hat = self.decode(z, **batch)
 
         assert x.shape == x_hat.shape
 
@@ -76,7 +76,7 @@ class VanillaVAE(BaseModel):
             loss=recons_loss + self.hparams_initial.beta * kld_loss,
         )
         return loss_dict
-    
+
     def _sample_impl(self, n_sample, condition=None):
         z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
         x_hat = self.decode(z, condition)
@@ -86,15 +86,19 @@ class VanillaVAE(BaseModel):
         loss_dict = self._get_loss(batch)
         prefix = "train_"
         loss_dict = {prefix + key: value for key, value in loss_dict.items()}
-        self.log_dict(loss_dict, on_step=True, on_epoch=False, logger=True, prog_bar=True)
-        return loss_dict[prefix+"loss"]
+        self.log_dict(
+            loss_dict, on_step=True, on_epoch=False, logger=True, prog_bar=True
+        )
+        return loss_dict[prefix + "loss"]
 
     def validation_step(self, batch, batch_idx):
         loss_dict = self._get_loss(batch)
         prefix = "val_"
         loss_dict = {prefix + key: value for key, value in loss_dict.items()}
-        self.log_dict(loss_dict, on_step=True, on_epoch=False, logger=True, prog_bar=True)
-        return loss_dict[prefix+"loss"]
+        self.log_dict(
+            loss_dict, on_step=True, on_epoch=False, logger=True, prog_bar=True
+        )
+        return loss_dict[prefix + "loss"]
 
     def configure_optimizers(self):
         return torch.optim.Adam(

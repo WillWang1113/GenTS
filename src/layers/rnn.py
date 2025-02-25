@@ -2,7 +2,7 @@ from torch import nn
 from torchvision.ops import MLP
 
 
-class GRULayer(nn.Module):
+class RNNLayer(nn.Module):
     def __init__(
         self,
         in_dim: int,
@@ -10,10 +10,19 @@ class GRULayer(nn.Module):
         out_dim=128,
         num_layers=1,
         dropout=0.0,
+        rnn_type='gru',
         **kwargs,
     ):
         super().__init__()
-        self.gru = nn.GRU(
+        assert rnn_type in ['gru', 'lstm', 'rnn']
+        if rnn_type == 'gru':
+            rnn_class = nn.GRU
+        elif rnn_type == 'lstm':
+            rnn_class = nn.LSTM
+        else:
+            rnn_class = nn.RNN
+
+        self.gru = rnn_class(
             in_dim,
             hidden_size=hidden_size,
             num_layers=num_layers,

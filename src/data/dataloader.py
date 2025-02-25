@@ -37,17 +37,19 @@ class TSDataModule(LightningDataModule):
         # Load, scale, condition
 
         # ! TO BE DELETED
-        t = torch.linspace(0, 64 * torch.pi, 1024*2).float()
-        data = torch.cos(t) +  torch.sin(2 * t)
-        data = (data - data.min()) / (data.max() - data.min())
+        t = torch.linspace(0, 12 * torch.pi, 1000).float()
+        data = t * torch.sin(t)
+        # data = (data - data.min()) / (data.max() - data.min())
         data = data.reshape(-1, 1)
-        os.makedirs(self.data_dir, exist_ok=True)
-        file_path = os.path.join(self.data_dir, "test.ckpt")
-        if not os.path.exists(file_path):
-            torch.save(data, file_path)
+        self.data = data
+        # os.makedirs(self.data_dir, exist_ok=True)
+        # file_path = os.path.join(self.data_dir, "test.ckpt")
+        # if not os.path.exists(file_path):
+            # torch.save(data, file_path)
 
     def setup(self, stage):
-        data = torch.load(os.path.join(self.data_dir, "test.ckpt"))
+        data = self.data
+        # data = torch.load(os.path.join(self.data_dir, "test.ckpt"))
         # train/val/test
         num_train = int(len(data) * 0.7)
         num_test = int(len(data) * 0.2)

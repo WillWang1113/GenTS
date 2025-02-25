@@ -173,7 +173,8 @@ class TimeVAE(VanillaVAE):
             seq_len, seq_dim, latent_dim, hidden_size_list, beta, lr, weight_decay
         )
         self.save_hyperparameters()
-        # encoding
+        
+        # override the encoder and decoder
         self.encoder = ConvEncoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
         hidden_size_list.reverse()
         self.decoder = ConvDecoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)

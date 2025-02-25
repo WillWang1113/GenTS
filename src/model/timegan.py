@@ -5,7 +5,7 @@ from torch.nn import functional as F
 from torchvision.ops import MLP
 
 from src.model.base import BaseModel
-from src.layers.rnn import GRULayer
+from src.layers.rnn import RNNLayer
 
 
 class TimeGAN(BaseModel):
@@ -21,34 +21,61 @@ class TimeGAN(BaseModel):
         n_critic: int = 2,
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
+        rnn_type: str = "gru",
         **kwargs,
     ):
         super().__init__()
         self.save_hyperparameters()
         self.automatic_optimization = False
 
-        self.embedder = nn.Sequential(
-            GRULayer(seq_dim, hidden_size, latent_dim, num_layers, **kwargs),
-            # nn.Sigmoid(),
+        self.embedder = (
+            RNNLayer(
+                seq_dim,
+                hidden_size,
+                latent_dim,
+                num_layers,
+                rnn_type=rnn_type,
+                **kwargs,
+            ),
         )
-        self.recovery = nn.Sequential(
-            GRULayer(latent_dim, hidden_size, seq_dim, num_layers, **kwargs),
-            # nn.Sigmoid(),
+        self.recovery = (
+            RNNLayer(
+                latent_dim,
+                hidden_size,
+                seq_dim,
+                num_layers,
+                rnn_type=rnn_type,
+                **kwargs,
+            ),
         )
 
         # Notice that the generator only produce latents,
         # and supervisor aims to supervise the mapping from t-1 to t
-        self.generator = nn.Sequential(
-            GRULayer(seq_dim, hidden_size, latent_dim, num_layers, **kwargs),
-            # nn.Sigmoid(),
+        self.generator = (
+            RNNLayer(
+                seq_dim,
+                hidden_size,
+                latent_dim,
+                num_layers,
+                rnn_type=rnn_type,
+                **kwargs,
+            ),
         )
-        self.supervisor = nn.Sequential(
-            GRULayer(latent_dim, hidden_size, latent_dim, num_layers, **kwargs),
-            # nn.Sigmoid(),
+        self.supervisor = (
+            RNNLayer(
+                latent_dim,
+                hidden_size,
+                latent_dim,
+                num_layers,
+                rnn_type=rnn_type,
+                **kwargs,
+            ),
         )
 
         self.discriminator = nn.Sequential(
-            GRULayer(latent_dim, hidden_size, 1, num_layers, **kwargs),
+            RNNLayer(
+                latent_dim, hidden_size, 1, num_layers, rnn_type=rnn_type, **kwargs
+            ),
             nn.Sigmoid(),
         )
 
@@ -112,9 +139,8 @@ class TimeGAN(BaseModel):
         else:
             # 3. Joint Training
             z = torch.rand_like(x)
-            
-            for _ in range(self.hparams.n_critic):
 
+            for _ in range(self.hparams.n_critic):
                 # Generator loss
                 # 1. Adversarial loss
                 self.toggle_optimizer(g_optim)
@@ -171,7 +197,9 @@ class TimeGAN(BaseModel):
                 # h_hat_supervise = self.supervisor(h)
                 x_tilde = self.recovery(h)
                 e_loss = 10 * F.mse_loss(x_tilde, x).sqrt()
-                e_loss = e_loss + 0.1 * F.mse_loss(h[:, 1:], h_hat_supervise[:, :-1].detach())
+                e_loss = e_loss + 0.1 * F.mse_loss(
+                    h[:, 1:], h_hat_supervise[:, :-1].detach()
+                )
                 e_optim.zero_grad()
                 self.manual_backward(e_loss)
                 e_optim.step()
@@ -191,13 +219,9 @@ class TimeGAN(BaseModel):
                 y_fake,
                 torch.zeros_like(y_fake),
             )
-            D_loss_fake_e = F.binary_cross_entropy(
-                y_fake_e, torch.zeros_like(y_fake_e)
-            )
+            D_loss_fake_e = F.binary_cross_entropy(y_fake_e, torch.zeros_like(y_fake_e))
             d_loss = (
-                D_loss_real
-                + D_loss_fake
-                + D_loss_fake_e * self.hparams_initial.gamma
+                D_loss_real + D_loss_fake + D_loss_fake_e * self.hparams_initial.gamma
             )
 
             if d_loss > 0.15:
