@@ -62,12 +62,12 @@ Python: 3.10
 ### what they have:
 - Basic models, VanillaGAN, VanillaVAE, etc.
 - Evaluation pipline
-- Datasets for unconditional generation
+- Datasets
 
 ### what they don't have
 - SOTA models, especially diffusion-based models
-- Unified unconditional and conditional model
-- conditional datasets
+- Newly proposed Time series Generation metrics, e.g. J-FTSD (ICML2024)
+- Unified unconditional and conditional framework
 
 ## TODO
 - [ ] Model reproduce
