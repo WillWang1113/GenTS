@@ -329,6 +329,7 @@ if __name__ == '__main__':
         orig_traj = orig_trajs[0].cpu().numpy()
         samp_traj = samp_trajs[0].cpu().numpy()
 
+
         plt.figure()
         plt.plot(orig_traj[:, 0], orig_traj[:, 1],
                  'g', label='true trajectory')

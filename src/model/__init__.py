@@ -1,1 +1,1 @@
-from .vanillavae import VanillaVAE
+# from .vanillavae import VanillaVAE

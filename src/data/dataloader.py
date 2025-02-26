@@ -37,8 +37,8 @@ class TSDataModule(LightningDataModule):
         # Load, scale, condition
 
         # ! TO BE DELETED
-        t = torch.linspace(0, 12 * torch.pi, 1000).float()
-        data = t * torch.sin(t)
+        t = torch.linspace(0, 24 * torch.pi, 1152).float()
+        data = torch.cos(t) + 2 * torch.sin(t * 2) + torch.randn_like(t) * 0.1
         # data = (data - data.min()) / (data.max() - data.min())
         data = data.reshape(-1, 1)
         self.data = data
