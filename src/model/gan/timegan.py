@@ -13,8 +13,8 @@ class TimeGAN(BaseModel):
         self,
         seq_len: int,
         seq_dim: int,
-        latent_dim: int,
-        hidden_size: int,
+        latent_dim: int = 128,
+        hidden_size: int = 128,
         num_layers: int = 1,
         gamma: float = 1.0,
         eta: float = 1.0,
@@ -28,48 +28,41 @@ class TimeGAN(BaseModel):
         self.save_hyperparameters()
         self.automatic_optimization = False
 
-        self.embedder = (
-            RNNLayer(
-                seq_dim,
-                hidden_size,
-                latent_dim,
-                num_layers,
-                rnn_type=rnn_type,
-                **kwargs,
-            ),
+        self.embedder = RNNLayer(
+            seq_dim,
+            hidden_size,
+            latent_dim,
+            num_layers,
+            rnn_type=rnn_type,
+            **kwargs,
         )
-        self.recovery = (
-            RNNLayer(
-                latent_dim,
-                hidden_size,
-                seq_dim,
-                num_layers,
-                rnn_type=rnn_type,
-                **kwargs,
-            ),
+
+        self.recovery = RNNLayer(
+            latent_dim,
+            hidden_size,
+            seq_dim,
+            num_layers,
+            rnn_type=rnn_type,
+            **kwargs,
         )
 
         # Notice that the generator only produce latents,
         # and supervisor aims to supervise the mapping from t-1 to t
-        self.generator = (
-            RNNLayer(
-                seq_dim,
-                hidden_size,
-                latent_dim,
-                num_layers,
-                rnn_type=rnn_type,
-                **kwargs,
-            ),
+        self.generator = RNNLayer(
+            seq_dim,
+            hidden_size,
+            latent_dim,
+            num_layers,
+            rnn_type=rnn_type,
+            **kwargs,
         )
-        self.supervisor = (
-            RNNLayer(
-                latent_dim,
-                hidden_size,
-                latent_dim,
-                num_layers,
-                rnn_type=rnn_type,
-                **kwargs,
-            ),
+        self.supervisor = RNNLayer(
+            latent_dim,
+            hidden_size,
+            latent_dim,
+            num_layers,
+            rnn_type=rnn_type,
+            **kwargs,
         )
 
         self.discriminator = nn.Sequential(

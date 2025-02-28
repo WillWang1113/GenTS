@@ -21,8 +21,10 @@ class VanillaMAF(BaseModel):
         self,
         seq_len: int,
         seq_dim: int,
-        latent_dim: int,
+        latent_dim: int = 128,
         hidden_size_list: List[int] = [64, 128, 256],
+        lr: float = 1e-3,
+        weight_decay: float = 1e-5,
         **kwargs,
     ):
         super().__init__()

@@ -9,13 +9,14 @@ from .vanillavae import VanillaVAE
 class TrendLayer(nn.Module):
     """
     The TrendLayer class is a neural network module that models the trend component of a time series.
-    
+
     Args:
         latent_dim (int): Dimensionality of the latent space.
         feat_dim (int): Dimensionality of the feature space.
         trend_poly (int): The order of the polynomial used to model the trend.
         seq_len (int): The length of the input sequence.
     """
+
     def __init__(self, latent_dim, feat_dim, trend_poly, seq_len):
         super(TrendLayer, self).__init__()
         self.feat_dim = feat_dim
@@ -135,26 +136,25 @@ class TrendSeasonalDecoder(nn.Module):
                 custom_seas=custom_seas,
             )
         else:
-            self.cust_seas_vals = torch.nn.Identity()
+            self.cust_seas_vals = nn.Sequential(nn.Linear(latent_dim, seq_dim * seq_len))
 
     def forward(self, z):
         z_trend = self.trend_vals(z)
-        z_seasonal = self.cust_seas_vals(z)
+        z_seasonal = self.cust_seas_vals(z).reshape(-1, self.seq_len, self.seq_dim)
         return z_trend + z_seasonal
 
 
-# TODO：Implement TimeVAE BUG inherent
 class TimeVAE(VanillaVAE):
     def __init__(
         self,
         seq_len: int,
         seq_dim: int,
-        latent_dim: int,
+        latent_dim: int = 128,
         hidden_size_list=[64, 128, 256],
         beta: float = 1e-3,
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
-        trend_poly=0,
+        trend_poly=2,
         custom_seas=None,
         use_residual_conn=True,
         **kwargs,
@@ -173,18 +173,22 @@ class TimeVAE(VanillaVAE):
             seq_len, seq_dim, latent_dim, hidden_size_list, beta, lr, weight_decay
         )
         self.save_hyperparameters()
-        
+
         # override the encoder and decoder
-        self.encoder = ConvEncoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
+        self.encoder = ConvEncoder(
+            seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+        )
         hidden_size_list.reverse()
-        self.decoder = ConvDecoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
+        self.decoder = ConvDecoder(
+            seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+        )
         self.trend_season_dec = TrendSeasonalDecoder(**self.hparams_initial)
 
-    def encode(self, x, c=None):
+    def encode(self, x, c=None, **kwargs):
         latents = self.encoder(x)
         mu = self.fc_mu(latents)
         logvar = self.fc_logvar(latents)
         return latents, mu, logvar
 
-    def decode(self, z, c=None):
+    def decode(self, z, c=None, **kwargs):
         return self.decoder(z) + self.trend_season_dec(z)

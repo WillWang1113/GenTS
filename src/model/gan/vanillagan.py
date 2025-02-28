@@ -47,7 +47,7 @@ class VanillaGAN(BaseModel):
         self,
         seq_len: int,
         seq_dim: int,
-        latent_dim: int,
+        latent_dim: int = 128,
         hidden_size_list: list = [64, 128, 256],
         beta: float = 1e-3,
         lr: float = 1e-3,

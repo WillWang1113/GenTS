@@ -166,3 +166,4 @@ lightning_logs/
 *.png
 misc/
 notebooks/
+data/

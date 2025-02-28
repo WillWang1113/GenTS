@@ -108,7 +108,7 @@ class VanillaDDPM(BaseModel):
         self,
         seq_len: int,
         seq_dim: int,
-        latent_dim: int,
+        latent_dim: int = 128,
         hidden_size_list: list = [64, 128, 256],
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
@@ -161,7 +161,7 @@ class VanillaDDPM(BaseModel):
         x = batch.pop("seq")
         loss = self._get_loss(x, batch)
         log_dict = {"train_loss": loss}
-        self.log_dict(log_dict, on_epoch=True, prog_bar=True, logger=True)
+        self.log_dict(log_dict, on_epoch=True, prog_bar=True, logger=True, batch_size=x.shape[0])
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -170,7 +170,7 @@ class VanillaDDPM(BaseModel):
         log_dict = {
             "val_loss": loss,
         }
-        self.log_dict(log_dict, on_epoch=True, prog_bar=True, logger=True)
+        self.log_dict(log_dict, on_epoch=True, prog_bar=True, logger=True, batch_size=x.shape[0])
         return loss
 
     def _sample_impl(self, n_sample, condition=None):

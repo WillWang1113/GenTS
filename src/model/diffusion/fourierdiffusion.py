@@ -154,6 +154,10 @@ class SDE(abc.ABC):
         return sample
 
     def prior_sampling(self, shape: tuple[int, ...]) -> torch.Tensor:
+        if self.G is None:
+            self.set_noise_scaling(shape[1])
+        assert self.G is not None
+
         # Reshape the G matrix to be (1, max_len, max_len)
         scaling_matrix = self.G_matrix.view(
             -1, self.G_matrix.shape[0], self.G_matrix.shape[1]
@@ -216,7 +220,6 @@ class VEScheduler(SDE):
         Returns:
             SamplingOutput: _description_
         """
-
         sqrt_derivative = (
             self.sigma_min
             * math.sqrt(2 * math.log(self.sigma_max / self.sigma_min))
@@ -301,7 +304,6 @@ class VPScheduler(SDE):
             SamplingOutput: _description_
         """
         beta = self.get_beta(timestep)
-        assert self.G is not None
         diffusion = torch.diag_embed(math.sqrt(beta) * self.G).to(device=sample.device)
 
         # Compute drift
@@ -535,7 +537,7 @@ class FourierDiffusion(BaseModel):
         num_layers: int = 10,
         n_head: int = 12,
         n_diff_steps: int = 1000,
-        lr: float = 1e-3,
+        lr: float = 1e-4,
         likelihood_weighting: bool = False,
     ) -> None:
         super().__init__()
@@ -543,7 +545,8 @@ class FourierDiffusion(BaseModel):
         self.max_len = seq_len
         self.n_channels = seq_dim
 
-        assert noise_schedule in ["vpsde", "vesde"]
+        # assert noise_schedule in ["vpsde", "vesde"]
+        # self.noise_scheduler = noise_schedule
         self.noise_scheduler = (
             VPScheduler() if noise_schedule == "vpsde" else VEScheduler()
         )
@@ -708,7 +711,7 @@ class FourierDiffusion(BaseModel):
         **kwargs,
     ) -> torch.Tensor:
         # Set the score model in eval mode and move it to GPU
-        self.eval()
+        # self.eval()
 
         # If the number of diffusion steps is not provided, use the number of training steps
         num_diffusion_steps = (
@@ -755,8 +758,8 @@ class FourierDiffusion(BaseModel):
 
             # Add the samples to the list
             all_samples.append(X.cpu())
-
-        return idft(torch.cat(all_samples, dim=0))
+        all_samples = torch.cat(all_samples, dim=0)
+        return idft(all_samples)
 
     def sample_prior(self, batch_size: int) -> torch.Tensor:
         # Sample from the prior distribution
@@ -777,7 +780,7 @@ class FourierDiffusionMLP(FourierDiffusion):
         self,
         seq_dim: int,
         seq_len: int,
-        noise_schedule: str = 'vpsde',
+        noise_schedule: str = "vpsde",
         # fourier_noise_scaling: bool = True,
         hidden_size: int = 72,
         d_mlp: int = 1024,
@@ -785,6 +788,7 @@ class FourierDiffusionMLP(FourierDiffusion):
         n_diff_steps: int = 1000,
         lr: float = 1e-4,
         likelihood_weighting: bool = False,
+        **kwargs,
     ) -> None:
         super().__init__(
             seq_dim=seq_dim,
@@ -809,7 +813,11 @@ class FourierDiffusionMLP(FourierDiffusion):
 
         self.backbone = nn.ModuleList(  # type: ignore
             [
-                MLP(in_channels=hidden_size, hidden_channels=[d_mlp, hidden_size], dropout=0.1)
+                MLP(
+                    in_channels=hidden_size,
+                    hidden_channels=[d_mlp, hidden_size],
+                    dropout=0.1,
+                )
                 for _ in range(num_layers)
             ]
         )
@@ -861,13 +869,14 @@ class FourierDiffusionLSTM(FourierDiffusion):
         self,
         seq_dim: int,
         seq_len: int,
-        noise_schedule: str = 'vpsde',
+        noise_schedule: str = "vpsde",
         # fourier_noise_scaling: bool = True,
         hidden_size: int = 72,
         num_layers: int = 3,
         n_diff_steps: int = 1000,
         lr: float = 1e-3,
         likelihood_weighting: bool = False,
+        **kwargs,
     ) -> None:
         super().__init__(
             seq_dim=seq_dim,

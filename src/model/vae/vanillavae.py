@@ -13,11 +13,12 @@ class VanillaVAE(BaseModel):
         self,
         seq_len: int,
         seq_dim: int,
-        latent_dim: int,
+        latent_dim: int = 128,
         hidden_size_list: list = [64, 128, 256],
         beta: float = 1e-3,
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
+        # condition: str = 'synthesis',
         **kwargs,
     ):
         super().__init__()
