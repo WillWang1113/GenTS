@@ -70,6 +70,7 @@ class Denoiser(nn.Module):
         seq_dim,
         latent_dim,
         hidden_size_list=[64, 128, 256],
+        condition: str = None,
         **kwargs,
     ):
         super().__init__()
@@ -87,11 +88,27 @@ class Denoiser(nn.Module):
         )
         self.dec = MLPDecoder(seq_len, seq_dim, latent_dim, [], **kwargs)
         self.pe = TimestepEmbed(latent_dim)
+        if condition:
+            if condition == "predict":
+                assert kwargs.get("obs_len") is not None
+                obs_len = kwargs.get("obs_len")
+                self.cond_net = MLPEncoder(
+                    obs_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                )
+            elif condition == "impute":
+                # assert kwargs.get('obs_len') is not None
+                # obs_len = kwargs.get('obs_len')
+                self.cond_net = MLPEncoder(
+                    seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                )
 
     def forward(self, x, t, c=None):
         x = self.enc(x)
         t = self.pe(t)
         x = x + t
+        if (c is not None) and (self.cond_net is not None):
+            cond_lats = self.cond_net(c)
+            x = x + cond_lats
         for layer in self.net:
             x = x + layer(x)
         return self.dec(x)
@@ -114,7 +131,8 @@ class VanillaDDPM(BaseModel):
         weight_decay: float = 1e-5,
         noise_schedule: str = "cosine",
         n_diff_steps=1000,
-        pred_x0=False,
+        pred_x0=True,
+        condition: str = None,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -161,7 +179,9 @@ class VanillaDDPM(BaseModel):
         x = batch.pop("seq")
         loss = self._get_loss(x, batch)
         log_dict = {"train_loss": loss}
-        self.log_dict(log_dict, on_epoch=True, prog_bar=True, logger=True, batch_size=x.shape[0])
+        self.log_dict(
+            log_dict, on_epoch=True, prog_bar=True, logger=True, batch_size=x.shape[0]
+        )
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -170,7 +190,9 @@ class VanillaDDPM(BaseModel):
         log_dict = {
             "val_loss": loss,
         }
-        self.log_dict(log_dict, on_epoch=True, prog_bar=True, logger=True, batch_size=x.shape[0])
+        self.log_dict(
+            log_dict, on_epoch=True, prog_bar=True, logger=True, batch_size=x.shape[0]
+        )
         return loss
 
     def _sample_impl(self, n_sample, condition=None):

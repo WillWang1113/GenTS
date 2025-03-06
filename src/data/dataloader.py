@@ -67,7 +67,7 @@ class ImputeDataset(TSDataset):
 
 
 DS_type = {
-    "synthesis": TSDataset,
+    # "synthesis": TSDataset,
     "predict": PredictDataset,
     "impute": ImputeDataset,
 }
@@ -85,10 +85,10 @@ class TSDataModule(LightningDataModule, abc.ABC):
         **kwargs,
     ):
         super().__init__()
-        assert condition in ["synthesis", "predict", "impute"]
+        assert condition in [None, "predict", "impute"]
         self.data_dir = data_dir
         self.seq_len = seq_len
-        self.dataset_cls = DS_type[condition]
+        self.dataset_cls = DS_type[condition] if condition is not None else TSDataset
         self.batch_size = batch_size
         self.scale = scale
         self.kwargs = kwargs
@@ -140,7 +140,7 @@ class SineDataModule(TSDataModule):
         seq_len: int,
         batch_size: int,
         data_dir: Path | str = Path.cwd() / "data",
-        condition: str = "synthesis",
+        condition: str = None,
         scale: bool = True,
         inference_batch_size: int = 1024,
         **kwargs,

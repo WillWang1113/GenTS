@@ -11,8 +11,24 @@ class Generator(nn.Module):
     ):
         super().__init__()
         self.dec = MLPDecoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
+        condition = kwargs.get("condition")
+        if condition:
+            if condition == "predict":
+                assert kwargs.get("obs_len") is not None
+                obs_len = kwargs.get("obs_len")
+                self.cond_net = MLPEncoder(
+                    obs_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                )
+            elif condition == "impute":
+                # assert kwargs.get('obs_len') is not None
+                # obs_len = kwargs.get('obs_len')
+                self.cond_net = MLPEncoder(
+                    seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                )
 
     def forward(self, z, c=None):
+        if (c is not None) and (self.cond_net is not None):
+            z = z + self.cond_net(c)
         return self.dec(z)
 
 
@@ -36,8 +52,25 @@ class Discriminator(nn.Module):
         if last_sigmoid:
             self.out_mlp.append(nn.Sigmoid())
 
+        condition = kwargs.get("condition")
+        if condition:
+            if condition == "predict":
+                assert kwargs.get("obs_len") is not None
+                obs_len = kwargs.get("obs_len")
+                self.cond_net = MLPEncoder(
+                    obs_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                )
+            elif condition == "impute":
+                # assert kwargs.get('obs_len') is not None
+                # obs_len = kwargs.get('obs_len')
+                self.cond_net = MLPEncoder(
+                    seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                )
+
     def forward(self, x, c=None):
         latents = self.enc(x)
+        if (c is not None) and (self.cond_net is not None):
+            latents = latents + self.cond_net(c)
         validity = self.out_mlp(latents)
         return validity
 
@@ -54,17 +87,18 @@ class VanillaGAN(BaseModel):
         weight_decay: float = 1e-5,
         clip_value: float = 0.01,
         n_critic: int = 5,
+        condition: str = None,
         **kwargs,
     ):
         super().__init__()
         self.save_hyperparameters()
         self.automatic_optimization = False
+        print(self.hparams)
 
         # networks
         self.discriminator = Discriminator(**self.hparams)
         self.hparams.hidden_size_list.reverse()
         self.generator = Generator(**self.hparams)
-        self.criterionSource = nn.BCELoss()
 
     def training_step(self, batch):
         x = batch["seq"]
@@ -132,7 +166,6 @@ class VanillaGAN(BaseModel):
             lr=self.hparams.lr,
         )
         return [g_optim, d_optim], []
-
 
     # @torch.no_grad()
     def _sample_impl(self, n_sample, condition=None):

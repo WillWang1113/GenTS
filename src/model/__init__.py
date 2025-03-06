@@ -9,13 +9,15 @@ from .gan.timegan import TimeGAN
 from .gan.vanillagan import VanillaGAN
 from .vae.timevae import TimeVAE
 from .vae.vanillavae import VanillaVAE
+from .vae.kovae import KoVAE
 
 __all__ = [
     "VanillaVAE",
-    "VanillaGAN",
-    "VanillaMAF",
-    "TimeGAN",
     "TimeVAE",
+    "KoVAE",
+    "VanillaGAN",
+    "TimeGAN",
+    "VanillaMAF",
     "VanillaDDPM",
     "FourierDiffusion",
     "FourierDiffusionLSTM",

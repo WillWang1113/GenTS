@@ -5,33 +5,84 @@ from src.data.dataloader import SineDataModule
 import matplotlib.pyplot as plt
 
 model_names = src.model.__all__
+# model_names = ['TimeVAE','TimeGAN', 'FourierDiffusion']
+model_names = ['KoVAE','VanillaVAE']
+# model_names = ['VanillaVAE','TimeVAE', 'KoVAE']
+# model_names = ['VanillaVAE', 'VanillaGAN', 'VanillaMAF', 'VanillaDDPM']
+# model_names = model_names[:2]
+
 # TODO: iter all, Model Capability
-conditions = ["synthesis", "predict", "impute"]
+conditions = [None, 'impute']
+# conditions = [None, "predict", "impute"]
 batch_size = 64
 seq_len = 96
-dm = SineDataModule(seq_len, batch_size)
-# dm.setup('fit')
 
+# imputation
+missing_type = "random"
+missing_rate = 0.2
 
+# forecast
+obs_len = 96
 
-# MY CODE
+# hparams
 hparams = dict(
     seq_len=seq_len,
     seq_dim=1,
     lr=1e-3,
 )
-n_row = int(sqrt(len(model_names)))
-n_col = len(model_names) // n_row + 1
-fig, axs = plt.subplots(n_row, n_col, figsize=[2 * n_col, 2 * n_row], sharex=True)
-axs = axs.flatten()
+
+
+n_row = len(model_names)
+n_col = len(conditions)
+fig, axs = plt.subplots(n_row, n_col, figsize=[3 * n_col, 3 * n_row], sharex="col")
+
 for i in range(len(model_names)):
-    test_model_cls = getattr(src.model, model_names[i])
-    test_model = test_model_cls(**hparams)
-    trainer = Trainer(devices=[1], max_epochs=10)
-    trainer.fit(test_model, dm)
-    samples = test_model.sample(3).squeeze().T.cpu().numpy()
-    axs[i].plot(samples)
-    axs[i].set_title(model_names[i])
+    print('=='*30)
+    print(model_names[i])
+    print('=='*30)
+    for j in range(len(conditions)):
+        print('=='*30)
+        c = conditions[j]
+        print(c)
+        print('=='*30)
+        if c == "predict":
+            dm = SineDataModule(seq_len, batch_size, condition=c, obs_len=obs_len)
+            cond_hparams = dict(**hparams, obs_len=obs_len, condition=c)
+        elif c == "impute":
+            dm = SineDataModule(
+                seq_len,
+                batch_size,
+                condition=c,
+                missing_rate=missing_rate,
+                missing_type=missing_type,
+            )
+            cond_hparams = dict(**hparams, condition=c)
+        else:
+            dm = SineDataModule(seq_len, batch_size, condition=c)
+            cond_hparams = hparams
+
+        test_model_cls = getattr(src.model, model_names[i])
+        test_model = test_model_cls(**cond_hparams)
+        trainer = Trainer(devices=[1], max_epochs=10)
+        trainer.fit(test_model, dm)
+        batch = next(iter(dm.val_ds))
+        test_cond = None
+        if c in ["predict", "impute"]:
+            test_cond = batch["c"].unsqueeze(0)
+            print(test_cond.shape)
+        samples = test_model.sample(1, condition=test_cond).squeeze().T.cpu().numpy()
+        if c == "impute":
+            axs[i, j].plot(range(seq_len), batch["c"].flatten())
+            axs[i, j].plot(range(seq_len), samples)
+        elif c == "predict":
+            axs[i, j].plot(range(obs_len), batch["c"].flatten())
+            axs[i, j].plot(range(obs_len, obs_len + seq_len), samples)
+        else:
+            axs[i, j].plot(range(seq_len), batch["seq"].flatten())
+            axs[i, j].plot(range(seq_len), samples)
+
+        axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
+        # break
 fig.suptitle("Model Comparison")
 fig.tight_layout()
-fig.savefig("test_model.png", bbox_inches='tight')
+fig.savefig("test_model.png", bbox_inches="tight")
