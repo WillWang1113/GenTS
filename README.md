@@ -10,12 +10,12 @@ Python: 3.10
 | :--------------: | :--------: | :-------------------: | :--------------------------------: | :----------------: |
 |    VanillaVAE    |    VAE     |           -           |             Synthesis              | :white_check_mark: |
 |     TimeVAE      |    VAE     |           -           |             Synthesis              | :white_check_mark: |
-|    TimeVQVAE     |    VAE     |      class label      |             Synthesis              |   :white_circle:   |
+|    TimeVQVAE     |    VAE     |      class label      |             Synthesis              | :white_check_mark: |
 |      KoVAE       |    VAE     |           -           |             Synthesis              | :white_check_mark: |
 |    VanillaGAN    |    GAN     |           -           |             Synthesis              | :white_check_mark: |
 |     TimeGAN      |    GAN     |           -           |             Synthesis              | :white_check_mark: |
 |       AST        |    GAN     |  :white_check_mark:   |            Forecasting             |   :white_circle:   |
-|    COSCI-GAN     |    GAN     |           -           |             Synthesis              |   :white_circle:   |
+|    COSCI-GAN     |    GAN     |           -           |             Synthesis              | :white_check_mark: |
 |      GT-GAN      |    GAN     |           -           |             Synthesis              |   :white_circle:   |
 |     PSA-GAN      |    GAN     |           -           |             Synthesis              |   :white_circle:   |
 |      GRUGAN      |    GAN     |           -           |             Imputation             |   :white_circle:   |

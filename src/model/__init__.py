@@ -6,6 +6,7 @@ from .diffusion.fourierdiffusion import (
 from .diffusion.vanilladiffusion import VanillaDDPM
 from .flow.vanillamaf import VanillaMAF
 from .gan.timegan import TimeGAN
+from .gan.coscigan import COSCIGAN
 from .gan.vanillagan import VanillaGAN
 from .vae.timevae import TimeVAE
 from .vae.vanillavae import VanillaVAE
@@ -18,6 +19,7 @@ __all__ = [
     "KoVAE",
     "TimeVQVAE",
     "VanillaGAN",
+    "COSCIGAN",
     "TimeGAN",
     "VanillaMAF",
     "VanillaDDPM",

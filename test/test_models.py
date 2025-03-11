@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 model_names = src.model.__all__
 # model_names = ['TimeVAE','TimeGAN', 'FourierDiffusion']
-model_names = ['TimeVQVAE', 'VanillaVAE']
+model_names = ['COSCIGAN', 'VanillaVAE']
 # model_names = ['TimeVQVAE','KoVAE', 'VanillaVAE', 'TimeVAE']
 # model_names = ['KoVAE','VanillaVAE']
 # model_names = ['VanillaVAE','TimeVAE', 'KoVAE']
@@ -14,9 +14,9 @@ model_names = ['TimeVQVAE', 'VanillaVAE']
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
-conditions = [ 'class', None]
+# conditions = [ 'class', None]
 # conditions = ['class', None]
-# conditions = [None, 'class']
+conditions = [None, 'class']
 # conditions = [None, 'impute']
 # conditions = [None, "predict", "impute"]
 batch_size = 32
@@ -29,12 +29,14 @@ missing_rate = 0.2
 # forecast
 obs_len = 96
 max_steps = 1000
+max_epochs = 100
 
 # hparams
 hparams = dict(
     seq_len=seq_len,
     seq_dim=2,
-    lr=1e-3,
+    latent_dim = 32,
+    # lr=1e-3,
 )
 
 
@@ -72,7 +74,7 @@ for i in range(len(model_names)):
 
         test_model_cls = getattr(src.model, model_names[i])
         test_model = test_model_cls(**cond_hparams)
-        trainer = Trainer(devices=[1], max_steps=max_steps)
+        trainer = Trainer(devices=[1], max_epochs=max_epochs)
         trainer.fit(test_model, dm)
         batch = next(iter(dm.val_ds))
         test_cond = None
@@ -90,6 +92,7 @@ for i in range(len(model_names)):
             axs[i, j].plot(range(seq_len), samples)
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
+        break
 fig.suptitle("Model Comparison")
 fig.tight_layout()
 fig.savefig("test_model.png", bbox_inches="tight")

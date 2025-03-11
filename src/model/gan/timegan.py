@@ -233,8 +233,8 @@ class TimeGAN(BaseModel):
                 on_step=False,
             )
 
-    def validation_step(self, batch, batch_idx):
-        pass
+    # TODO: ES for GAN?
+    def validation_step(self, batch, batch_idx): ...
 
     def _sample_impl(self, n_sample: int, condition: torch.Tensor = None):
         z = torch.rand(
