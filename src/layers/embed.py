@@ -2,268 +2,60 @@ import collections.abc
 import math
 
 # from src.models.blocks import RevIN
-from functools import partial
-from itertools import repeat
+
 from typing import Callable, Optional
 
 import torch
 import torch.nn as nn
 from torchvision.ops import MLP
+import numpy as np
+from src.layers.mlp import CustomMLP
+
+#################################################################################
+#                   Sine/Cosine Positional Embedding Functions                  #
+#################################################################################
+# https://github.com/facebookresearch/mae/blob/main/util/pos_embed.py
 
 
-class RevIN(nn.Module):
-    def __init__(self, num_features: int, eps=1e-5, affine=True):
-        """
-        :param num_features: the number of features or channels
-        :param eps: a value added for numerical stability
-        :param affine: if True, RevIN has learnable affine parameters
-        """
-        super(RevIN, self).__init__()
-        self.num_features = num_features
-        self.eps = eps
-        self.affine = affine
-        if self.affine:
-            self._init_params()
+def get_1d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=0):
+    """
+    grid_size: int of the grid height and width
+    return:
+    pos_embed: [grid_size, embed_dim] or [1+grid_size, embed_dim] (w/ or w/o cls_token)
+    """
+    grid = np.arange(grid_size, dtype=np.float32).reshape(1, -1)
+    # grid_w = np.arange(grid_size, dtype=np.float32)
+    # grid = np.meshgrid(grid_h)  # here w goes first
+    # grid = np.stack(grid, axis=0)
 
-    def forward(self, x, mode: str):
-        if mode == "norm":
-            self._get_statistics(x)
-            x = self._normalize(x)
-        elif mode == "denorm":
-            x = self._denormalize(x)
-        else:
-            raise NotImplementedError
-        return x
-
-    def _init_params(self):
-        # initialize RevIN params: (C,)
-        self.affine_weight = nn.Parameter(torch.ones(self.num_features))
-        self.affine_bias = nn.Parameter(torch.zeros(self.num_features))
-
-    def _get_statistics(self, x):
-        dim2reduce = tuple(range(1, x.ndim - 1))
-        self.mean = torch.mean(x, dim=dim2reduce, keepdim=True).detach()
-        self.stdev = torch.sqrt(
-            torch.var(x, dim=dim2reduce, keepdim=True, unbiased=False) + self.eps
-        ).detach()
-
-    def _normalize(self, x):
-        x = x - self.mean
-        x = x / self.stdev
-        if self.affine:
-            x = x * self.affine_weight
-            x = x + self.affine_bias
-        return x
-
-    def _denormalize(self, x):
-        if self.affine:
-            x = x - self.affine_bias
-            x = x / (self.affine_weight + self.eps * self.eps)
-        x = x * self.stdev
-        x = x + self.mean
-        return x
-
-
-class PositionalEmbedding(nn.Module):
-    def __init__(self, d_model, max_len=5000):
-        super(PositionalEmbedding, self).__init__()
-        # Compute the positional encodings once in log space.
-        pe = torch.zeros(max_len, d_model).float()
-        pe.require_grad = False
-
-        position = torch.arange(0, max_len).float().unsqueeze(1)
-        div_term = (
-            torch.arange(0, d_model, 2).float() * -(math.log(10000.0) / d_model)
-        ).exp()
-
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-
-        pe = pe.unsqueeze(0)
-        self.register_buffer("pe", pe)
-
-    def forward(self, x):
-        return self.pe[:, : x.size(1)]
-
-
-class TokenEmbedding(nn.Module):
-    def __init__(self, c_in, d_model):
-        super(TokenEmbedding, self).__init__()
-        padding = 1 if torch.__version__ >= "1.5.0" else 2
-        self.tokenConv = nn.Conv1d(
-            in_channels=c_in,
-            out_channels=d_model,
-            kernel_size=3,
-            padding=padding,
-            padding_mode="circular",
-            bias=False,
+    # grid = grid.reshape([1, grid_size])
+    pos_embed = get_1d_sincos_pos_embed_from_grid(embed_dim, grid)
+    if cls_token and extra_tokens > 0:
+        pos_embed = np.concatenate(
+            [np.zeros([extra_tokens, embed_dim]), pos_embed], axis=0
         )
-        for m in self.modules():
-            if isinstance(m, nn.Conv1d):
-                nn.init.kaiming_normal_(
-                    m.weight, mode="fan_in", nonlinearity="leaky_relu"
-                )
-
-    def forward(self, x):
-        x = self.tokenConv(x.permute(0, 2, 1)).transpose(1, 2)
-        return x
+    return pos_embed
 
 
-class FixedEmbedding(nn.Module):
-    def __init__(self, c_in, d_model):
-        super(FixedEmbedding, self).__init__()
+def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
+    """
+    embed_dim: output dimension for each position
+    pos: a list of positions to be encoded: size (M,)
+    out: (M, D)
+    """
+    assert embed_dim % 2 == 0
+    omega = np.arange(embed_dim // 2, dtype=np.float64)
+    omega /= embed_dim / 2.0
+    omega = 1.0 / 10000**omega  # (D/2,)
 
-        w = torch.zeros(c_in, d_model).float()
-        w.require_grad = False
+    pos = pos.reshape(-1)  # (M,)
+    out = np.einsum("m,d->md", pos, omega)  # (M, D/2), outer product
 
-        position = torch.arange(0, c_in).float().unsqueeze(1)
-        div_term = (
-            torch.arange(0, d_model, 2).float() * -(math.log(10000.0) / d_model)
-        ).exp()
+    emb_sin = np.sin(out)  # (M, D/2)
+    emb_cos = np.cos(out)  # (M, D/2)
 
-        w[:, 0::2] = torch.sin(position * div_term)
-        w[:, 1::2] = torch.cos(position * div_term)
-
-        self.emb = nn.Embedding(c_in, d_model)
-        self.emb.weight = nn.Parameter(w, requires_grad=False)
-
-    def forward(self, x):
-        return self.emb(x).detach()
-
-
-class TemporalEmbedding(nn.Module):
-    def __init__(self, d_model, embed_type="fixed", freq="h"):
-        super(TemporalEmbedding, self).__init__()
-
-        minute_size = 4
-        hour_size = 24
-        weekday_size = 7
-        day_size = 32
-        month_size = 13
-
-        Embed = FixedEmbedding if embed_type == "fixed" else nn.Embedding
-        if freq == "t":
-            self.minute_embed = Embed(minute_size, d_model)
-        self.hour_embed = Embed(hour_size, d_model)
-        self.weekday_embed = Embed(weekday_size, d_model)
-        self.day_embed = Embed(day_size, d_model)
-        self.month_embed = Embed(month_size, d_model)
-
-    def forward(self, x):
-        x = x.long()
-        minute_x = (
-            self.minute_embed(x[:, :, 4]) if hasattr(self, "minute_embed") else 0.0
-        )
-        hour_x = self.hour_embed(x[:, :, 3])
-        weekday_x = self.weekday_embed(x[:, :, 2])
-        day_x = self.day_embed(x[:, :, 1])
-        month_x = self.month_embed(x[:, :, 0])
-
-        return hour_x + weekday_x + day_x + month_x + minute_x
-
-
-class TimeFeatureEmbedding(nn.Module):
-    def __init__(self, d_model, embed_type="timeF", freq="h"):
-        super(TimeFeatureEmbedding, self).__init__()
-
-        freq_map = {"h": 4, "t": 5, "s": 6, "m": 1, "a": 1, "w": 2, "d": 3, "b": 3}
-        d_inp = freq_map[freq]
-        self.embed = nn.Linear(d_inp, d_model, bias=False)
-
-    def forward(self, x):
-        return self.embed(x)
-
-
-class DataEmbedding(nn.Module):
-    def __init__(self, c_in, d_model, embed_type="fixed", freq="h", dropout=0.1):
-        super(DataEmbedding, self).__init__()
-
-        self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
-        self.position_embedding = PositionalEmbedding(d_model=d_model)
-        self.temporal_embedding = (
-            TemporalEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
-            if embed_type != "timeF"
-            else TimeFeatureEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
-        )
-        self.dropout = nn.Dropout(p=dropout)
-
-    def forward(self, x, x_mark):
-        if x_mark is None:
-            x = self.value_embedding(x) + self.position_embedding(x)
-        else:
-            x = (
-                self.value_embedding(x)
-                + self.temporal_embedding(x_mark)
-                + self.position_embedding(x)
-            )
-        return self.dropout(x)
-
-
-class DataEmbedding_inverted(nn.Module):
-    def __init__(self, c_in, d_model, embed_type="fixed", freq="h", dropout=0.1):
-        super(DataEmbedding_inverted, self).__init__()
-        self.value_embedding = nn.Linear(c_in, d_model)
-        self.dropout = nn.Dropout(p=dropout)
-
-    def forward(self, x, x_mark):
-        x = x.permute(0, 2, 1)
-        # x: [Batch Variate Time]
-        if x_mark is None:
-            x = self.value_embedding(x)
-        else:
-            x = self.value_embedding(torch.cat([x, x_mark.permute(0, 2, 1)], 1))
-        # x: [Batch Variate d_model]
-        return self.dropout(x)
-
-
-class DataEmbedding_wo_pos(nn.Module):
-    def __init__(self, c_in, d_model, embed_type="fixed", freq="h", dropout=0.1):
-        super(DataEmbedding_wo_pos, self).__init__()
-
-        self.value_embedding = TokenEmbedding(c_in=c_in, d_model=d_model)
-        self.position_embedding = PositionalEmbedding(d_model=d_model)
-        self.temporal_embedding = (
-            TemporalEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
-            if embed_type != "timeF"
-            else TimeFeatureEmbedding(d_model=d_model, embed_type=embed_type, freq=freq)
-        )
-        self.dropout = nn.Dropout(p=dropout)
-
-    def forward(self, x, x_mark):
-        if x_mark is None:
-            x = self.value_embedding(x)
-        else:
-            x = self.value_embedding(x) + self.temporal_embedding(x_mark)
-        return self.dropout(x)
-
-
-class PatchEmbedding(nn.Module):
-    # PatchTST
-    def __init__(self, d_model, patch_len, stride, padding, dropout):
-        super(PatchEmbedding, self).__init__()
-        # Patching
-        self.patch_len = patch_len
-        self.stride = stride
-        self.padding_patch_layer = nn.ReplicationPad1d((0, padding))
-
-        # Backbone, Input encoding: projection of feature vectors onto a d-dim vector space
-        self.value_embedding = nn.Linear(patch_len, d_model, bias=False)
-
-        # Positional embedding
-        self.position_embedding = PositionalEmbedding(d_model)
-
-        # Residual dropout
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x):
-        # do patching
-        n_vars = x.shape[1]
-        x = self.padding_patch_layer(x)
-        x = x.unfold(dimension=-1, size=self.patch_len, step=self.stride)
-        x = torch.reshape(x, (x.shape[0] * x.shape[1], x.shape[2], x.shape[3]))
-        # Input encoding
-        x = self.value_embedding(x) + self.position_embedding(x)
-        return self.dropout(x), n_vars
+    emb = np.concatenate([emb_sin, emb_cos], axis=1)  # (M, D)
+    return emb
 
 
 class PatchEmbed(nn.Module):
@@ -310,60 +102,6 @@ class PatchEmbed(nn.Module):
         return x.permute(0, 2, 1)
 
 
-# From PyTorch internals
-def _ntuple(n):
-    def parse(x):
-        if isinstance(x, collections.abc.Iterable) and not isinstance(x, str):
-            return tuple(x)
-        return tuple(repeat(x, n))
-
-    return parse
-
-
-to_2tuple = _ntuple(2)
-
-
-class CustomMLP(nn.Module):
-    """MLP as used in Vision Transformer, MLP-Mixer and related networks"""
-
-    def __init__(
-        self,
-        in_features,
-        hidden_features=None,
-        out_features=None,
-        act_layer=nn.GELU,
-        norm_layer=None,
-        bias=True,
-        drop=0.0,
-        use_conv=False,
-        **kwargs,
-    ):
-        super().__init__()
-        out_features = out_features or in_features
-        hidden_features = hidden_features or in_features
-        bias = to_2tuple(bias)
-        drop_probs = to_2tuple(drop)
-        linear_layer = partial(nn.Conv2d, kernel_size=1) if use_conv else nn.Linear
-
-        self.fc1 = linear_layer(in_features, hidden_features, bias=bias[0])
-        self.act = act_layer()
-        self.drop1 = nn.Dropout(drop_probs[0])
-        self.norm = (
-            norm_layer(hidden_features) if norm_layer is not None else nn.Identity()
-        )
-        self.fc2 = linear_layer(hidden_features, out_features, bias=bias[1])
-        self.drop2 = nn.Dropout(drop_probs[1])
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.act(x)
-        x = self.drop1(x)
-        x = self.norm(x)
-        x = self.fc2(x)
-        x = self.drop2(x)
-        return x
-
-
 class TimestepEmbed(nn.Module):
     """
     Embeds scalar timesteps into vector representations.
@@ -391,9 +129,7 @@ class TimestepEmbed(nn.Module):
         # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
         half = dim // 2
         freqs = torch.exp(
-            -math.log(max_period)
-            * torch.arange(start=0, end=half)
-            / half
+            -math.log(max_period) * torch.arange(start=0, end=half) / half
         ).to(device=t.device)
         args = t[:, None] * freqs[None]
         embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
@@ -409,70 +145,70 @@ class TimestepEmbed(nn.Module):
         return t_emb
 
 
-class ConditionEmbed(nn.Module):
-    def __init__(
-        self,
-        seq_channels,
-        seq_length,
-        hidden_size,
-        latent_dim,
-        cond_dropout_prob=0.5,
-        norm=True,
-        num_patches=1,
-    ) -> None:
-        super().__init__()
+# class ConditionEmbed(nn.Module):
+#     def __init__(
+#         self,
+#         seq_channels,
+#         seq_length,
+#         hidden_size,
+#         latent_dim,
+#         cond_dropout_prob=0.5,
+#         norm=True,
+#         num_patches=1,
+#     ) -> None:
+#         super().__init__()
 
-        self.latent_dim = latent_dim
-        self.norm = norm
-        self.num_patches = num_patches
-        # self.embedder = nn.Linear(seq_length, hidden_size)
-        if norm:
-            self.rev = RevIN(seq_channels)
-        self.input_enc = MLP(
-            in_channels=seq_length,
-            hidden_channels=[hidden_size * 2, hidden_size],
-        )
-        self.pred_dec = torch.nn.Linear(hidden_size, latent_dim * num_patches)
-        self.dropout_prob = cond_dropout_prob
-        self.seq_channels = seq_channels
+#         self.latent_dim = latent_dim
+#         self.norm = norm
+#         self.num_patches = num_patches
+#         # self.embedder = nn.Linear(seq_length, hidden_size)
+#         if norm:
+#             self.rev = RevIN(seq_channels)
+#         self.input_enc = MLP(
+#             in_channels=seq_length,
+#             hidden_channels=[hidden_size * 2, hidden_size],
+#         )
+#         self.pred_dec = torch.nn.Linear(hidden_size, latent_dim * num_patches)
+#         self.dropout_prob = cond_dropout_prob
+#         self.seq_channels = seq_channels
 
-    def token_drop(self, labels, force_drop_ids=None):
-        """
-        Drops labels to enable classifier-free guidance.
-        """
-        if force_drop_ids is None:
-            drop_ids = (
-                torch.rand(labels.shape[0], device=labels.device) < self.dropout_prob
-            )
-        else:
-            drop_ids = force_drop_ids == 1
-        self.drop_ids = drop_ids.unsqueeze(1).unsqueeze(1)
-        labels = torch.where(self.drop_ids, torch.zeros_like(labels), labels)
-        return labels
+#     def token_drop(self, labels, force_drop_ids=None):
+#         """
+#         Drops labels to enable classifier-free guidance.
+#         """
+#         if force_drop_ids is None:
+#             drop_ids = (
+#                 torch.rand(labels.shape[0], device=labels.device) < self.dropout_prob
+#             )
+#         else:
+#             drop_ids = force_drop_ids == 1
+#         self.drop_ids = drop_ids.unsqueeze(1).unsqueeze(1)
+#         labels = torch.where(self.drop_ids, torch.zeros_like(labels), labels)
+#         return labels
 
-    def forward(self, observed_data, train, force_drop_ids=None, **kwargs):
-        use_dropout = self.dropout_prob > 0
+#     def forward(self, observed_data, train, force_drop_ids=None, **kwargs):
+#         use_dropout = self.dropout_prob > 0
 
-        if (train and use_dropout) or (force_drop_ids is not None):
-            observed_data = self.token_drop(observed_data, force_drop_ids)
+#         if (train and use_dropout) or (force_drop_ids is not None):
+#             observed_data = self.token_drop(observed_data, force_drop_ids)
 
-        if self.norm:
-            x_norm = self.rev(observed_data, "norm")
-        else:
-            x_norm = observed_data
+#         if self.norm:
+#             x_norm = self.rev(observed_data, "norm")
+#         else:
+#             x_norm = observed_data
 
-        latents = self.input_enc(x_norm.permute(0, 2, 1))
-        latents = latents.flatten(1)
-        latents = self.pred_dec(latents)
+#         latents = self.input_enc(x_norm.permute(0, 2, 1))
+#         latents = latents.flatten(1)
+#         latents = self.pred_dec(latents)
 
-        # if self.norm:
-        # latents = self.rev(latents, "denorm")
+#         # if self.norm:
+#         # latents = self.rev(latents, "denorm")
 
-        return latents
-        # mean_pred = self.mean_dec(y_pred_denorm.permute(0, 2, 1)).permute(0, 2, 1)
-        # std_pred = self.std_dec(y_pred_denorm.permute(0, 2, 1)).permute(0, 2, 1)
+#         return latents
+#         # mean_pred = self.mean_dec(y_pred_denorm.permute(0, 2, 1)).permute(0, 2, 1)
+#         # std_pred = self.std_dec(y_pred_denorm.permute(0, 2, 1)).permute(0, 2, 1)
 
-        # return {"latents": latents, "mean_pred": mean_pred, "std_pred": std_pred}
+#         # return {"latents": latents, "mean_pred": mean_pred, "std_pred": std_pred}
 
 
 class LabelEmbedder(nn.Module):
@@ -507,3 +243,89 @@ class LabelEmbedder(nn.Module):
             labels = self.token_drop(labels, force_drop_ids)
         embeddings = self.embedding_table(labels)
         return embeddings
+
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model: int, max_len: int):
+        super().__init__()
+
+        # Learnable Embedding matrix to map time steps to embeddings
+        self.embedding = nn.Embedding(
+            num_embeddings=max_len, embedding_dim=d_model, max_norm=math.sqrt(d_model)
+        )  # (max_len, d_emb)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Adds a positional encoding to the tensor x.
+
+        Args:
+            x (torch.Tensor): Tensor of shape (batch_size, max_len, d_emb) to which the positional encoding should be added
+
+        Returns:
+            torch.Tensor: Tensor with an additional positional encoding
+        """
+        position = torch.arange(x.size(1), device=x.device).unsqueeze(0)  # (1, max_len)
+        pe = self.embedding(position)  # (1, max_len, d_emb)
+        x = x + pe
+        return x
+
+
+class TimeEncoding(nn.Module):
+    def __init__(self, d_model: int, max_time: int, use_time_axis: bool = True):
+        super().__init__()
+
+        # Learnable Embedding matrix to map time steps to embeddings
+        self.embedding = nn.Embedding(
+            num_embeddings=max_time, embedding_dim=d_model, max_norm=math.sqrt(d_model)
+        )  # (max_time, d_emb)
+        self.use_time_axis = use_time_axis
+
+    def forward(
+        self, x: torch.Tensor, timesteps: torch.LongTensor, use_time_axis: bool = True
+    ) -> torch.Tensor:
+        """Adds a time encoding to the tensor x.
+
+        Args:
+            x (torch.Tensor): Tensor of shape (batch_size, max_len, d_emb) to which the time encoding should be added
+            timesteps (torch.LongTensor): Tensor of shape (batch_size,) containing the current timestep for each sample in the batch
+
+        Returns:
+            torch.Tensor: Tensor with an additional time encoding
+        """
+        t_emb = self.embedding(timesteps)  # (batch_size, d_model)
+        if use_time_axis:
+            t_emb = t_emb.unsqueeze(1)  # (batch_size, 1, d_model)
+        assert isinstance(t_emb, torch.Tensor)
+        return x + t_emb
+
+
+class GaussianFourierProjection(nn.Module):
+    """Gaussian random features for encoding time steps.
+    Courtesy of https://colab.research.google.com/drive/120kYYBOVa1i0TD85RjlEkFjaWDxSFUx3?usp=sharing#scrollTo=YyQtV7155Nht
+    """
+
+    def __init__(self, d_model: int, scale: float = 30.0):
+        super().__init__()
+        # Randomly sample weights during initialization. These weights are fixed
+        # during optimization and are not trainable.
+        self.d_model = d_model
+        self.W = nn.Parameter(
+            torch.randn((d_model + 1) // 2) * scale, requires_grad=False
+        )
+
+        self.dense = nn.Linear(d_model, d_model)
+
+    def forward(
+        self, x: torch.Tensor, timesteps: torch.Tensor, use_time_axis: bool = True
+    ) -> torch.Tensor:
+        time_proj = timesteps[:, None] * self.W[None, :] * 2 * torch.pi
+        embeddings = torch.cat([torch.sin(time_proj), torch.cos(time_proj)], dim=-1)
+
+        # Slice to get exactly d_model
+        t_emb = embeddings[:, : self.d_model]  # (batch_size, d_model)
+
+        if use_time_axis:
+            t_emb = t_emb.unsqueeze(1)
+
+        projected_emb: torch.Tensor = self.dense(t_emb)
+
+        return x + projected_emb

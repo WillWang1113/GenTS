@@ -97,12 +97,12 @@ class TimeGAN(BaseModel):
         return [e0_optim, e_optim, d_optim, g_optim, gs_optim], []
 
     def training_step(self, batch, batch_idx):
-        max_epoch = self.trainer.max_epochs
+        max_steps = self.trainer.max_steps
         x = batch["seq"]
         # x = self._norm(batch["seq"], mode="norm")
         e0_optim, e_optim, d_optim, g_optim, gs_optim = self.optimizers()
 
-        if (self.current_epoch >= 0) and (self.current_epoch < int(1 / 3 * max_epoch)):
+        if (self.global_step >= 0) and (self.global_step < int(1 / 3 * max_steps)):
             # 1. Embedding network training
             self.toggle_optimizer(e0_optim)
             h = self.embedder(x)
@@ -114,8 +114,8 @@ class TimeGAN(BaseModel):
             self.log_dict({"stage1-recon_los": loss}, on_epoch=True, on_step=False)
             self.untoggle_optimizer(e0_optim)
 
-        elif (self.current_epoch >= int(1 / 3 * max_epoch)) and (
-            self.current_epoch < int(2 / 3 * max_epoch)
+        elif (self.global_step >= int(1 / 3 * max_steps)) and (
+            self.global_step < int(2 / 3 * max_steps)
         ):
             # 2. Training only with supervised loss
             self.toggle_optimizer(gs_optim)

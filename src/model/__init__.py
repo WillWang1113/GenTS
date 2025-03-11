@@ -10,11 +10,13 @@ from .gan.vanillagan import VanillaGAN
 from .vae.timevae import TimeVAE
 from .vae.vanillavae import VanillaVAE
 from .vae.kovae import KoVAE
+from .vae.timevqvae import TimeVQVAE
 
 __all__ = [
     "VanillaVAE",
     "TimeVAE",
     "KoVAE",
+    "TimeVQVAE",
     "VanillaGAN",
     "TimeGAN",
     "VanillaMAF",
