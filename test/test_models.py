@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 
 model_names = src.model.__all__
 # model_names = ['TimeVAE','TimeGAN', 'FourierDiffusion']
-model_names = ['COSCIGAN', 'VanillaVAE']
+# model_names = ['COSCIGAN', 'VanillaVAE']
+model_names = ["RCGAN", "VanillaVAE"]
+# model_names = ['COSCIGAN', 'RCGAN']
 # model_names = ['TimeVQVAE','KoVAE', 'VanillaVAE', 'TimeVAE']
 # model_names = ['KoVAE','VanillaVAE']
 # model_names = ['VanillaVAE','TimeVAE', 'KoVAE']
@@ -14,13 +16,13 @@ model_names = ['COSCIGAN', 'VanillaVAE']
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
-# conditions = [ 'class', None]
+conditions = [None, 'class', ]
 # conditions = ['class', None]
-conditions = [None, 'class']
+# conditions = [None, "class"]
 # conditions = [None, 'impute']
 # conditions = [None, "predict", "impute"]
-batch_size = 32
-seq_len = 96
+batch_size = 64
+seq_len = 48
 
 # imputation
 missing_type = "random"
@@ -29,14 +31,15 @@ missing_rate = 0.2
 # forecast
 obs_len = 96
 max_steps = 1000
-max_epochs = 100
+max_epochs = 1000
 
 # hparams
 hparams = dict(
     seq_len=seq_len,
     seq_dim=2,
-    latent_dim = 32,
-    # lr=1e-3,
+    latent_dim=32,
+    hidden_size=64,
+    lr=1e-2,
 )
 
 
@@ -45,14 +48,14 @@ n_col = len(conditions)
 fig, axs = plt.subplots(n_row, n_col, figsize=[3 * n_col, 3 * n_row], sharex="col")
 
 for i in range(len(model_names)):
-    print('=='*30)
+    print("==" * 30)
     print(model_names[i])
-    print('=='*30)
+    print("==" * 30)
     for j in range(len(conditions)):
-        print('=='*30)
+        print("==" * 30)
         c = conditions[j]
         print(c)
-        print('=='*30)
+        print("==" * 30)
         if c == "predict":
             dm = SynDataModule(seq_len, batch_size, condition=c, obs_len=obs_len)
             cond_hparams = dict(**hparams, obs_len=obs_len, condition=c)
@@ -65,7 +68,7 @@ for i in range(len(model_names)):
                 missing_type=missing_type,
             )
             cond_hparams = dict(**hparams, condition=c)
-        elif c == 'class':
+        elif c == "class":
             dm = SynDataModule(seq_len, batch_size, condition=c)
             cond_hparams = dict(**hparams, n_classes=2, condition=c)
         else:
