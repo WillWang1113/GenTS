@@ -19,7 +19,7 @@ Python: 3.10
 |      GT-GAN      |    GAN     |           -           |             Synthesis              |   :white_circle:   |
 |     PSA-GAN      |    GAN     |           -           |             Synthesis              |   :white_circle:   |
 |      GRUGAN      |    GAN     |           -           |             Imputation             |   :white_circle:   |
-|      RCGAN       |    GAN     |           -           |             Synthesis              |   :white_circle:   |
+|      RCGAN       |    GAN     |           -           |             Synthesis              |   :white_check_mark:   |
 |    VanillaMAF    |    Flow    |           -           |             Synthesis              | :white_check_mark: |
 |   Fourier Flow   |    Flow    |           -           |             Synthesis              |   :white_circle:   |
 |       GANF       |    Flow    |           -           |         Anomaly Detection          |   :white_circle:   |

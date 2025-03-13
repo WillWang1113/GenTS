@@ -9,14 +9,21 @@ from torch.nn import functional as F
 
 class Generator(nn.Module):
     def __init__(
-        self, seq_dim, latent_dim, hidden_size, num_layers, n_classes=0, **kwargs
+        self,
+        seq_dim,
+        latent_dim,
+        hidden_size,
+        num_layers,
+        class_emb_dim,
+        n_classes=0,
+        **kwargs,
     ):
         super().__init__()
         self.dec = RNNLayer(
-            latent_dim * 2, hidden_size, seq_dim, num_layers, rnn_type="gru"
+            latent_dim + class_emb_dim, hidden_size, seq_dim, num_layers, rnn_type="gru"
         )
         self.n_classes = n_classes
-        self.emb = nn.Embedding(n_classes + 1, latent_dim)
+        self.emb = nn.Embedding(n_classes + 1, class_emb_dim)
 
     def forward(self, z, c=None):
         if c is None:
@@ -29,14 +36,21 @@ class Generator(nn.Module):
 
 class Discriminator(nn.Module):
     def __init__(
-        self, seq_dim, latent_dim, hidden_size, num_layers, n_classes=0, **kwargs
+        self,
+        seq_dim,
+        latent_dim,
+        hidden_size,
+        num_layers,
+        class_emb_dim,
+        n_classes=0,
+        **kwargs,
     ):
         super().__init__()
         self.enc = RNNLayer(
-            seq_dim + latent_dim, hidden_size, 1, num_layers, rnn_type="gru"
+            seq_dim + class_emb_dim, hidden_size, 1, num_layers, rnn_type="gru"
         )
         self.n_classes = n_classes
-        self.emb = nn.Embedding(n_classes + 1, latent_dim)
+        self.emb = nn.Embedding(n_classes + 1, class_emb_dim)
 
     def forward(self, x, c=None):
         if c is None:
@@ -54,6 +68,7 @@ class RCGAN(BaseModel):
         seq_len: int,
         seq_dim: int,
         latent_dim: int = 128,
+        class_emb_dim: int = 8,
         hidden_size: int = 128,
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
@@ -80,6 +95,7 @@ class RCGAN(BaseModel):
             latent_dim=latent_dim,
             hidden_size=hidden_size,
             num_layers=num_layers,
+            class_emb_dim=class_emb_dim,
             n_classes=n_classes,
         )
         self.generator = Generator(
@@ -87,6 +103,7 @@ class RCGAN(BaseModel):
             latent_dim=latent_dim,
             hidden_size=hidden_size,
             num_layers=num_layers,
+            class_emb_dim=class_emb_dim,
             n_classes=n_classes,
         )
 

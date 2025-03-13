@@ -22,7 +22,7 @@ conditions = [None, 'class', ]
 # conditions = [None, 'impute']
 # conditions = [None, "predict", "impute"]
 batch_size = 64
-seq_len = 48
+seq_len = 30
 
 # imputation
 missing_type = "random"
@@ -31,15 +31,16 @@ missing_rate = 0.2
 # forecast
 obs_len = 96
 max_steps = 1000
-max_epochs = 1000
+max_epochs = 2000
 
 # hparams
 hparams = dict(
     seq_len=seq_len,
     seq_dim=2,
-    latent_dim=32,
-    hidden_size=64,
-    lr=1e-2,
+    latent_dim=64,
+    hidden_size=128,
+    class_emb_dim=16,
+    lr=1e-3,
 )
 
 
@@ -48,14 +49,8 @@ n_col = len(conditions)
 fig, axs = plt.subplots(n_row, n_col, figsize=[3 * n_col, 3 * n_row], sharex="col")
 
 for i in range(len(model_names)):
-    print("==" * 30)
-    print(model_names[i])
-    print("==" * 30)
     for j in range(len(conditions)):
-        print("==" * 30)
         c = conditions[j]
-        print(c)
-        print("==" * 30)
         if c == "predict":
             dm = SynDataModule(seq_len, batch_size, condition=c, obs_len=obs_len)
             cond_hparams = dict(**hparams, obs_len=obs_len, condition=c)
