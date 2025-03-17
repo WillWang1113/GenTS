@@ -117,7 +117,7 @@ class COSCIGAN(BaseModel):
         self,
         seq_len,
         seq_dim,
-        latent_dim,
+        latent_dim=32,
         DG_type="LSTM",
         central_disc_type="MLP",
         gamma=5.0,

@@ -1,13 +1,15 @@
 from math import sqrt
-from lightning import Trainer
+from lightning import Trainer, seed_everything
 import src.model
 from src.data.dataloader import SynDataModule
 import matplotlib.pyplot as plt
 
+seed_everything(3407, workers=True)
+
 model_names = src.model.__all__
 # model_names = ['TimeVAE','TimeGAN', 'FourierDiffusion']
 # model_names = ['COSCIGAN', 'VanillaVAE']
-model_names = ["RCGAN", "VanillaVAE"]
+model_names = ["PSAGAN", "VanillaVAE"]
 # model_names = ['COSCIGAN', 'RCGAN']
 # model_names = ['TimeVQVAE','KoVAE', 'VanillaVAE', 'TimeVAE']
 # model_names = ['KoVAE','VanillaVAE']
@@ -21,8 +23,8 @@ conditions = [None, 'class', ]
 # conditions = [None, "class"]
 # conditions = [None, 'impute']
 # conditions = [None, "predict", "impute"]
-batch_size = 64
-seq_len = 30
+batch_size = 128
+seq_len = 64
 
 # imputation
 missing_type = "random"
@@ -31,16 +33,26 @@ missing_rate = 0.2
 # forecast
 obs_len = 96
 max_steps = 1000
-max_epochs = 2000
+max_epochs = 1000
 
 # hparams
 hparams = dict(
     seq_len=seq_len,
     seq_dim=2,
-    latent_dim=64,
+    # latent_dim=64,
     hidden_size=128,
-    class_emb_dim=16,
-    lr=1e-3,
+    depth_schedule=[5*25, 10*25, 15*25],
+    # class_emb_dim=16,
+    # lr={'G':1e-4, 'D':1e-4},
+    n_critic = 1,
+    epoch_fade_in=2*25,
+    ks_conv=7,
+    ks_value = 1,
+    ks_key = 1,
+    ks_query = 1,
+    key_features= 1,
+    value_features= 1,
+    # gamma = 1.0,
 )
 
 
@@ -72,7 +84,7 @@ for i in range(len(model_names)):
 
         test_model_cls = getattr(src.model, model_names[i])
         test_model = test_model_cls(**cond_hparams)
-        trainer = Trainer(devices=[1], max_epochs=max_epochs)
+        trainer = Trainer(devices=[1], max_epochs=max_epochs, log_every_n_steps=20)
         trainer.fit(test_model, dm)
         batch = next(iter(dm.val_ds))
         test_cond = None
@@ -91,6 +103,7 @@ for i in range(len(model_names)):
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
         break
+    break
 fig.suptitle("Model Comparison")
 fig.tight_layout()
 fig.savefig("test_model.png", bbox_inches="tight")
