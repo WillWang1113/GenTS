@@ -4,6 +4,7 @@ from torchvision.ops import MLP
 from functools import partial
 from itertools import repeat
 import collections.abc
+import torch.nn.functional as F
 
 
 # From PyTorch internals
@@ -72,7 +73,7 @@ class FinalTanh(torch.nn.Module):
                "".format(self.input_channels, self.hidden_channels,
                          self.hidden_hidden_channels, self.num_hidden_layers)
 
-    def forward(self, z):
+    def forward(self, t, z):
 
         z = self.linear_in(z)
         z = z.relu()
@@ -149,3 +150,22 @@ class CustomMLP(nn.Module):
         x = self.fc2(x)
         x = self.drop2(x)
         return x
+
+
+
+class MaskedLinear(nn.Module):
+    def __init__(
+        self, in_features, out_features, mask, cond_in_features=None, bias=True
+    ):
+        super(MaskedLinear, self).__init__()
+        self.linear = nn.Linear(in_features, out_features)
+        if cond_in_features is not None:
+            self.cond_linear = nn.Linear(cond_in_features, out_features, bias=False)
+
+        self.register_buffer("mask", mask)
+
+    def forward(self, inputs, cond_inputs: torch.Tensor = None):
+        output = F.linear(inputs, self.linear.weight * self.mask, self.linear.bias)
+        if cond_inputs is not None:
+            output += self.cond_linear(cond_inputs)
+        return output

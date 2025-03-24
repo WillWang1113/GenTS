@@ -1,8 +1,6 @@
-import lightning as L
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torchvision.ops import MLP
 
 from src.model.base import BaseModel
 from src.layers.rnn import RNNLayer
@@ -97,12 +95,12 @@ class TimeGAN(BaseModel):
         return [e0_optim, e_optim, d_optim, g_optim, gs_optim], []
 
     def training_step(self, batch, batch_idx):
-        max_steps = self.trainer.max_steps
+        max_steps = self.trainer.max_epochs
         x = batch["seq"]
         # x = self._norm(batch["seq"], mode="norm")
         e0_optim, e_optim, d_optim, g_optim, gs_optim = self.optimizers()
 
-        if (self.global_step >= 0) and (self.global_step < int(1 / 3 * max_steps)):
+        if (self.current_epoch >= 0) and (self.current_epoch < int(1 / 3 * max_steps)):
             # 1. Embedding network training
             self.toggle_optimizer(e0_optim)
             h = self.embedder(x)
@@ -114,8 +112,8 @@ class TimeGAN(BaseModel):
             self.log_dict({"stage1-recon_los": loss}, on_epoch=True, on_step=False)
             self.untoggle_optimizer(e0_optim)
 
-        elif (self.global_step >= int(1 / 3 * max_steps)) and (
-            self.global_step < int(2 / 3 * max_steps)
+        elif (self.current_epoch >= int(1 / 3 * max_steps)) and (
+            self.current_epoch < int(2 / 3 * max_steps)
         ):
             # 2. Training only with supervised loss
             self.toggle_optimizer(gs_optim)

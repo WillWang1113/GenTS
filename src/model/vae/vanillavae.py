@@ -51,6 +51,7 @@ class VanillaVAE(BaseModel):
         # x = x
         latents = self.encoder(x)
         if (c is not None) and (self.cond_net is not None):
+            c = c.to(x)
             cond_lats = self.cond_net(c)
             latents = latents + cond_lats
         mu = self.fc_mu(latents)
@@ -59,6 +60,7 @@ class VanillaVAE(BaseModel):
 
     def decode(self, z: torch.Tensor, c: torch.Tensor = None, **kwargs):
         if (c is not None) and (self.cond_net is not None):
+            c = c.to(z)
             cond_lats = self.cond_net(c)
             z = z + cond_lats
         return self.decoder(z)

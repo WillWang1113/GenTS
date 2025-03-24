@@ -6,47 +6,47 @@ Python: 3.10
 
 ## Models 
 
-|       Name       | Model Type |       Condition       |            Application             |      Finish?       |
-| :--------------: | :--------: | :-------------------: | :--------------------------------: | :----------------: |
-|    VanillaVAE    |    VAE     |           -           |             Synthesis              | :white_check_mark: |
-|     TimeVAE      |    VAE     |           -           |             Synthesis              | :white_check_mark: |
-|    TimeVQVAE     |    VAE     |      class label      |             Synthesis              | :white_check_mark: |
-|      KoVAE       |    VAE     |           -           |             Synthesis              | :white_check_mark: |
-|    VanillaGAN    |    GAN     |           -           |             Synthesis              | :white_check_mark: |
-|     TimeGAN      |    GAN     |           -           |             Synthesis              | :white_check_mark: |
-|       AST        |    GAN     |  :white_check_mark:   |            Forecasting             |   :white_circle:   |
-|    COSCI-GAN     |    GAN     |           -           |             Synthesis              | :white_check_mark: |
-|      GT-GAN      |    GAN     |           -           |             Synthesis              |   :white_circle:   |
-|     PSA-GAN      |    GAN     |           -           |             Synthesis              |   :white_circle:   |
-|      GRUGAN      |    GAN     |           -           |             Imputation             |   :white_circle:   |
-|      RCGAN       |    GAN     |           -           |             Synthesis              |   :white_check_mark:   |
-|    VanillaMAF    |    Flow    |           -           |             Synthesis              | :white_check_mark: |
-|   Fourier Flow   |    Flow    |           -           |             Synthesis              |   :white_circle:   |
-|       GANF       |    Flow    |           -           |         Anomaly Detection          |   :white_circle:   |
-|     LSTM-MAF     |    Flow    |  :white_check_mark:   |            Forecasting             |   :white_circle:   |
-|       TFM        |    Flow    |           -           |            Forecasting             |   :white_circle:   |
-|   VanillaDDPM    | Diffusion  |           -           |             Synthesis              | :white_check_mark: |
-|       ANT        | Diffusion  |  :white_check_mark:   | Synthesis, Forecasting, Refinement |   :white_circle:   |
-|   Diffusion-TS   | Diffusion  |  :white_check_mark:   |       Synthesis, Forecasting       |   :white_circle:   |
-|       FIDE       | Diffusion  |           -           |             Synthesis              |   :white_circle:   |
-|       D3M        | Diffusion  |           -           |      Forecasting, Imputation       |   :white_circle:   |
-|  FTS-Diffusion   | Diffusion  |           -           |             Synthesis              |   :white_circle:   |
-|    TimeWeaver    | Diffusion  |  :white_check_mark:   |             Synthesis              |   :white_circle:   |
-|     TimeGrad     | Diffusion  |  :white_check_mark:   |            Forecasting             |   :white_circle:   |
-|       CSDI       | Diffusion  |  :white_check_mark:   |      Imputation, Forecasting       |   :white_circle:   |
-|      D3VAE       | Diffusion  |  :white_check_mark:   |            Forecasting             |   :white_circle:   |
-|      TSDiff      | Diffusion  | inference conditional | Synthesis, Forecasting, Refinement |   :white_circle:   |
-|       TMDM       | Diffusion  |  :white_check_mark:   |            Forecasting             |   :white_circle:   |
-|     mr-diff      | Diffusion  |  :white_check_mark:   |            Forecasting             |   :white_circle:   |
-|      MG-TSD      | Diffusion  |  :white_check_mark:   |            Forecasting             |   :white_circle:   |
-|       RATD       | Diffusion  |  :white_check_mark:   |            Forecasting             |   :white_circle:   |
-| FourierDiffusion | Diffusion  |           -           |             Synthesis              | :white_check_mark: |
-|    ImagenTime    | Diffusion  |  :white_check_mark:   |       Synthesis, Forecasting       |   :white_circle:   |
-|    Latent ODE    | Diff. Eq.  |           -           |        Continuous modelling        | :white_check_mark: |
-|     ODE-RNN      | Diff. Eq.  |           -           |        Continuous modelling        |   :white_circle:   |
-|    Neural SDE    | Diff. Eq.  |           -           |        Continuous modelling        |   :white_circle:   |
-|       LS4        | Diff. Eq.  |           -           |        Continuous modelling        |   :white_circle:   |
-|     SDformer     |  VAE+GPT   |  :white_check_mark:   |             Synthesis              |   :white_circle:   |
+|       Name       | Model Type |       Condition       |    Application    |      Finish?       |
+| :--------------: | :--------: | :-------------------: | :---------------: | :----------------: |
+|    VanillaVAE    |    VAE     |           -           |        Syn        | :white_check_mark: |
+|     TimeVAE      |    VAE     |           -           |        Syn        | :white_check_mark: |
+|  TimeVQVAE$^*$   |    VAE     |      class label      |        Syn        | :white_check_mark: |
+|      KoVAE       |    VAE     |           -           |        Syn        | :white_check_mark: |
+|    VanillaGAN    |    GAN     |           -           |        Syn        | :white_check_mark: |
+|   TimeGAN$^*$    |    GAN     |           -           |        Syn        | :white_check_mark: |
+|    AST$^\dag$    |    GAN     |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|    COSCI-GAN     |    GAN     |           -           |        Syn        | :white_check_mark: |
+|    GT-GAN$^*$    |    GAN     |           -           |        Syn        |   :white_circle:   |
+|     PSA-GAN      |    GAN     |           -           |        Syn        | :white_check_mark: |
+|      GRUGAN      |    GAN     |           -           |        Imp        |   :white_circle:   |
+|      RCGAN       |    GAN     |           -           |        Syn        | :white_check_mark: |
+|    VanillaMAF    |    Flow    |           -           |        Syn        | :white_check_mark: |
+|   Fourier Flow   |    Flow    |           -           |        Syn        |   :white_circle:   |
+|       GANF       |    Flow    |           -           |        AD         |   :white_circle:   |
+|     LSTM-MAF     |    Flow    |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|       TFM        |    Flow    |           -           |       Fcst        |   :white_circle:   |
+|   VanillaDDPM    | Diffusion  |           -           |        Syn        | :white_check_mark: |
+|       ANT        | Diffusion  |  :white_check_mark:   | Syn, Fcst, Refine |   :white_circle:   |
+|   Diffusion-TS   | Diffusion  |  :white_check_mark:   |     Syn, Fcst     |   :white_circle:   |
+|       FIDE       | Diffusion  |           -           |        Syn        |   :white_circle:   |
+|       D3M        | Diffusion  |           -           |     Fcst, Imp     |   :white_circle:   |
+|  FTS-Diffusion   | Diffusion  |           -           |        Syn        |   :white_circle:   |
+|    TimeWeaver    | Diffusion  |  :white_check_mark:   |        Syn        |   :white_circle:   |
+|     TimeGrad     | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|       CSDI       | Diffusion  |  :white_check_mark:   |     Imp, Fcst     |   :white_circle:   |
+|      D3VAE       | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|      TSDiff      | Diffusion  | inference conditional | Syn, Fcst, Refine |   :white_circle:   |
+|       TMDM       | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|     mr-diff      | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|      MG-TSD      | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|       RATD       | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+| FourierDiffusion | Diffusion  |           -           |        Syn        | :white_check_mark: |
+|    ImagenTime    | Diffusion  |  :white_check_mark:   |     Syn, Fcst     |   :white_circle:   |
+|    Latent ODE    | Diff. Eq.  |           -           |        Syn        | :white_check_mark: |
+|     ODE-RNN      | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
+|    Neural SDE    | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
+|       LS4        | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
+|     SDformer     |  VAE+GPT   |  :white_check_mark:   |        Syn        |   :white_circle:   |
 
 
 

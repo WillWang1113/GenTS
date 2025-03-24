@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch.nn.utils import weight_norm
 from torch import Tensor
 import torch.nn.functional as F
+from src.layers.misc import exists, l2norm
 from src.layers.norm import RMSNorm
 
 
@@ -73,15 +74,6 @@ def FeedForward(dim, mult=4):
         weight_norm(nn.LayerNorm(inner_dim)),
         nn.Linear(inner_dim, dim, bias=False),
     )
-
-
-def exists(val):
-    return val is not None
-
-
-def l2norm(t):
-    return F.normalize(t, dim=-1)
-
 
 class DiffAttn(nn.Module):
     """

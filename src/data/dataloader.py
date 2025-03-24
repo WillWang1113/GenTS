@@ -10,19 +10,45 @@ from lightning import LightningDataModule
 
 
 class TSDataset(Dataset):
-    def __init__(self, data, cond=None):
+    def __init__(
+        self,
+        data: torch.Tensor,
+        cond: torch.Tensor = None,
+        add_coeffs: bool = False,
+        time_idx_last: bool = False,
+    ):
         super().__init__()
         self.data = data
+        if time_idx_last:
+            self.data = self.data[:, :, :-1]
+            self.time_idx = self.data[:, :, -1]
+        else:
+            self.time_idx = torch.arange(data.shape[1]).float()
         self.cond = cond
         self.cond_shape = None
         if cond is not None:
             self.cond_shape = tuple(cond.shape[1:])
+        if add_coeffs:
+                
+            from torchcde import natural_cubic_spline_coeffs
+
+            t = torch.arange(data.shape[1]).float()
+            if cond is None:
+                data_nan = data
+            else:
+                # assert cond.type() == "torch.bool"
+                data_nan = data.masked_fill(cond.bool(), float("nan"))
+            self.coeffs = natural_cubic_spline_coeffs(data_nan, t)
+        else:
+            self.coeffs = None
 
     def __getitem__(self, index):
+        batch_dict = dict(seq=self.data[index], t=self.time_idx)
         if self.cond_shape is not None:
-            return dict(seq=self.data[index], c=self.cond[index])
-        else:
-            return dict(seq=self.data[index])
+            batch_dict["c"] = self.cond[index]
+        if self.coeffs is not None:
+            batch_dict["coeffs"] = self.coeffs[index]
+        return batch_dict
 
     def __len__(self):
         return len(self.data)
@@ -99,6 +125,8 @@ class SynDataModule(LightningDataModule):
         scale: bool = True,
         inference_batch_size: int = 1024,
         num_samples: int = 1000,
+        add_coeffs: bool = False,
+        time_idx_last: bool = False,
         **kwargs,
     ):
         super().__init__()
@@ -114,6 +142,8 @@ class SynDataModule(LightningDataModule):
         self.missing_rate = None
         self.missing_kind = None
         self.condition = condition
+        self.add_coeffs = add_coeffs
+        self.time_idx_last = time_idx_last
 
         assert condition in [None, "predict", "impute", "class"]
         if condition == "predict":
@@ -210,7 +240,7 @@ class SynDataModule(LightningDataModule):
         if self.condition is not None:
             cond = torch.load(os.path.join(self.data_dir, f"{self.condition}_cond.pt"))
         add_cond = cond is not None
-        
+
         # train/val/test
         num_train = int(len(data) * 0.7)
         num_test = int(len(data) * 0.2)
@@ -231,22 +261,22 @@ class SynDataModule(LightningDataModule):
                 train_cond = cond[starts["fit"] : ends["fit"]]
                 val_cond = cond[starts["validate"] : ends["validate"]]
 
-            self.train_ds = TSDataset(train_data, train_cond)
-            self.val_ds = TSDataset(val_data, val_cond)
+            self.train_ds = TSDataset(train_data, train_cond, self.add_coeffs, self.time_idx_last)
+            self.val_ds = TSDataset(val_data, val_cond, self.add_coeffs, self.time_idx_last)
 
         if stage == "predict":
             test_data = data[starts["test"] : ends["test"]]
             test_cond = None
             if add_cond:
                 test_cond = cond[starts["test"] : ends["test"]]
-            self.pred_ds = TSDataset(test_data, test_cond)
+            self.pred_ds = TSDataset(test_data, test_cond, self.add_coeffs, self.time_idx_last)
 
         if stage == "test":
             test_data = data[starts["test"] : ends["test"]]
             test_cond = None
             if add_cond:
                 test_cond = cond[starts["test"] : ends["test"]]
-            self.test_ds = TSDataset(test_data, test_cond)
+            self.test_ds = TSDataset(test_data, test_cond, self.add_coeffs, self.time_idx_last)
 
     def train_dataloader(self):
         return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=True)

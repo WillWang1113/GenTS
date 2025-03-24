@@ -11,7 +11,6 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-import logging
 from math import log2, sqrt
 from typing import List, Optional
 
@@ -21,15 +20,6 @@ import torch.nn.functional as F
 from torch.nn.utils import spectral_norm
 
 from src.model.base import BaseModel
-
-# from gluonts.core.component import validated
-
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format="%(asctime)s [%(levelname)s] %(name)s %(message)s",
-#     datefmt="[%Y-%m-%d %H:%M:%S]",
-# )
-# logger = logging.getLogger(__name__)
 
 
 class SelfAttention(nn.Module):
@@ -368,6 +358,7 @@ class ProGenerator(nn.Module):
         embedding_dim: int = 10,
         self_attention: bool = True,
         context_length: int = 0,
+        **kwargs,
     ):
         super(ProGenerator, self).__init__()
 
@@ -437,6 +428,7 @@ class ProGenerator(nn.Module):
 
         self.context_length = context_length
         if self.context_length > 0:
+            self.init_emb = nn.Linear(seq_dim, 1)
             self.mlp_block_list = nn.ModuleList([])
             for stage in range(1, self.nb_step):
                 self.mlp_block_list.append(
@@ -500,6 +492,7 @@ class ProGenerator(nn.Module):
         y = self.initial_block(reduced_x)
         for idx, l in enumerate(self.block_list[:depth]):
             y = F.interpolate(y, scale_factor=2, mode="nearest")
+            # y shape: [bs, hidden_size, 2*len]
             previous_y = y
             if self.time_feat_dim > 0 and time_feat is not None:
                 tf = F.avg_pool1d(
@@ -509,11 +502,15 @@ class ProGenerator(nn.Module):
             else:
                 tf = None
             if self.context_length > 0:
+                context_emb = self.init_emb(context)
                 context_reshaped = (
-                    context[:, -self.context_length :]
-                    .unsqueeze(-1)
-                    .expand(y.shape[0], self.context_length, y.shape[2])
+                    context_emb[:, -self.context_length :].expand(
+                        y.shape[0], self.context_length, y.shape[2]
+                    )
+                    # .unsqueeze(-1)
                 )
+                # [bs, obs_len, 2*len]
+
                 y_mlp = torch.cat((context_reshaped, y), dim=1)
                 y_mlp = self.mlp_block_list[idx](y_mlp.permute(0, 2, 1)).permute(
                     0, 2, 1
@@ -542,33 +539,6 @@ class ProGenerator(nn.Module):
         return y
 
 
-class ProGeneratorInference(nn.Module):
-    # @validated()
-    def __init__(self, trained_generator: nn.Module):
-        super(ProGeneratorInference, self).__init__()
-        self.trained_generator = trained_generator
-
-    @staticmethod
-    def _get_noise(time_features: torch.Tensor):
-        time_features = time_features.permute(0, 2, 1)
-        bs = time_features.size(0)
-        target_len = time_features.size(2)
-        noise = torch.randn((bs, 1, target_len))
-        noise = torch.cat((time_features, noise), dim=1)
-        return noise
-
-    def forward(
-        self,
-        past_target: torch.Tensor,
-        time_features: torch.Tensor,
-        feat_static_cat: torch.Tensor,
-    ):
-        noise = self._get_noise(time_features)
-        return self.trained_generator(
-            x=noise, feat_static_cat=feat_static_cat, context=past_target
-        )
-
-
 class ProDiscriminator(nn.Module):
     """
     Attributes:
@@ -593,6 +563,7 @@ class ProDiscriminator(nn.Module):
         cardinality: Optional[List[int]] = None,
         embedding_dim: int = 10,
         self_attention: bool = True,
+        **kwargs,
     ):
         super(ProDiscriminator, self).__init__()
         assert seq_len >= 8, "target length should be at least of value 8"
@@ -843,6 +814,8 @@ class PSAGAN(BaseModel):
     def training_step(self, batch, batch_idx):
         x = batch["seq"].permute(0, 2, 1)
         c = batch.get("c", None)
+        # if c is not None:
+        #     c = c.permute(0, 2, 1)
         if self.time_feat_dim > 0:
             assert batch.get("time_feat", None) is not None
         tf = batch.get("time_feat", None)
@@ -920,7 +893,7 @@ class PSAGAN(BaseModel):
             d_loss = self.loss_fn(y_real, torch.ones_like(y_real)) + self.loss_fn(
                 y_fake, torch.zeros_like(y_fake)
             )
-            d_loss = d_loss/2
+            d_loss = d_loss / 2
             optimizer_d.zero_grad()
             self.manual_backward(d_loss)
             optimizer_d.step()
@@ -931,7 +904,8 @@ class PSAGAN(BaseModel):
 
             loss_dict = {"d_loss": d_loss}
             self.log_dict(
-                loss_dict, on_epoch=True,
+                loss_dict,
+                on_epoch=True,
                 on_step=False,
             )
 

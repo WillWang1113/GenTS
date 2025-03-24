@@ -3,7 +3,6 @@ from torch import nn
 
 from src.layers.rnn import RNNLayer
 from src.model.base import BaseModel
-from einops import repeat
 from torch.nn import functional as F
 
 

@@ -167,3 +167,4 @@ lightning_logs/
 misc/
 notebooks/
 data/
+nohup.out

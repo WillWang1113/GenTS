@@ -6,7 +6,8 @@ from torch import nn
 from torch.nn import functional as F
 from torchvision.ops import MLP
 
-from src.layers.flow import MADE, BatchNormFlow, Reverse, FlowSequential
+from src.layers.norm import BatchNormFlow
+from src.layers.flow import MADE, Reverse, FlowSequential
 from src.layers.mlp import MLPEncoder, MLPDecoder
 
 # from src.layers.conv import ConvDecoder, ConvEncoder

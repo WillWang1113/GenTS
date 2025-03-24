@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from src.model.vae.vanillavae import VanillaVAE
-from src.layers.nde import NeuralCDE, natural_cubic_spline_coeffs
+from torchcde import natural_cubic_spline_coeffs
+from src.layers.nde import NeuralCDE
+# from src.layers.nde import NeuralCDE, natural_cubic_spline_coeffs
 from src.layers.mlp import FinalTanh
 
 
@@ -100,6 +102,7 @@ class VKDecoder(nn.Module):
 
         # ! Originally, added a sigmoid output layer
         # x_hat = nn.functional.sigmoid(self.linear(h))
+        # print(x_hat.shape)
 
         return x_hat
 
@@ -161,14 +164,19 @@ class KoVAE(VanillaVAE):
         self.fc_mu = nn.Linear(self.hidden_size * 2, self.latent_dim)
         self.fc_logvar = nn.Linear(self.hidden_size * 2, self.latent_dim)
 
-
+    # TODO: fix dataset?
     def encode(self, x: torch.Tensor, c=None, **kwargs):
         if self.missing_value:
             time = torch.arange(self.seq_len).to(x)
             final_index = (torch.ones(x.shape[0]) * (self.seq_len-1)).to(x)
-            mask = kwargs.get('mask')
+            # print(final_index.shape)
+            # print(time.shape)
+            # print(c.shape)
+            mask = c
             x_masked_nan = x.masked_fill(mask.bool(), float('nan'))
-            x = natural_cubic_spline_coeffs(time, x_masked_nan)
+            # print(x_masked_nan.shape)
+            x = natural_cubic_spline_coeffs(x_masked_nan, time)
+            # print(x.shape)
             latents = self.encoder(time, x, final_index)
         else:
             latents = self.encoder(x)

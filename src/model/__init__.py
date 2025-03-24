@@ -9,6 +9,7 @@ from .gan.psagan import PSAGAN
 from .gan.rcgan import RCGAN
 from .gan.timegan import TimeGAN
 from .gan.coscigan import COSCIGAN
+from .gan.gtgan import GTGAN
 from .gan.vanillagan import VanillaGAN
 from .vae.timevae import TimeVAE
 from .vae.vanillavae import VanillaVAE
@@ -24,6 +25,7 @@ __all__ = [
     "COSCIGAN",
     "RCGAN",
     "TimeGAN",
+    "GTGAN",
     "PSAGAN",
     "VanillaMAF",
     "VanillaDDPM",

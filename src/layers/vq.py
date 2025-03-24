@@ -3,17 +3,24 @@ The code is taken from https://github.com/lucidrains/vector-quantize-pytorch
 """
 # import copy
 from typing import Union
+
 import torch
-from torch import nn, einsum
-import torch.nn.functional as F
 import torch.distributed as distributed
-from torch.cuda.amp import autocast
-from torch.distributions.categorical import Categorical
-
+import torch.nn.functional as F
 from einops import rearrange, repeat
-# from contextlib import contextmanager
+from torch import einsum, nn
+from torch.cuda.amp import autocast
 
-# from utils import *
+from src.layers.misc import (
+    default,
+    ema_inplace,
+    exists,
+    l2norm,
+    laplace_smoothing,
+    noop,
+    softmax_sample,
+)
+
 
 def quantize(z, vq_model, transpose_channel_length_axes=False, svq_temp:Union[float,None]=None):
     input_dim = len(z.shape) - 2
@@ -33,54 +40,6 @@ def quantize(z, vq_model, transpose_channel_length_axes=False, svq_temp:Union[fl
     return z_q, indices, vq_loss, perplexity
 
 
-def exists(val):
-    return val is not None
-
-
-def default(val, d):
-    return val if exists(val) else d
-
-
-def noop(*args, **kwargs):
-    pass
-
-
-def l2norm(t):
-    return F.normalize(t, p=2, dim=-1)
-
-
-def log(t, eps=1e-20):
-    return torch.log(t.clamp(min=eps))
-
-
-def gumbel_noise(t):
-    noise = torch.zeros_like(t).uniform_(0, 1)
-    return -log(-log(noise))
-
-
-def gumbel_sample(t, temperature=1., dim=-1):
-    if temperature == 0:
-        return t.argmax(dim=dim)
-
-    return ((t / temperature) + gumbel_noise(t)).argmax(dim=dim)
-
-
-def softmax_sample(t, temperature, dim=-1):
-    if isinstance(temperature, type(None)):
-        return t.argmax(dim=dim)
-
-    m = Categorical(logits=t / temperature)
-    return m.sample()
-
-
-def ema_inplace(moving_avg, new, decay):
-    moving_avg.data.mul_(decay).add_(new, alpha=(1 - decay))
-
-
-def laplace_smoothing(x, n_categories, eps=1e-5):
-    return (x + eps) / (x.sum() + n_categories * eps)
-
-
 def sample_vectors(samples, num):
     num_samples, device = samples.shape[0], samples.device
 
@@ -93,7 +52,7 @@ def sample_vectors(samples, num):
 
 
 def kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
-    dim, dtype, device = samples.shape[-1], samples.dtype, samples.device
+    dim, dtype = samples.shape[-1], samples.dtype
 
     means = sample_vectors(samples, num_clusters)
 
@@ -331,7 +290,7 @@ class VectorQuantize(nn.Module):
         """
         x: (B, N, D)
         """
-        shape, device, heads, is_multiheaded, codebook_size = x.shape, x.device, self.heads, self.heads > 1, self.codebook_size
+        device, heads, is_multiheaded = x.device, self.heads, self.heads > 1
         need_transpose = not self.channel_last and not self.accept_image_fmap
         vq_loss = {'loss': torch.tensor([0.], device=device, requires_grad=self.training),
                    'commit_loss': 0.,
@@ -393,17 +352,3 @@ class VectorQuantize(nn.Module):
 
         return quantize, embed_ind, vq_loss, self._codebook.perplexity
 
-
-# if __name__ == '__main__':
-#     torch.manual_seed(0)
-
-#     B, N, D = 1024, 32, 128
-#     x = torch.rand((B, N, D))
-
-#     vq = VectorQuantize(dim=D, codebook_size=512)
-
-#     quantize, vq_ind, vq_loss, perplexity = vq(x)
-#     print(vq_ind[0])  # `vq_ind` is a set of codebook indices; e.g., 87 denotes the 88-th code in the codebook which can be accessed by `vq.codebook[87]`.
-
-#     # you can fetch the codebook weight by `vq.codebook`
-#     print('vq.codebook.shape:', vq.codebook.shape)  # (codebook_size, dim)
