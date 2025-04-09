@@ -168,3 +168,6 @@ misc/
 notebooks/
 data/
 nohup.out
+scripts/context_fid.py
+scripts/kovae_rebuttal.py
+configs/dataset/

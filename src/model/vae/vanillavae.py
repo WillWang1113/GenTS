@@ -16,7 +16,7 @@ class VanillaVAE(BaseModel):
         seq_dim: int,
         latent_dim: int = 128,
         hidden_size_list: list = [64, 128, 256],
-        beta: float = 1e-3,
+        w_kl: float = 1e-4,
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
         condition: str = None,
@@ -51,6 +51,8 @@ class VanillaVAE(BaseModel):
         # x = x
         latents = self.encoder(x)
         if (c is not None) and (self.cond_net is not None):
+            if self.condition == "impute":
+                c = x * c.int()
             c = c.to(x)
             cond_lats = self.cond_net(c)
             latents = latents + cond_lats
@@ -76,19 +78,20 @@ class VanillaVAE(BaseModel):
 
     def _get_loss(self, batch):
         x = batch["seq"]
+        batch_size = x.shape[0]
 
         # encode
         _, mu, logvar = self.encode(x, **batch)
         # print(latents.shape)
         # print(mu.shape)
         # print(logvar.shape)
-        
+
         # reparameterize
         z = self.reparam(mu, logvar)
 
         # prior z distribution
         z_prior, mu_prior, logvar_prior = self.sample_prior(n_sample=z.shape[0])
-        
+
         # decode
         x_hat = self.decode(z, **batch)
 
@@ -99,11 +102,12 @@ class VanillaVAE(BaseModel):
 
         # KL divergence loss
         kld_loss = kl_loss(mu, logvar, mu_prior, logvar_prior)
+        kld_loss = torch.sum(kld_loss) / batch_size
 
         loss_dict = dict(
             recon_loss=recons_loss,
-            kl_loss=self.hparams_initial.beta * kld_loss,
-            loss=recons_loss + self.hparams_initial.beta * kld_loss,
+            kl_loss=self.hparams_initial.w_kl * kld_loss,
+            loss=recons_loss + self.hparams_initial.w_kl * kld_loss,
         )
         return loss_dict, z_prior, mu_prior, logvar_prior, z, mu, logvar
 
@@ -114,21 +118,15 @@ class VanillaVAE(BaseModel):
 
     def training_step(self, batch, batch_idx):
         loss_dict = self._get_loss(batch)[0]
-        prefix = "train_"
-        loss_dict = {prefix + key: value for key, value in loss_dict.items()}
-        self.log_dict(
-            loss_dict, on_step=True, on_epoch=False, logger=True, prog_bar=True
-        )
-        return loss_dict[prefix + "loss"]
+        self.log_dict(loss_dict, on_epoch=True, logger=True)
+        return loss_dict
 
     def validation_step(self, batch, batch_idx):
         loss_dict = self._get_loss(batch)[0]
         prefix = "val_"
         loss_dict = {prefix + key: value for key, value in loss_dict.items()}
-        self.log_dict(
-            loss_dict, on_step=True, on_epoch=False, logger=True, prog_bar=True
-        )
-        return loss_dict[prefix + "loss"]
+        self.log_dict(loss_dict, on_epoch=True, logger=True)
+        return loss_dict
 
     def configure_optimizers(self):
         return torch.optim.Adam(
@@ -137,10 +135,10 @@ class VanillaVAE(BaseModel):
             weight_decay=self.hparams_initial.weight_decay,
         )
 
-
     def sample_prior(self, n_sample):
-        z_prior = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
+        z_prior = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(
+            self.device
+        )
         mu_prior = torch.zeros_like(z_prior)
         logvar_prior = torch.zeros_like(z_prior)
-        return z_prior, mu_prior, logvar_prior        
-        
+        return z_prior, mu_prior, logvar_prior

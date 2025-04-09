@@ -195,7 +195,7 @@ class VanillaDDPM(BaseModel):
         )
         return loss
 
-    def _sample_impl(self, n_sample, condition=None):
+    def _sample_impl(self, n_sample, condition=None, **kwargs):
         x = torch.randn(
             (n_sample, self.hparams_initial.seq_len, self.hparams_initial.seq_dim)
         ).type_as(next(iter(self.parameters())))

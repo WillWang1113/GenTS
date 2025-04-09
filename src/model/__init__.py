@@ -5,16 +5,17 @@ from .diffusion.fourierdiffusion import (
 )
 from .diffusion.vanilladiffusion import VanillaDDPM
 from .flow.vanillamaf import VanillaMAF
+from .gan.ast import AST
+from .gan.coscigan import COSCIGAN
+from .gan.gtgan import GTGAN
 from .gan.psagan import PSAGAN
 from .gan.rcgan import RCGAN
 from .gan.timegan import TimeGAN
-from .gan.coscigan import COSCIGAN
-from .gan.gtgan import GTGAN
 from .gan.vanillagan import VanillaGAN
-from .vae.timevae import TimeVAE
-from .vae.vanillavae import VanillaVAE
 from .vae.kovae import KoVAE
+from .vae.timevae import TimeVAE
 from .vae.timevqvae import TimeVQVAE
+from .vae.vanillavae import VanillaVAE
 
 __all__ = [
     "VanillaVAE",
@@ -22,6 +23,7 @@ __all__ = [
     "KoVAE",
     "TimeVQVAE",
     "VanillaGAN",
+    "AST",
     "COSCIGAN",
     "RCGAN",
     "TimeGAN",

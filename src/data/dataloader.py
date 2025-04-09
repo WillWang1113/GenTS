@@ -1,4 +1,5 @@
 import abc
+from ast import Slice
 import logging
 import os
 from pathlib import Path
@@ -16,9 +17,17 @@ class TSDataset(Dataset):
         cond: torch.Tensor = None,
         add_coeffs: bool = False,
         time_idx_last: bool = False,
+        channel_independent: bool = False,
     ):
         super().__init__()
+        assert data.dim() == 3
         self.data = data
+        self.data_shape = data.shape
+        self.sample_chnl = False
+        # if input TS is multivariate and treat channel independent, we need to sample a channel
+        if (self.data.shape[-1] > 1) and channel_independent:
+            self.sample_chnl = True
+
         if time_idx_last:
             self.data = self.data[:, :, :-1]
             self.time_idx = self.data[:, :, -1]
@@ -29,7 +38,6 @@ class TSDataset(Dataset):
         if cond is not None:
             self.cond_shape = tuple(cond.shape[1:])
         if add_coeffs:
-                
             from torchcde import natural_cubic_spline_coeffs
 
             t = torch.arange(data.shape[1]).float()
@@ -43,11 +51,18 @@ class TSDataset(Dataset):
             self.coeffs = None
 
     def __getitem__(self, index):
-        batch_dict = dict(seq=self.data[index], t=self.time_idx)
+        if self.sample_chnl:
+            chnl = torch.randint(0, self.data_shape[-1], (1,))
+            batch_dict = dict(seq=self.data[index, :, chnl], t=self.time_idx, chnl_id=chnl)
+        else:
+            chnl = ...
+            batch_dict = dict(seq=self.data[index, :, :], t=self.time_idx)
+            
+
         if self.cond_shape is not None:
-            batch_dict["c"] = self.cond[index]
+            batch_dict["c"] = self.cond[index, :, chnl]
         if self.coeffs is not None:
-            batch_dict["coeffs"] = self.coeffs[index]
+            batch_dict["coeffs"] = self.coeffs[index, :, chnl]
         return batch_dict
 
     def __len__(self):
@@ -127,6 +142,7 @@ class SynDataModule(LightningDataModule):
         num_samples: int = 1000,
         add_coeffs: bool = False,
         time_idx_last: bool = False,
+        channel_independent: bool = False,
         **kwargs,
     ):
         super().__init__()
@@ -144,6 +160,7 @@ class SynDataModule(LightningDataModule):
         self.condition = condition
         self.add_coeffs = add_coeffs
         self.time_idx_last = time_idx_last
+        self.channel_independent = channel_independent
 
         assert condition in [None, "predict", "impute", "class"]
         if condition == "predict":
@@ -212,7 +229,7 @@ class SynDataModule(LightningDataModule):
         elif self.condition == "impute":
             mask = torch.ones_like(data)
             if self.missing_type == "random":
-                mask = torch.rand_like(data) > self.missing_rate
+                mask = torch.rand_like(data) < self.missing_rate
             elif self.missing_type == "block":
                 delta = int(self.total_seq_len * self.missing_rate)
                 rand_start = torch.randint(
@@ -261,22 +278,30 @@ class SynDataModule(LightningDataModule):
                 train_cond = cond[starts["fit"] : ends["fit"]]
                 val_cond = cond[starts["validate"] : ends["validate"]]
 
-            self.train_ds = TSDataset(train_data, train_cond, self.add_coeffs, self.time_idx_last)
-            self.val_ds = TSDataset(val_data, val_cond, self.add_coeffs, self.time_idx_last)
+            self.train_ds = TSDataset(
+                train_data, train_cond, self.add_coeffs, self.time_idx_last, self.channel_independent
+            )
+            self.val_ds = TSDataset(
+                val_data, val_cond, self.add_coeffs, self.time_idx_last, self.channel_independent
+            )
 
         if stage == "predict":
             test_data = data[starts["test"] : ends["test"]]
             test_cond = None
             if add_cond:
                 test_cond = cond[starts["test"] : ends["test"]]
-            self.pred_ds = TSDataset(test_data, test_cond, self.add_coeffs, self.time_idx_last)
+            self.pred_ds = TSDataset(
+                test_data, test_cond, self.add_coeffs, self.time_idx_last, self.channel_independent
+            )
 
         if stage == "test":
             test_data = data[starts["test"] : ends["test"]]
             test_cond = None
             if add_cond:
                 test_cond = cond[starts["test"] : ends["test"]]
-            self.test_ds = TSDataset(test_data, test_cond, self.add_coeffs, self.time_idx_last)
+            self.test_ds = TSDataset(
+                test_data, test_cond, self.add_coeffs, self.time_idx_last, self.channel_independent
+            )
 
     def train_dataloader(self):
         return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=True)

@@ -875,7 +875,7 @@ class GTGAN(BaseModel):
         num_layers_d=2,
         num_layers_mlp=3,
         x_hidden=48,
-        last_activation_r="sigmoid",
+        last_activation_r="identity",
         last_activation_d="sigmoid",
         solver="sym12async",
         atol=1e-3,
