@@ -14,20 +14,21 @@ model_names = src.model.__all__
 # model_names = ['KoVAE', 'VanillaVAE', 'TimeVAE']
 # model_names = ["KoVAE", "VanillaVAE"]
 # model_names = ["AST", "VanillaVAE"]
-model_names = ['VanillaVAE','VanillaVAE']
+model_names = ['VanillaVAE', 'MrDiff']
+# model_names = ['MrDiff','VanillaVAE']
 # model_names = ['VanillaVAE', 'VanillaGAN', 'VanillaMAF', 'VanillaDDPM']
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
-# conditions = [
-#     "predict",
-#     None,
-# ]
+conditions = [
+    "predict",
+    None,
+]
 # conditions = [None, 'predict', ]
 # conditions = ['class', None]
 # conditions = [None, "class"]
 # conditions = [None, "impute"]
-conditions = ["impute", None]
+# conditions = ["impute", None]
 # conditions = [None, "predict", "impute"]
 batch_size = 128
 seq_len = 64
@@ -39,7 +40,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 300
+max_epochs = 3
 inference_batch_size = 4
 
 # hparams
@@ -158,12 +159,13 @@ for i in range(len(model_names)):
         elif c == "predict":
             # axs[i, j].plot(range(obs_len), batch["c"].squeeze()[0])
             axs[i, j].plot(range(0, obs_len + seq_len), batch["seq"].squeeze()[0])
-            axs[i, j].plot(range(obs_len, obs_len + seq_len), samples[0])
+            axs[i, j].plot(range(obs_len, obs_len + seq_len), samples[0].squeeze())
         else:
             axs[i, j].plot(range(seq_len), batch["seq"].squeeze()[0])
             axs[i, j].plot(range(seq_len), samples[0])
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
+        break
     
 fig.suptitle("Model Comparison")
 fig.tight_layout()

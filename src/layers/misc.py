@@ -5,6 +5,11 @@ from torch.distributions.categorical import Categorical
 import six
 # __all__ = ["sample_rademacher_like", "sample_gaussian_like", "exists", 'l2norm','default','noop','log','']
 
+def extract_into_tensor(a, t, x_shape):
+    b, *_ = t.shape
+    out = a.gather(-1, t)
+    return out.reshape(b, *((1,) * (len(x_shape) - 1)))
+
 
 def sample_standard_gaussian(mu, sigma):
     device = mu.device

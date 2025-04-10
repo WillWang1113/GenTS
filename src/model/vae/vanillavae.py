@@ -30,6 +30,7 @@ class VanillaVAE(BaseModel):
         self.hiddens.reverse()
         self.decoder = MLPDecoder(seq_len, seq_dim, latent_dim, self.hiddens, **kwargs)
         self.cond_net = None
+        self.condition=condition
         if condition:
             if condition == "predict":
                 assert kwargs.get("obs_len") is not None
@@ -77,7 +78,7 @@ class VanillaVAE(BaseModel):
             return mu
 
     def _get_loss(self, batch):
-        x = batch["seq"]
+        x = batch["seq"][:,-self.hparams_initial.seq_len:]
         batch_size = x.shape[0]
 
         # encode
@@ -111,6 +112,7 @@ class VanillaVAE(BaseModel):
         )
         return loss_dict, z_prior, mu_prior, logvar_prior, z, mu, logvar
 
+    # TODO: fcst sample times
     def _sample_impl(self, n_sample, condition=None, **kwargs):
         z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
         x_hat = self.decode(z, condition)
