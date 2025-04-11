@@ -14,7 +14,7 @@ model_names = src.model.__all__
 # model_names = ['KoVAE', 'VanillaVAE', 'TimeVAE']
 # model_names = ["KoVAE", "VanillaVAE"]
 # model_names = ["AST", "VanillaVAE"]
-model_names = ['VanillaVAE', 'MrDiff']
+model_names = ['TMDM', 'MrDiff']
 # model_names = ['MrDiff','VanillaVAE']
 # model_names = ['VanillaVAE', 'VanillaGAN', 'VanillaMAF', 'VanillaDDPM']
 # model_names = model_names[:2]
@@ -40,7 +40,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 3
+max_epochs = 20
 inference_batch_size = 4
 
 # hparams
@@ -52,6 +52,8 @@ hparams = dict(
     # latent_dim=20,
     hidden_size=64,
     w_kl=1e-4,
+    # n_diff_steps=200,
+    # d_ff=512,
     # depth_schedule=[5 * 25, 10 * 25, 15 * 25],
     # class_emb_dim=16,
     # lr={'G':1e-4, 'D':1e-4},
@@ -146,7 +148,7 @@ for i in range(len(model_names)):
         #     test_cond = batch["c"].unsqueeze(0)
         samples = (
             test_model.sample(
-                inference_batch_size, condition=batch.get("c", None), **batch
+                1, condition=batch.get("c", None), **batch
             )
             .squeeze(0)
             .cpu()
@@ -166,7 +168,7 @@ for i in range(len(model_names)):
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
         break
-    
+    break
 fig.suptitle("Model Comparison")
 fig.tight_layout()
 fig.savefig("test_model.png", bbox_inches="tight")

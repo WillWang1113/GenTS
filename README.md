@@ -18,7 +18,7 @@ SOTA TS models included are list as follows, where
 |        KoVAE        |    VAE     |           -           |        Syn        | :white_check_mark: |
 |     VanillaGAN      |    GAN     |           -           |        Syn        | :white_check_mark: |
 | TimeGAN$^\triangle$ |    GAN     |           -           |        Syn        | :white_check_mark: |
-|     AST$^\dag$      |    GAN     |  :white_check_mark:   |       Fcst        | :white_check_mark: |
+|     AST$^\dag$      |    GAN     |  :white_check_mark:   |    Fcst(point)    | :white_check_mark: |
 |      COSCI-GAN      |    GAN     |           -           |        Syn        | :white_check_mark: |
 |       GT-GAN        |    GAN     |           -           |        Syn        | :white_check_mark: |
 |       PSA-GAN       |    GAN     |           -           |        Syn        | :white_check_mark: |
@@ -39,8 +39,8 @@ SOTA TS models included are list as follows, where
 |        CSDI         | Diffusion  |  :white_check_mark:   |     Imp, Fcst     |   :white_circle:   |
 |        D3VAE        | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
 |       TSDiff        | Diffusion  | inference conditional | Syn, Fcst, Refine |   :white_circle:   |
-|        TMDM         | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
-|       mr-diff       | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|        TMDM         | Diffusion  |  :white_check_mark:   |       Fcst        | :white_check_mark: |
+|       mr-diff       | Diffusion  |  :white_check_mark:   |       Fcst        | :white_check_mark: |
 |       MG-TSD        | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
 |        RATD         | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
 |  FourierDiffusion   | Diffusion  |           -           |        Syn        | :white_check_mark: |

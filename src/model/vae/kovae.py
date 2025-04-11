@@ -334,13 +334,45 @@ class KoVAE(BaseModel):
         self.log_dict(
             {
                 "train_loss": losses[0],
-                "recon_loss": losses[1],
-                "kl_loss": losses[2],
-                "pred_loss": losses[3],
+                "train_recon_loss": losses[1],
+                "train_kl_loss": losses[2],
+                "train_pred_loss": losses[3],
             },
-            prog_bar=True,
+            prog_bar=True, on_epoch=True
         )
         return losses[0]
+
+    def validation_step(self, batch, batch_idx):
+        if self.missing_value:
+            # imputation task
+
+            x = batch["seq"]
+            cond = batch['c']
+            x = x.masked_fill(cond.bool(), float("nan"))
+            
+            x = batch['seq']
+            train_coeffs = batch['inter']  # .to(device)
+            time = torch.arange(x.shape[1]).to(x)
+            final_index = (torch.ones(x.shape[0]) * (self.seq_len-1)).to(x)
+            x_rec, Z_enc, Z_enc_prior = self(train_coeffs, time, final_index)
+
+        else:
+            X = batch["seq"]
+            x_rec, Z_enc, Z_enc_prior = self(X)
+
+        losses = self.loss(
+            X, x_rec, Z_enc, Z_enc_prior
+        )  # x_rec, x_pred_rec, z, z_pred_, Ct
+        self.log_dict(
+            {
+                "val_loss": losses[0],
+                "val_recon_loss": losses[1],
+                "val_kl_loss": losses[2],
+                "val_pred_loss": losses[3],
+            },
+            prog_bar=True, on_epoch=True
+        )
+        # return losses[0]
 
     def configure_optimizers(self):
         return torch.optim.Adam(

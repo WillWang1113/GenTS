@@ -1037,6 +1037,7 @@ class MrDiff(BaseModel):
         **kwargs,
     ):
         super(MrDiff, self).__init__()
+        self.condition='predict'
         self.save_hyperparameters()
         args = Namespace(**self.hparams_initial)
         args.seq_len = obs_len
@@ -1047,7 +1048,6 @@ class MrDiff(BaseModel):
         args.features = "S" if seq_dim == 1 else "M"
         args.ablation_study_F_type = "Linear"
         args.device = self.device
-        print(args)
         self.args = args
         # self.device = args.device
 
@@ -1474,6 +1474,16 @@ class MrDiff(BaseModel):
 
         self.log("train_loss", loss, prog_bar=True, logger=True)
         return loss
+    
+    def validation_step(self, batch, batch_idx):
+        batch_x = batch["c"]
+
+        batch_y = batch["seq"]
+
+        loss = self.train_forward(batch_x, None, batch_y, None)
+
+        self.log("val_loss", loss, prog_bar=True, logger=True)
+        # return loss
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
         self.args.sample_times = n_sample

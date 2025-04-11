@@ -1,9 +1,22 @@
+import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 import six
 # __all__ = ["sample_rademacher_like", "sample_gaussian_like", "exists", 'l2norm','default','noop','log','']
+
+
+def dict2namespace(config):
+    namespace = argparse.Namespace()
+    for key, value in config.items():
+        if isinstance(value, dict):
+            new_value = dict2namespace(value)
+        else:
+            new_value = value
+        setattr(namespace, key, new_value)
+    return namespace
+
 
 def extract_into_tensor(a, t, x_shape):
     b, *_ = t.shape

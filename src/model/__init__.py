@@ -5,6 +5,7 @@ from .diffusion.fourierdiffusion import (
 )
 from .diffusion.vanilladiffusion import VanillaDDPM
 from .diffusion.mrdiff import MrDiff
+from .diffusion.tmdm import TMDM
 from .flow.vanillamaf import VanillaMAF
 from .gan.ast import AST
 from .gan.coscigan import COSCIGAN
@@ -32,6 +33,7 @@ __all__ = [
     "PSAGAN",
     "VanillaMAF",
     "VanillaDDPM",
+    "TMDM",
     "MrDiff",
     "FourierDiffusion",
     "FourierDiffusionLSTM",

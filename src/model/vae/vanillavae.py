@@ -120,14 +120,16 @@ class VanillaVAE(BaseModel):
 
     def training_step(self, batch, batch_idx):
         loss_dict = self._get_loss(batch)[0]
-        self.log_dict(loss_dict, on_epoch=True, logger=True)
+        prefix = "train_"
+        loss_dict = {prefix + key: value for key, value in loss_dict.items()}
+        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
         return loss_dict
 
     def validation_step(self, batch, batch_idx):
         loss_dict = self._get_loss(batch)[0]
         prefix = "val_"
         loss_dict = {prefix + key: value for key, value in loss_dict.items()}
-        self.log_dict(loss_dict, on_epoch=True, logger=True)
+        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
         return loss_dict
 
     def configure_optimizers(self):
