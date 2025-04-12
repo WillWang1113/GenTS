@@ -397,22 +397,25 @@ def get_sde_loss_fn(
 
 
 class FourierDiffusion(BaseModel):
+    ALLOW_CONDITION = [None]
     scale_noise: bool = True
 
     def __init__(
         self,
-        seq_dim: int,
         seq_len: int,
+        seq_dim: int,
         noise_schedule: str = "vpsde",
         # fourier_noise_scaling: bool = True,
         hidden_size: int = 72,
         num_layers: int = 10,
-        n_head: int = 12,
+        n_head: int = 4,
         n_diff_steps: int = 1000,
         lr: float = 1e-4,
         likelihood_weighting: bool = False,
+        condition: str = None,
+        **kwargs
     ) -> None:
-        super().__init__()
+        super().__init__(seq_len, seq_dim, condition)
         # Hyperparameters
         self.max_len = seq_len
         self.n_channels = seq_dim
@@ -650,8 +653,8 @@ class FourierDiffusion(BaseModel):
 class FourierDiffusionMLP(FourierDiffusion):
     def __init__(
         self,
-        seq_dim: int,
         seq_len: int,
+        seq_dim: int,
         noise_schedule: str = "vpsde",
         # fourier_noise_scaling: bool = True,
         hidden_size: int = 72,
@@ -739,8 +742,8 @@ class FourierDiffusionMLP(FourierDiffusion):
 class FourierDiffusionLSTM(FourierDiffusion):
     def __init__(
         self,
-        seq_dim: int,
         seq_len: int,
+        seq_dim: int,
         noise_schedule: str = "vpsde",
         # fourier_noise_scaling: bool = True,
         hidden_size: int = 72,

@@ -711,6 +711,8 @@ class ProDiscriminator(nn.Module):
 
 
 class PSAGAN(BaseModel):
+    ALLOW_CONDITION = [None, "predict"]
+
     def __init__(
         self,
         seq_len,
@@ -718,7 +720,7 @@ class PSAGAN(BaseModel):
         time_feat_dim=0,
         hidden_size: int = 32,
         condition=None,
-        depth_schedule: list = None,
+        depth_schedule: list = [5, 10, 15],
         epoch_fade_in: int = 2,
         lr: dict = {"G": 1e-4, "D": 1e-4},
         weight_decay: float = 1e-5,
@@ -726,8 +728,7 @@ class PSAGAN(BaseModel):
         # gamma: float = 1.0,
         **kwargs,
     ):
-        super().__init__()
-        assert condition in [None, "predict"]
+        super().__init__(seq_len, seq_dim, condition)
         if condition == "predict":
             context_len = kwargs.get("obs_len", None)
             assert context_len is not None
@@ -812,7 +813,7 @@ class PSAGAN(BaseModel):
         self.residual = self._residual()
 
     def training_step(self, batch, batch_idx):
-        x = batch["seq"].permute(0, 2, 1)
+        x = batch["seq"].permute(0, 2, 1)[..., -self.seq_len :]
         c = batch.get("c", None)
         # if c is not None:
         #     c = c.permute(0, 2, 1)
@@ -910,20 +911,33 @@ class PSAGAN(BaseModel):
             )
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
-        noise = torch.randn((n_sample, self.seq_dim, self.seq_len)).to(self.device)
-        if (self.time_feat_dim > 0) and (kwargs.get("time_feat", None) is not None):
-            time_feat = kwargs.get("time_feat")
-        else:
-            time_feat = None
+        time_feat = kwargs.get("time_feat", None)
 
-        if (self.context_len > 0) and condition is not None:
-            context = condition
-        else:
-            context = None
+        if ((self.time_feat_dim > 0) and (time_feat is None)) or (
+            (self.time_feat_dim == 0) and (time_feat is not None)
+        ):
+            raise ValueError(
+                "Given time feats but model does not use them or vice versa"
+            )
 
-        return self.generator(x=noise, time_feat=time_feat, context=context).permute(
-            0, 2, 1
-        )
+        # Unconditional
+        if self.condition is None:
+            noise = torch.randn((n_sample, self.seq_dim, self.seq_len)).to(self.device)
+            return self.generator(x=noise, time_feat=time_feat, context=None).permute(
+                0, 2, 1
+            )
+        else:
+            # Forecasting
+            all_samples = []
+            for i in range(n_sample):
+                noise = torch.randn(
+                    (condition.shape[0], self.seq_dim, self.seq_len)
+                ).to(self.device)
+                sample = self.generator(
+                    x=noise, time_feat=time_feat, context=condition
+                ).permute(0, 2, 1)
+                all_samples.append(sample)
+            return torch.stack(all_samples, dim=-1)
 
     def configure_optimizers(self):
         g_optim = torch.optim.Adam(

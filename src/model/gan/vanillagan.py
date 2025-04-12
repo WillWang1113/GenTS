@@ -76,6 +76,7 @@ class Discriminator(nn.Module):
 
 
 class VanillaGAN(BaseModel):
+    ALLOW_CONDITION = [None, "predict", "impute"]
     def __init__(
         self,
         seq_len: int,
@@ -90,7 +91,7 @@ class VanillaGAN(BaseModel):
         condition: str = None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(seq_len, seq_dim, condition)
         self.save_hyperparameters()
         self.automatic_optimization = False
         print(self.hparams)
@@ -168,7 +169,7 @@ class VanillaGAN(BaseModel):
         return [g_optim, d_optim], []
 
     # @torch.no_grad()
-    def _sample_impl(self, n_sample, condition=None):
+    def _sample_impl(self, n_sample, condition=None, **kwargs):
         z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
         samples = self.generator(z, condition)
         return samples

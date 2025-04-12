@@ -15,12 +15,12 @@ SOTA TS models included are list as follows, where
 |     VanillaVAE      |    VAE     |           -           |        Syn        | :white_check_mark: |
 |       TimeVAE       |    VAE     |           -           |        Syn        | :white_check_mark: |
 |      TimeVQVAE      |    VAE     |      class label      |        Syn        | :white_check_mark: |
-|        KoVAE        |    VAE     |           -           |        Syn        | :white_check_mark: |
+|        KoVAE        |    VAE     |           -           |    Syn(irreg)     | :white_check_mark: |
 |     VanillaGAN      |    GAN     |           -           |        Syn        | :white_check_mark: |
 | TimeGAN$^\triangle$ |    GAN     |           -           |        Syn        | :white_check_mark: |
 |     AST$^\dag$      |    GAN     |  :white_check_mark:   |    Fcst(point)    | :white_check_mark: |
 |      COSCI-GAN      |    GAN     |           -           |        Syn        | :white_check_mark: |
-|       GT-GAN        |    GAN     |           -           |        Syn        | :white_check_mark: |
+|       GT-GAN        |    GAN     |           -           |    Syn (irreg)    | :white_check_mark: |
 |       PSA-GAN       |    GAN     |           -           |        Syn        | :white_check_mark: |
 |        RCGAN        |    GAN     |           -           |        Syn        | :white_check_mark: |
 |     VanillaMAF      |    Flow    |           -           |        Syn        | :white_check_mark: |

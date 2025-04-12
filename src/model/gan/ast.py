@@ -911,6 +911,7 @@ def loss_quantile(mu: Variable, labels: Variable, quantile: Variable):
 
 
 class AST(BaseModel):
+    ALLOW_CONDITION = ['predict']
     def __init__(
         self,
         seq_len,
@@ -930,8 +931,8 @@ class AST(BaseModel):
         n_classes=1,
         **kwargs,
     ):
-        super().__init__()
-        assert condition == "predict"
+        super().__init__(seq_len, seq_dim, condition)
+        # assert condition == "predict"
         assert seq_dim == 1
         assert attn_type in ["softmax", "sparsemax", "entmax15"]
         self.automatic_optimization = False
@@ -951,7 +952,6 @@ class AST(BaseModel):
             embedding_dim=class_emb_dim,
             # **self.hparams_initial,
         )
-        print(params)
         self.params = params
         self.seq_dim = seq_dim
         self.num_covariates = covariate_dim

@@ -10,6 +10,10 @@ from src.utils.losses import kl_loss
 
 
 class VanillaVAE(BaseModel):
+    """Vanilla Variational Autoencoder (VAE) model with MLP encoder and decoder."""
+    
+    ALLOW_CONDITION = [None, "predict", "impute", "class"]
+    
     def __init__(
         self,
         seq_len: int,
@@ -22,7 +26,19 @@ class VanillaVAE(BaseModel):
         condition: str = None,
         **kwargs,
     ):
-        super().__init__()
+        """
+        Args:
+            seq_len (int): Target sequence length
+            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+            latent_dim (int, optional): Latent dimension for z. Defaults to 128.
+            hidden_size_list (list, optional): Hidden size for encoder and decoder. Defaults to [64, 128, 256].
+            w_kl (float, optional): Loss weight of KL div. Defaults to 1e-4.
+            lr (float, optional): Learning rate. Defaults to 1e-3.
+            weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+            condition (str, optional): Given conditions. Defaults to None.
+        """
+        
+        super().__init__(seq_len, seq_dim, condition)
         self.save_hyperparameters()
         # print(self.hparams)
         self.hiddens = hidden_size_list.copy()
@@ -114,16 +130,25 @@ class VanillaVAE(BaseModel):
 
     # TODO: fcst sample times
     def _sample_impl(self, n_sample, condition=None, **kwargs):
-        z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
-        x_hat = self.decode(z, condition)
-        return x_hat
+        if self.condition != 'predict':
+            z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
+            all_samples = self.decode(z, condition)
+        else:
+            all_samples = []
+            for i in range(n_sample):
+                z = torch.randn((condition.shape[0], self.hparams_initial.latent_dim)).to(self.device)
+                x_hat = self.decode(z, condition)
+                all_samples.append(x_hat)
+            all_samples = torch.stack(all_samples, dim=-1)
+                
+        return all_samples
 
     def training_step(self, batch, batch_idx):
         loss_dict = self._get_loss(batch)[0]
         prefix = "train_"
         loss_dict = {prefix + key: value for key, value in loss_dict.items()}
         self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
-        return loss_dict
+        return loss_dict['train_loss']
 
     def validation_step(self, batch, batch_idx):
         loss_dict = self._get_loss(batch)[0]

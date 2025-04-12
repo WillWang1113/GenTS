@@ -113,6 +113,7 @@ class Generator(nn.Module):
 
 
 class COSCIGAN(BaseModel):
+    ALLOW_CONDITION = [None]
     def __init__(
         self,
         seq_len,
@@ -122,9 +123,10 @@ class COSCIGAN(BaseModel):
         central_disc_type="MLP",
         gamma=5.0,
         lr={"G": 1e-3, "D": 1e-3, "CD": 1e-4},
+        condition=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
         assert DG_type in ["MLP", "LSTM"]
         assert central_disc_type in ["MLP", "LSTM"]
         self.save_hyperparameters()

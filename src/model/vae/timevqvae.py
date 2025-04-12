@@ -59,7 +59,8 @@ class TimeVQVAE(BaseModel):
         condition=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(seq_len, seq_dim, condition)
+
         self.save_hyperparameters()
         self.automatic_optimization = False
         assert condition in [None, "class"]

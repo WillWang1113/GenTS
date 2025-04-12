@@ -115,6 +115,7 @@ class Denoiser(nn.Module):
 
 
 class VanillaDDPM(BaseModel):
+    ALLOW_CONDITION = [None, "predict", "impute"]
     """VanillaDDPM model with MLP backbone.
 
     Args:
@@ -135,7 +136,7 @@ class VanillaDDPM(BaseModel):
         condition: str = None,
         **kwargs,
     ) -> None:
-        super().__init__()
+        super().__init__(seq_len, seq_dim, condition)
         self.save_hyperparameters()
         # self.backbone = DiT(**self.hparams)
         self.backbone = Denoiser(**self.hparams)

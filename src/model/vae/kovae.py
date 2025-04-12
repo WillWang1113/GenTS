@@ -117,6 +117,8 @@ class VKDecoder(nn.Module):
 
 
 class KoVAE(BaseModel):
+    # 'impute' condition for input missing data
+    ALLOW_CONDITION = [None, 'impute']
     def __init__(
         self,
         seq_len: int,
@@ -135,7 +137,8 @@ class KoVAE(BaseModel):
         condition: str = None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(seq_len, seq_dim, condition)
+        
         self.save_hyperparameters()
         self.koopman_nstep = koopman_nstep
         self.latent_dim = latent_dim  # latent
@@ -222,7 +225,7 @@ class KoVAE(BaseModel):
 
         batch_size = x.size(0)
 
-        z_post_mean, z_post_logvar, z_post = (
+        z_post_mean, z_post_logvar, _ = (
             Z_enc["mean"],
             Z_enc["logvar"],
             Z_enc["sample"],

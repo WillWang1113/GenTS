@@ -866,6 +866,8 @@ def compute_ll(log_det, base_variables, vars, masks):
 
 
 class GTGAN(BaseModel):
+    # 'impute' condition for input missing data
+    ALLOW_CONDITION = [None, 'impute']
     def __init__(
         self,
         seq_len,
@@ -908,9 +910,11 @@ class GTGAN(BaseModel):
         gamma=1.0,
         log_time=2,
         lr={"ER": 1e-3, "G": 1e-3, "D": 1e-3},
+        condition=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
+        
         self.save_hyperparameters()
         self.automatic_optimization = False
         self.args = Namespace(
@@ -961,9 +965,9 @@ class GTGAN(BaseModel):
         # x = batch['data'].to(device)
         # train_coeffs = batch['inter']#.to(device)
         # original_x = batch['original_data'].to(device)
-        assert kwargs.get("t", None) is not None
-        assert kwargs.get("t").shape[0] == n_sample
         obs = kwargs.get("t")
+        assert obs is not None
+        assert obs.shape[0] == n_sample
         # x = x[:, :, :-1]
         z = torch.randn(n_sample, self.hparams.seq_len, self.args.effective_shape).to(
             self.device
@@ -977,7 +981,7 @@ class GTGAN(BaseModel):
         times = time
         times = times.unsqueeze(0)
         times = times.unsqueeze(2)
-        times = times.repeat(obs.shape[0], 1, 1)
+        times = times.repeat(n_sample, 1, 1)
         h_hat = run_latent_ctfp_model5_2(
             self.args, self.generator, z, times, self.device, z=True
         )
@@ -1008,7 +1012,7 @@ class GTGAN(BaseModel):
         max_steps = self.trainer.max_epochs
         x = batch["seq"]
         cond = batch.get("c", None)
-        if cond is not None:
+        if (cond is not None) and (self.condition == 'impute'):
             x = x.masked_fill(cond.bool(), float("nan"))
         batch_size = x.shape[0]
         t = batch["t"]

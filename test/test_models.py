@@ -12,21 +12,21 @@ model_names = src.model.__all__
 # model_names = ["PSAGAN", "VanillaVAE"]
 # model_names = ['COSCIGAN', 'RCGAN']
 # model_names = ['KoVAE', 'VanillaVAE', 'TimeVAE']
-# model_names = ["KoVAE", "VanillaVAE"]
+model_names = ["KoVAE", "GTGAN"]
 # model_names = ["AST", "VanillaVAE"]
-model_names = ['TMDM', 'MrDiff']
+# model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
 # model_names = ['VanillaVAE', 'VanillaGAN', 'VanillaMAF', 'VanillaDDPM']
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
-conditions = [
-    "predict",
-    None,
-]
-# conditions = [None, 'predict', ]
+# conditions = [
+#     "predict",
+#     None,
+# ]
+# conditions = ["predict", None]
 # conditions = ['class', None]
-# conditions = [None, "class"]
+conditions = [None, "class"]
 # conditions = [None, "impute"]
 # conditions = ["impute", None]
 # conditions = [None, "predict", "impute"]
@@ -40,7 +40,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 20
+max_epochs = 30
 inference_batch_size = 4
 
 # hparams
@@ -48,23 +48,23 @@ hparams = dict(
     seq_len=seq_len,
     seq_dim=2,
     covariate_dim=0,
-    n_classes=2,
+    # n_classes=2,
     # latent_dim=20,
-    hidden_size=64,
-    w_kl=1e-4,
+    hidden_size=128,
+    # w_kl=1e-4,
     # n_diff_steps=200,
     # d_ff=512,
-    # depth_schedule=[5 * 25, 10 * 25, 15 * 25],
+    depth_schedule=[20, 40, 60],
     # class_emb_dim=16,
     # lr={'G':1e-4, 'D':1e-4},
     # lr=1e-3,
     # beta=1e-1,
     # n_critic=1,
     # epoch_fade_in=2 * 25,
-    # ks_conv=7,
-    # ks_value=1,
-    # ks_key=1,
-    # ks_query=1,
+    ks_conv=7,
+    ks_value=1,
+    ks_key=1,
+    ks_query=1,
     # key_features=1,
     # value_features=1,
     # gamma = 1.0,
@@ -148,7 +148,7 @@ for i in range(len(model_names)):
         #     test_cond = batch["c"].unsqueeze(0)
         samples = (
             test_model.sample(
-                1, condition=batch.get("c", None), **batch
+                inference_batch_size, condition=batch.get("c", None), **batch
             )
             .squeeze(0)
             .cpu()
@@ -160,15 +160,21 @@ for i in range(len(model_names)):
             axs[i, j].plot(range(seq_len), samples[0])
         elif c == "predict":
             # axs[i, j].plot(range(obs_len), batch["c"].squeeze()[0])
+            print(batch["seq"].shape)
             axs[i, j].plot(range(0, obs_len + seq_len), batch["seq"].squeeze()[0])
-            axs[i, j].plot(range(obs_len, obs_len + seq_len), samples[0].squeeze())
+            for ii in range(samples.shape[2]):
+                axs[i, j].plot(
+                    range(obs_len, obs_len + seq_len),
+                    samples[0, :, ii].squeeze(),
+                    c=f"C{ii}",
+                    alpha=0.5,
+                )
         else:
             axs[i, j].plot(range(seq_len), batch["seq"].squeeze()[0])
             axs[i, j].plot(range(seq_len), samples[0])
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
         break
-    break
 fig.suptitle("Model Comparison")
 fig.tight_layout()
 fig.savefig("test_model.png", bbox_inches="tight")

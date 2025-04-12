@@ -145,6 +145,7 @@ class TrendSeasonalDecoder(nn.Module):
 
 
 class TimeVAE(VanillaVAE):
+    ALLOW_CONDITION = [None]
     def __init__(
         self,
         seq_len: int,

@@ -377,6 +377,7 @@ class Model(nn.Module):
 
 
 class TMDM(BaseModel):
+    ALLOW_CONDITION = ['predict']
     def __init__(
         self,
         seq_len,
@@ -408,9 +409,12 @@ class TMDM(BaseModel):
         cat_y_pred=True,
         lr=1e-3,
         weight_decay=0.0,
+        condition='predict',
         **kwargs,
     ):
-        super().__init__()
+
+
+        super().__init__(seq_len, seq_dim, condition)
         self.save_hyperparameters()
         self.condition = 'predict'
         args = Namespace(**self.hparams_initial)
@@ -521,8 +525,12 @@ class TMDM(BaseModel):
         batch_y = batch["seq"][:, self.args.obs_len - self.args.label_len :]
 
         # ! add time features or not?
-        batch_x_mark = batch.get("obs_mark", torch.zeros_like(batch_x))
-        batch_y_mark = batch.get("seq_mark", torch.zeros_like(batch_y))
+        batch_x_mark = batch.get("obs_mark", None)
+        batch_y_mark = batch.get("seq_mark", None)
+            
+        if self.args.emb_add_temporal:
+            assert batch_x_mark is not None
+            assert batch_y_mark is not None
 
         # decoder input
         dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len :, :])

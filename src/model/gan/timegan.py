@@ -7,6 +7,7 @@ from src.layers.rnn import RNNLayer
 
 
 class TimeGAN(BaseModel):
+    ALLOW_CONDITION = [None]
     def __init__(
         self,
         seq_len: int,
@@ -20,9 +21,10 @@ class TimeGAN(BaseModel):
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
         rnn_type: str = "gru",
+        condition: str = None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(seq_len, seq_dim, condition)
         self.save_hyperparameters()
         self.automatic_optimization = False
 
@@ -234,7 +236,7 @@ class TimeGAN(BaseModel):
     # TODO: ES for GAN?
     def validation_step(self, batch, batch_idx): ...
 
-    def _sample_impl(self, n_sample: int, condition: torch.Tensor = None):
+    def _sample_impl(self, n_sample: int, condition: torch.Tensor = None, **kwargs):
         z = torch.rand(
             (n_sample, self.hparams_initial.seq_len, self.hparams_initial.seq_dim)
         ).to(next(self.parameters()))

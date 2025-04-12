@@ -1000,9 +1000,7 @@ class BaseMapping(nn.Module):
 
 
 class MrDiff(BaseModel):
-    """
-    Decomposition-Linear
-    """
+    ALLOW_CONDITION = ['predict']
 
     def __init__(
         self,
@@ -1034,9 +1032,10 @@ class MrDiff(BaseModel):
         our_ddpm_clip=100,
         parameterization="x_start",
         beta_dist_alpha=-1,
+        condition='predict',
         **kwargs,
     ):
-        super(MrDiff, self).__init__()
+        super(MrDiff, self).__init__(seq_len, seq_dim, condition)
         self.condition='predict'
         self.save_hyperparameters()
         args = Namespace(**self.hparams_initial)

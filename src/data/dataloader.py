@@ -4,6 +4,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Optional
+from einops import repeat
 from matplotlib import pyplot as plt
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -11,6 +12,19 @@ from lightning import LightningDataModule
 
 
 class TSDataset(Dataset):
+    """Time series dataset. A batch conatins:
+        
+    
+
+    A batch 
+        "seq": (B, T, C) Target time series window
+        "t": (B, T) Time index at each time step in the window. 
+        Could be either the last axis of input data, or default [0,1,...,T-1]
+        "c": (B, T/OBS, C) Condition. Empty if unconditional.
+        "coeffs": (B, T, C) Coefficients of cubic spline of NCDE-related models. 
+        Empty if add_coeffs is False.
+        "chnl_id": (1,) channel id if channel_independent is True
+    """
     def __init__(
         self,
         data: torch.Tensor,
@@ -33,6 +47,8 @@ class TSDataset(Dataset):
             self.time_idx = self.data[:, :, -1]
         else:
             self.time_idx = torch.arange(data.shape[1]).float()
+            self.time_idx = repeat(self.time_idx, "t -> b t", b=data.shape[0])
+
         self.cond = cond
         self.cond_shape = None
         if cond is not None:
@@ -53,14 +69,15 @@ class TSDataset(Dataset):
     def __getitem__(self, index):
         if self.sample_chnl:
             chnl = torch.randint(0, self.data_shape[-1], (1,))
-            batch_dict = dict(seq=self.data[index, :, chnl], t=self.time_idx, chnl_id=chnl)
+            batch_dict = dict(
+                seq=self.data[index, :, chnl], t=self.time_idx[index], chnl_id=chnl
+            )
         else:
             chnl = ...
-            batch_dict = dict(seq=self.data[index, :, :], t=self.time_idx)
-            
+            batch_dict = dict(seq=self.data[index, :, :], t=self.time_idx[index])
 
         if self.cond_shape is not None:
-            batch_dict["c"] = self.cond[index, :, chnl]
+            batch_dict["c"] = self.cond[index, ..., chnl]
         if self.coeffs is not None:
             batch_dict["coeffs"] = self.coeffs[index, :, chnl]
         return batch_dict
@@ -279,10 +296,18 @@ class SynDataModule(LightningDataModule):
                 val_cond = cond[starts["validate"] : ends["validate"]]
 
             self.train_ds = TSDataset(
-                train_data, train_cond, self.add_coeffs, self.time_idx_last, self.channel_independent
+                train_data,
+                train_cond,
+                self.add_coeffs,
+                self.time_idx_last,
+                self.channel_independent,
             )
             self.val_ds = TSDataset(
-                val_data, val_cond, self.add_coeffs, self.time_idx_last, self.channel_independent
+                val_data,
+                val_cond,
+                self.add_coeffs,
+                self.time_idx_last,
+                self.channel_independent,
             )
 
         if stage == "predict":
@@ -291,7 +316,11 @@ class SynDataModule(LightningDataModule):
             if add_cond:
                 test_cond = cond[starts["test"] : ends["test"]]
             self.pred_ds = TSDataset(
-                test_data, test_cond, self.add_coeffs, self.time_idx_last, self.channel_independent
+                test_data,
+                test_cond,
+                self.add_coeffs,
+                self.time_idx_last,
+                self.channel_independent,
             )
 
         if stage == "test":
@@ -300,7 +329,11 @@ class SynDataModule(LightningDataModule):
             if add_cond:
                 test_cond = cond[starts["test"] : ends["test"]]
             self.test_ds = TSDataset(
-                test_data, test_cond, self.add_coeffs, self.time_idx_last, self.channel_independent
+                test_data,
+                test_cond,
+                self.add_coeffs,
+                self.time_idx_last,
+                self.channel_independent,
             )
 
     def train_dataloader(self):

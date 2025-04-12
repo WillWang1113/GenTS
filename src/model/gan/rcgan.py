@@ -60,8 +60,8 @@ class Discriminator(nn.Module):
         return self.enc(z)
 
 
-# TODO: RCGAN train
 class RCGAN(BaseModel):
+    ALLOW_CONDITION = [None, "class"]
     def __init__(
         self,
         seq_len: int,
@@ -77,7 +77,7 @@ class RCGAN(BaseModel):
         condition: str = None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(seq_len, seq_dim, condition)
         self.save_hyperparameters()
         self.automatic_optimization = False
         assert condition in [None, "class"]
