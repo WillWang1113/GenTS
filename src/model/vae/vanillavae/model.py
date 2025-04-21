@@ -68,7 +68,7 @@ class VanillaVAE(BaseModel):
         latents = self.encoder(x)
         if (c is not None) and (self.cond_net is not None):
             if self.condition == "impute":
-                c = x * c.int()
+                c = x * (~c).int()
             c = c.to(x)
             cond_lats = self.cond_net(c)
             latents = latents + cond_lats
@@ -78,6 +78,8 @@ class VanillaVAE(BaseModel):
 
     def decode(self, z: torch.Tensor, c: torch.Tensor = None, **kwargs):
         if (c is not None) and (self.cond_net is not None):
+            if self.condition == "impute":
+                c = kwargs['seq'] * (~c).int()
             c = c.to(z)
             cond_lats = self.cond_net(c)
             z = z + cond_lats
@@ -128,16 +130,22 @@ class VanillaVAE(BaseModel):
         return loss_dict, z_prior, mu_prior, logvar_prior, z, mu, logvar
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
+        print(self.condition)
         if self.condition is None:
             z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
             all_samples = self.decode(z, condition)
         else:
             all_samples = []
+            # if self.condition == "impute":
+            #     c = kwargs['seq'] * (~condition).int()
+            # else:
+            #     c = condition
+                
             for i in range(n_sample):
                 z = torch.randn(
                     (condition.shape[0], self.hparams_initial.latent_dim)
                 ).to(self.device)
-                x_hat = self.decode(z, condition)
+                x_hat = self.decode(z, **kwargs)
                 all_samples.append(x_hat)
             all_samples = torch.stack(all_samples, dim=-1)
 

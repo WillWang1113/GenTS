@@ -7,6 +7,7 @@ from .fourierdiffusion.model import (
 from .mrdiff.model import MrDiff
 from .tmdm.model import TMDM
 from .diffusionts.model import DiffusionTS
+from .csdi.model import CSDI
 
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "FourierDiffusionMLP",
     "MrDiff",
     "TMDM",
-    "DiffusionTS"
+    "DiffusionTS",
+    "CSDI"
 ]

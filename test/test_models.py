@@ -3,6 +3,8 @@ from lightning import Trainer, seed_everything
 import src.model
 from src.data.dataloader import SynDataModule
 import matplotlib.pyplot as plt
+import torch
+
 
 seed_everything(3407, workers=True)
 
@@ -13,7 +15,7 @@ model_names = src.model.__all__
 # model_names = ['COSCIGAN', 'RCGAN']
 # model_names = ['KoVAE', 'VanillaVAE', 'TimeVAE']
 # model_names = ["KoVAE", "GTGAN"]
-model_names = ["DiffusionTS", "VanillaVAE"]
+model_names = ["CSDI", "VanillaVAE"]
 # model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
 # model_names = ['VanillaVAE', 'VanillaGAN', 'VanillaMAF', 'VanillaDDPM']
@@ -24,7 +26,7 @@ model_names = ["DiffusionTS", "VanillaVAE"]
 #     "predict",
 #     None,
 # ]
-conditions = ["predict", 'impute']
+conditions = ["impute", "predict"]
 # conditions = ['class', None]
 # conditions = [None, "class"]
 # conditions = [None, "impute"]
@@ -40,7 +42,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 10
+max_epochs = 50
 inference_batch_size = 4
 
 # hparams
@@ -111,7 +113,7 @@ for i in range(len(model_names)):
                 inference_batch_size=inference_batch_size,
                 channel_independent=channel_independent,
             )
-            cond_hparams = dict(**hparams, condixtion=c)
+            cond_hparams = dict(**hparams, condition=c)
         elif c == "class":
             dm = SynDataModule(
                 seq_len,
@@ -135,7 +137,7 @@ for i in range(len(model_names)):
 
         test_model_cls = getattr(src.model, model_names[i])
         test_model = test_model_cls(**cond_hparams)
-        trainer = Trainer(devices=[1], max_epochs=max_epochs, log_every_n_steps=20)
+        trainer = Trainer(devices=[0], max_epochs=max_epochs, log_every_n_steps=20)
         trainer.fit(test_model, dm)
         dm.setup("test")
 
@@ -152,13 +154,34 @@ for i in range(len(model_names)):
             )
             .squeeze(0)
             .cpu()
-            .numpy()
         )
         print(samples.shape)
+
         if c == "impute":
-            batch["seq"] = batch["seq"].masked_fill(batch["c"].bool(), float("nan"))
-            axs[i, j].plot(range(seq_len), batch["seq"].squeeze()[0])
-            axs[i, j].plot(range(seq_len), samples[0])
+            obs = batch["seq"].masked_fill(batch["c"].bool(), float("nan"))
+            real = batch["seq"].masked_fill(~batch["c"].bool(), float("nan"))
+            timeaxis = torch.arange(seq_len)
+
+            axs[i, j].plot(timeaxis, batch["seq"].squeeze()[0])
+            axs[i, j].scatter(timeaxis, real.squeeze()[0, ..., 0], c="C0")
+            axs[i, j].scatter(timeaxis, real.squeeze()[0, ..., 1], c="C1")
+
+            if samples.ndim == 4:
+                for iii in range(samples.shape[0]):
+                    samples[..., iii] = samples[..., iii].masked_fill(
+                        ~batch["c"].bool(), float("nan")
+                    )
+
+                for ii in range(samples.shape[2]):
+
+                    axs[i, j].scatter(
+                        timeaxis,
+                        samples[0,:,ii].squeeze().mean(dim=-1),
+                        c=f"C{ii + 2}",
+                        alpha=0.5,
+                    )
+            else:
+                axs[i, j].plot(range(seq_len), samples[0])
         elif c == "predict":
             # axs[i, j].plot(range(obs_len), batch["c"].squeeze()[0])
             print(batch["seq"].shape)
@@ -175,6 +198,8 @@ for i in range(len(model_names)):
             axs[i, j].plot(range(seq_len), samples[0])
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
+        break
+    break
 fig.suptitle("Model Comparison")
 fig.tight_layout()
 fig.savefig("test_model.png", bbox_inches="tight")
