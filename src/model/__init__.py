@@ -1,23 +1,14 @@
-from .diffusion.fourierdiffusion import (
+from .diffusion import (
+    VanillaDDPM,
     FourierDiffusion,
     FourierDiffusionLSTM,
     FourierDiffusionMLP,
+    MrDiff,
+    TMDM,
+    DiffusionTS,
 )
-from .diffusion.vanilladiffusion import VanillaDDPM
-from .diffusion.mrdiff import MrDiff
-from .diffusion.tmdm import TMDM
-from .flow.vanillamaf import VanillaMAF
-from .gan.ast import AST
-from .gan.coscigan import COSCIGAN
-from .gan.gtgan import GTGAN
-from .gan.psagan import PSAGAN
-from .gan.rcgan import RCGAN
-from .gan.timegan import TimeGAN
-from .gan.vanillagan import VanillaGAN
-from .vae.kovae import KoVAE
-from .vae.timevae import TimeVAE
-from .vae.timevqvae import TimeVQVAE
-from .vae.vanillavae import VanillaVAE
+from .vae import VanillaVAE, TimeVAE, TimeVQVAE, KoVAE
+from .gan import TimeGAN, VanillaGAN, GTGAN, COSCIGAN, AST, PSAGAN, RCGAN
 
 __all__ = [
     "VanillaVAE",
@@ -25,17 +16,17 @@ __all__ = [
     "KoVAE",
     "TimeVQVAE",
     "VanillaGAN",
-    "AST",
-    "COSCIGAN",
-    "RCGAN",
     "TimeGAN",
-    "GTGAN",
+    "RCGAN",
     "PSAGAN",
-    "VanillaMAF",
+    "COSCIGAN",
+    "GTGAN",
+    "AST",
     "VanillaDDPM",
-    "TMDM",
-    "MrDiff",
     "FourierDiffusion",
     "FourierDiffusionLSTM",
     "FourierDiffusionMLP",
+    "MrDiff",
+    "TMDM",
+    "DiffusionTS",
 ]

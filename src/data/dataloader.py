@@ -13,18 +13,19 @@ from lightning import LightningDataModule
 
 class TSDataset(Dataset):
     """Time series dataset. A batch conatins:
-        
-    
 
-    A batch 
+
+
+    A batch
         "seq": (B, T, C) Target time series window
-        "t": (B, T) Time index at each time step in the window. 
+        "t": (B, T) Time index at each time step in the window.
         Could be either the last axis of input data, or default [0,1,...,T-1]
         "c": (B, T/OBS, C) Condition. Empty if unconditional.
-        "coeffs": (B, T, C) Coefficients of cubic spline of NCDE-related models. 
+        "coeffs": (B, T, C) Coefficients of cubic spline of NCDE-related models.
         Empty if add_coeffs is False.
         "chnl_id": (1,) channel id if channel_independent is True
     """
+
     def __init__(
         self,
         data: torch.Tensor,
@@ -195,15 +196,20 @@ class SynDataModule(LightningDataModule):
         )
 
     def prepare_data(self) -> None:
-        if (not (self.data_dir / "data.pt").exists()) or (
-            not (self.data_dir / f"{self.condition}_cond.pt").exists()
+        if (not (self.data_dir / f"data_tsl{self.total_seq_len}.pt").exists()) or (
+            not (
+                self.data_dir / f"{self.condition}_cond_tsl{self.total_seq_len}.pt"
+            ).exists()
         ):
             logging.info(f"Downloading {self.dataset_name} dataset in {self.data_dir}.")
             os.makedirs(self.data_dir, exist_ok=True)
             data, cond = self.get_data()
-            torch.save(data, self.data_dir / "data.pt")
+            torch.save(data, self.data_dir / f"data_tsl{self.total_seq_len}.pt")
             if cond is not None:
-                torch.save(cond, self.data_dir / f"{self.condition}_cond.pt")
+                torch.save(
+                    cond,
+                    self.data_dir / f"{self.condition}_cond_tsl{self.total_seq_len}.pt",
+                )
 
     def get_data(self):
         t = torch.linspace(0, 4 * torch.pi, self.total_seq_len).float()
@@ -269,10 +275,16 @@ class SynDataModule(LightningDataModule):
         return "2DSpiral"
 
     def setup(self, stage):
-        data = torch.load(os.path.join(self.data_dir, "data.pt"))
+        data = torch.load(
+            os.path.join(self.data_dir, f"data_tsl{self.total_seq_len}.pt")
+        )
         cond = None
         if self.condition is not None:
-            cond = torch.load(os.path.join(self.data_dir, f"{self.condition}_cond.pt"))
+            cond = torch.load(
+                os.path.join(
+                    self.data_dir, f"{self.condition}_cond_tsl{self.total_seq_len}.pt"
+                )
+            )
         add_cond = cond is not None
 
         # train/val/test

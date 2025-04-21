@@ -12,8 +12,8 @@ model_names = src.model.__all__
 # model_names = ["PSAGAN", "VanillaVAE"]
 # model_names = ['COSCIGAN', 'RCGAN']
 # model_names = ['KoVAE', 'VanillaVAE', 'TimeVAE']
-model_names = ["KoVAE", "GTGAN"]
-# model_names = ["AST", "VanillaVAE"]
+# model_names = ["KoVAE", "GTGAN"]
+model_names = ["DiffusionTS", "VanillaVAE"]
 # model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
 # model_names = ['VanillaVAE', 'VanillaGAN', 'VanillaMAF', 'VanillaDDPM']
@@ -24,9 +24,9 @@ model_names = ["KoVAE", "GTGAN"]
 #     "predict",
 #     None,
 # ]
-# conditions = ["predict", None]
+conditions = ["predict", 'impute']
 # conditions = ['class', None]
-conditions = [None, "class"]
+# conditions = [None, "class"]
 # conditions = [None, "impute"]
 # conditions = ["impute", None]
 # conditions = [None, "predict", "impute"]
@@ -40,7 +40,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 30
+max_epochs = 10
 inference_batch_size = 4
 
 # hparams
@@ -154,6 +154,7 @@ for i in range(len(model_names)):
             .cpu()
             .numpy()
         )
+        print(samples.shape)
         if c == "impute":
             batch["seq"] = batch["seq"].masked_fill(batch["c"].bool(), float("nan"))
             axs[i, j].plot(range(seq_len), batch["seq"].squeeze()[0])
@@ -174,7 +175,6 @@ for i in range(len(model_names)):
             axs[i, j].plot(range(seq_len), samples[0])
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
-        break
 fig.suptitle("Model Comparison")
 fig.tight_layout()
 fig.savefig("test_model.png", bbox_inches="tight")
