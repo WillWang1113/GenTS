@@ -10,53 +10,64 @@ SOTA TS models included are list as follows, where
 - $\triangle$: originally tensorflow implementation  
 - $\dag$: original implementation is different from paper
 
-|           Name            | Model Type |       Condition       |    Application    |      Finish?       |
-| :-----------------------: | :--------: | :-------------------: | :---------------: | :----------------: |
-|        VanillaVAE         |    VAE     |           -           |        Syn        | :white_check_mark: |
-|          TimeVAE          |    VAE     |           -           |        Syn        | :white_check_mark: |
-|         TimeVQVAE         |    VAE     |      class label      |        Syn        | :white_check_mark: |
-|           KoVAE           |    VAE     |           -           |    Syn(irreg)     | :white_check_mark: |
-|        VanillaGAN         |    GAN     |           -           |        Syn        | :white_check_mark: |
-|          TimeGAN          |    GAN     |           -           |        Syn        | :white_check_mark: |
-|            AST            |    GAN     |  :white_check_mark:   |    Fcst(point)    | :white_check_mark: |
-|         COSCI-GAN         |    GAN     |           -           |        Syn        | :white_check_mark: |
-|          GT-GAN           |    GAN     |           -           |    Syn(irreg)     | :white_check_mark: |
-|        PSA-GAN$^g$        |    GAN     |           -           |        Syn        | :white_check_mark: |
-|           RCGAN           |    GAN     |           -           |        Syn        | :white_check_mark: |
-|        VanillaMAF         |    Flow    |           -           |        Syn        | :white_check_mark: |
-|       Fourier Flow        |    Flow    |           -           |        Syn        |   :white_circle:   |
-|           GANF            |    Flow    |           -           |        AD         |   :white_circle:   |
-|         LSTM-MAF          |    Flow    |  :white_check_mark:   |       Fcst        |   :white_circle:   |
-|            TFM            |    Flow    |           -           |       Fcst        |   :white_circle:   |
-|        VanillaDDPM        | Diffusion  |           -           |        Syn        | :white_check_mark: |
-|            ANT            | Diffusion  |  :white_check_mark:   | Syn, Fcst, Refine |   :white_circle:   |
-|       Diffusion-TS        | Diffusion  |  :white_check_mark:   | Syn, Fcst, Impute | :white_check_mark: |
-|           FIDE            | Diffusion  |           -           |        Syn        |   :white_circle:   |
-|      D3M$^\triangle$      | Diffusion  |           -           |     Fcst, Imp     |   :white_circle:   |
-| FTS-Diffusion$^\triangle$ | Diffusion  |           -           |        Syn        |   :white_circle:   |
-|  TimeWeaver$^\triangle$   | Diffusion  |  :white_check_mark:   |        Syn        |   :white_circle:   |
-|         TimeGrad          | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
-|           CSDI            | Diffusion  |  :white_check_mark:   |     Imp, Fcst     |   :white_circle:   |
-|         D3VAE$^p$         | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
-|        TSDiff$^g$         | Diffusion  | inference conditional | Syn, Fcst, Refine |   :white_circle:   |
-|           TMDM            | Diffusion  |  :white_check_mark:   |       Fcst        | :white_check_mark: |
-|          mr-diff          | Diffusion  |  :white_check_mark:   |       Fcst        | :white_check_mark: |
-|        MG-TSD$^g$         | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
-|           RATD            | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
-|     FourierDiffusion      | Diffusion  |           -           |        Syn        | :white_check_mark: |
-|        ImagenTime         | Diffusion  |  :white_check_mark:   |     Syn, Fcst     |   :white_circle:   |
-|        Latent ODE         | Diff. Eq.  |           -           |        Syn        | :white_check_mark: |
-|          ODE-RNN          | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
-|        Neural SDE         | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
-|            LS4            | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
-|         SDformer          |  VAE+GPT   |  :white_check_mark:   |        Syn        |   :white_circle:   |
+|          Name          | Model Type |       Condition       |    Application    |      Finish?       |
+| :--------------------: | :--------: | :-------------------: | :---------------: | :----------------: |
+|       VanillaVAE       |    VAE     |           -           |        Syn        | :white_check_mark: |
+|        TimeVAE         |    VAE     |           -           |        Syn        | :white_check_mark: |
+|       TimeVQVAE        |    VAE     |      class label      |        Syn        | :white_check_mark: |
+|         KoVAE          |    VAE     |           -           |    Syn(irreg)     | :white_check_mark: |
+|       VanillaGAN       |    GAN     |           -           |        Syn        | :white_check_mark: |
+|        TimeGAN         |    GAN     |           -           |        Syn        | :white_check_mark: |
+|          AST           |    GAN     |  :white_check_mark:   |    Fcst(point)    | :white_check_mark: |
+|       COSCI-GAN        |    GAN     |           -           |        Syn        | :white_check_mark: |
+|         GT-GAN         |    GAN     |           -           |    Syn(irreg)     | :white_check_mark: |
+|    PSA-GAN **(-G)**    |    GAN     |           -           |        Syn        | :white_check_mark: |
+|         RCGAN          |    GAN     |           -           |        Syn        | :white_check_mark: |
+|       VanillaMAF       |    Flow    |           -           |        Syn        | :white_check_mark: |
+|      Fourier Flow      |    Flow    |           -           |        Syn        |   :white_circle:   |
+|          GANF          |    Flow    |           -           |        AD         |   :white_circle:   |
+|        LSTM-MAF        |    Flow    |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|          TFM           |    Flow    |           -           |       Fcst        |   :white_circle:   |
+|      VanillaDDPM       | Diffusion  |           -           |        Syn        | :white_check_mark: |
+|          ANT           | Diffusion  |  :white_check_mark:   | Syn, Fcst, Refine |   :white_circle:   |
+|      Diffusion-TS      | Diffusion  |  :white_check_mark:   | Syn, Fcst, Impute | :white_check_mark: |
+|          FIDE          | Diffusion  |           -           |        Syn        |   :white_circle:   |
+|      D3M **(-M)**      | Diffusion  |           -           |     Fcst, Imp     |   :white_circle:   |
+| FTS-Diffusion **(-M)** | Diffusion  |           -           |        Syn        |   :white_circle:   |
+|  TimeWeaver **(-M)**   | Diffusion  |  :white_check_mark:   |        Syn        |   :white_circle:   |
+|   TimeGrad **(-G)**    | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|          CSDI          | Diffusion  |  :white_check_mark:   |   Impute, Fcst    | :white_check_mark: |
+|     D3VAE **(-P)**     | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|    TSDiff **(-G)**     | Diffusion  | inference conditional | Syn, Fcst, Refine |   :white_circle:   |
+|          TMDM          | Diffusion  |  :white_check_mark:   |       Fcst        | :white_check_mark: |
+|        mr-diff         | Diffusion  |  :white_check_mark:   |       Fcst        | :white_check_mark: |
+|    MG-TSD **(-G)**     | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|          RATD          | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|    FourierDiffusion    | Diffusion  |           -           |        Syn        | :white_check_mark: |
+|       ImagenTime       | Diffusion  |  :white_check_mark:   |     Syn, Fcst     | :white_check_mark: |
+|       Latent ODE       | Diff. Eq.  |           -           |        Syn        | :white_check_mark: |
+|        ODE-RNN         | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
+|       Neural SDE       | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
+|          LS4           | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
+|        SDformer        |  VAE+GPT   |  :white_check_mark:   |        Syn        |   :white_circle:   |
 
+
+*Notes*: 
+- **(-G)** = GluonTS style code
+- **(-P)** = PaddlePaddle instead of torch
+- **(-M)** = Missing official codes
 
 
 ## Custormization
 
 ### How to build a new model?
+Inheret ```BaseModel```, and make sure implement ```training_step```,```configure_optimizers```,```validation_step```, and ```_sample_impl```.
 
+The former three are standard ```lightning``` methods for model training; The last one required for sampling.
+
+Details.
+
+<!-- 
 ## Similar projects on gtihub
 - TSGM: https://github.com/AlexanderVNikitin/tsgm (NIPS2024 Datasets and Benchmarks Track)
 - TSGBench: https://github.com/YihaoAng/TSGBench  (VLDB2024 Best Research Paper Award Nomination)
@@ -70,9 +81,9 @@ SOTA TS models included are list as follows, where
 ### what they don't have
 - SOTA models, especially diffusion-based models
 - Newly proposed Time series Generation metrics, e.g. J-FTSD (ICML2024)
-- Unified unconditional and conditional framework
+- Unified unconditional and conditional framework -->
 
 ## TODO
-- [ ] Model reproduce
-- [ ] Metrics under different applications
+- [ ] Flow-based model
+- [ ] Metrics
 - [ ] Benchmark datasets (some models are designed for special cases?)

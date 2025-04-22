@@ -8,6 +8,7 @@ from .mrdiff.model import MrDiff
 from .tmdm.model import TMDM
 from .diffusionts.model import DiffusionTS
 from .csdi.model import CSDI
+from .imagentime.model import ImagenTime
 
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "MrDiff",
     "TMDM",
     "DiffusionTS",
-    "CSDI"
+    "CSDI",
+    "ImagenTime"
 ]

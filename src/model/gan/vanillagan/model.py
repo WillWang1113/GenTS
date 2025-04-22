@@ -33,6 +33,9 @@ class VanillaGAN(BaseModel):
     def training_step(self, batch):
         x = batch["seq"]
         c = batch.get("c", None)
+        if self.condition == "impute":
+            c = x * (~c).int()
+
         optimizer_g, optimizer_d = self.optimizers()
 
         # sample noise
@@ -78,6 +81,8 @@ class VanillaGAN(BaseModel):
     def validation_step(self, batch, batch_idx):
         x = batch["seq"]
         c = batch.get("c", None)
+        if self.condition == "impute":
+            c = x * (~c).int()
         z = torch.randn(x.shape[0], self.hparams.latent_dim).type_as(x)
 
         w_distance = torch.mean(self.discriminator(x, c)) - torch.mean(
@@ -101,15 +106,18 @@ class VanillaGAN(BaseModel):
     def _sample_impl(self, n_sample, condition=None, **kwargs):
         if self.condition is None:
             z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
-            samples = self.generator(z, condition)
+            all_samples = self.generator(z, condition)
         else:
+            if self.condition == "impute":
+                c = kwargs["seq"] * (~condition).int()
+                c = c.to(self.device)
             all_samples = []
             for i in range(n_sample):
-                z = torch.randn(
-                    (condition.shape[0], self.hparams_initial.latent_dim)
-                ).to(self.device)
-                samples = self.generator(z, condition)
+                z = torch.randn((c.shape[0], self.hparams_initial.latent_dim)).to(
+                    self.device
+                )
+                samples = self.generator(z, c)
                 all_samples.append(samples)
             all_samples = torch.stack(all_samples, dim=-1)
-        return samples
-    
+
+        return all_samples

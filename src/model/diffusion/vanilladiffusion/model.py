@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn.functional as F
 
@@ -6,6 +5,7 @@ import torch.nn.functional as F
 from src.model.base import BaseModel
 from ._backbones import Denoiser
 from ._utils import linear_schedule, cosine_schedule
+
 
 class VanillaDDPM(BaseModel):
     ALLOW_CONDITION = [None, "predict", "impute"]
@@ -90,10 +90,57 @@ class VanillaDDPM(BaseModel):
         return loss
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
-        x = torch.randn(
-            (n_sample, self.hparams_initial.seq_len, self.hparams_initial.seq_dim)
-        ).type_as(next(iter(self.parameters())))
+        # device = next(iter(self.parameters())).device
+        if self.condition is None:
+            x = torch.randn(
+                (n_sample, self.hparams_initial.seq_len, self.hparams_initial.seq_dim)
+            ).to(self.device)
+            all_samples = self.sample_loop(x)
+        else:
+            if self.condition == "impute":
+                print(condition.device)
+                print(kwargs['seq'].device)
+                condition = kwargs["seq"] * (~condition).int()
+                condition = condition.to(self.device)
 
+            all_samples = []
+            for i in range(n_sample):
+                x = torch.randn(
+                    (
+                        condition.shape[0],
+                        self.hparams_initial.seq_len,
+                        self.hparams_initial.seq_dim,
+                    )
+                ).type_as(next(iter(self.parameters())))
+                x = self.sample_loop(x, condition)
+                all_samples.append(x)
+            all_samples = torch.stack(all_samples, dim=-1)
+
+        return all_samples
+
+    def _get_loss(self, x, condition: dict = None):
+        batch_size = x.shape[0]
+        cond = condition.get("c", None)
+        if self.condition == "impute":
+            cond = x * (~cond).int()
+        # sample t, x_T
+        t = torch.randint(0, self.n_diff_steps, (batch_size,)).to(self.device)
+
+        # corrupt data
+        x_noisy, noise = self.degrade(x, t)
+
+        # eps_theta
+        eps_theta = self.backbone(x_noisy, t, cond)
+
+        # compute loss
+        if self.pred_x0:
+            loss = F.mse_loss(eps_theta, x)
+        else:
+            loss = F.mse_loss(eps_theta, noise)
+
+        return loss
+
+    def sample_loop(self, x, condition=None):
         for t in range(self.n_diff_steps - 1, -1, -1):
             z = torch.randn_like(x)
             t_tensor = torch.tensor(t).repeat(x.shape[0]).type_as(x)
@@ -124,25 +171,4 @@ class VanillaDDPM(BaseModel):
                     * self.betas[t]
                 )
             x = mu_pred + sigma * z
-
         return x
-
-    def _get_loss(self, x, condition: dict = None):
-        batch_size = x.shape[0]
-        cond = condition.get("c", None)
-        # sample t, x_T
-        t = torch.randint(0, self.n_diff_steps, (batch_size,)).to(self.device)
-
-        # corrupt data
-        x_noisy, noise = self.degrade(x, t)
-
-        # eps_theta
-        eps_theta = self.backbone(x_noisy, t, cond)
-
-        # compute loss
-        if self.pred_x0:
-            loss = F.mse_loss(eps_theta, x)
-        else:
-            loss = F.mse_loss(eps_theta, noise)
-
-        return loss

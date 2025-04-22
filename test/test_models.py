@@ -7,6 +7,7 @@ import torch
 
 
 seed_everything(3407, workers=True)
+gpu=0
 
 model_names = src.model.__all__
 # model_names = ['TimeVAE','TimeGAN', 'FourierDiffusion']
@@ -15,10 +16,10 @@ model_names = src.model.__all__
 # model_names = ['COSCIGAN', 'RCGAN']
 # model_names = ['KoVAE', 'VanillaVAE', 'TimeVAE']
 # model_names = ["KoVAE", "GTGAN"]
-model_names = ["CSDI", "VanillaVAE"]
+# model_names = ["ImagenTime", "VanillaVAE"]
 # model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
-# model_names = ['VanillaVAE', 'VanillaGAN', 'VanillaMAF', 'VanillaDDPM']
+model_names = ['VanillaGAN', 'VanillaVAE']
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
@@ -26,12 +27,12 @@ model_names = ["CSDI", "VanillaVAE"]
 #     "predict",
 #     None,
 # ]
-conditions = ["impute", "predict"]
+# conditions = ["impute", "predict"]
 # conditions = ['class', None]
 # conditions = [None, "class"]
 # conditions = [None, "impute"]
 # conditions = ["impute", None]
-# conditions = [None, "predict", "impute"]
+conditions = ["impute", None]
 batch_size = 128
 seq_len = 64
 add_coeffs = False
@@ -42,7 +43,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 50
+max_epochs = 20
 inference_batch_size = 4
 
 # hparams
@@ -50,6 +51,9 @@ hparams = dict(
     seq_len=seq_len,
     seq_dim=2,
     covariate_dim=0,
+    delay=8, embedding=16,
+    use_stft=False,
+    n_fft=15, hop_length=8, 
     # n_classes=2,
     # latent_dim=20,
     hidden_size=128,
@@ -113,7 +117,7 @@ for i in range(len(model_names)):
                 inference_batch_size=inference_batch_size,
                 channel_independent=channel_independent,
             )
-            cond_hparams = dict(**hparams, condition=c)
+            cond_hparams = dict(**hparams, condition=c, missing_rate=missing_rate)
         elif c == "class":
             dm = SynDataModule(
                 seq_len,
@@ -137,13 +141,14 @@ for i in range(len(model_names)):
 
         test_model_cls = getattr(src.model, model_names[i])
         test_model = test_model_cls(**cond_hparams)
-        trainer = Trainer(devices=[0], max_epochs=max_epochs, log_every_n_steps=20)
+        trainer = Trainer(devices=[gpu], max_epochs=max_epochs, log_every_n_steps=20, check_val_every_n_epoch=5)
+        
         trainer.fit(test_model, dm)
         dm.setup("test")
 
         batch = next(iter(dm.test_dataloader()))
         for k in batch:
-            batch[k] = batch[k].to(test_model.device)
+            batch[k] = batch[k].to(f'cuda:{gpu}')
 
         test_cond = None
         # if c in ["predict", "impute"]:
@@ -156,6 +161,11 @@ for i in range(len(model_names)):
             .cpu()
         )
         print(samples.shape)
+        batch["seq"] = batch["seq"].cpu()
+        try:
+            batch["c"] = batch["c"].cpu()
+        except:
+            pass
 
         if c == "impute":
             obs = batch["seq"].masked_fill(batch["c"].bool(), float("nan"))
@@ -198,8 +208,7 @@ for i in range(len(model_names)):
             axs[i, j].plot(range(seq_len), samples[0])
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
-        break
-    break
+
 fig.suptitle("Model Comparison")
 fig.tight_layout()
 fig.savefig("test_model.png", bbox_inches="tight")
