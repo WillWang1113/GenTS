@@ -1,7 +1,7 @@
 # GenTS: A library for generative time series analysis
 
 
-## Installation
+## Installation(TODO:details)
 Python: 3.10
 
 ## Model zoo
@@ -76,7 +76,7 @@ The former three are standard ```lightning``` methods for model training; The la
 
 
 ## TODO-list
-- [ ] Flow-based model
-- [ ] ODE-based model
-- [ ] Evaluation (from TSGBench + new metrics J-FTSD, ICML2024)
-- [ ] Benchmark datasets
+- [ ] Flow-based model (5.15)
+- [ ] ODE-based model (5.15)
+- [ ] Evaluation (TSGBench + new metrics J-FTSD, ICML2024) (5.31)
+- [ ] Benchmark datasets (6.15)
