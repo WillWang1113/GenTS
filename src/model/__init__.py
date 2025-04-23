@@ -7,7 +7,7 @@ from .diffusion import (
     TMDM,
     DiffusionTS,
     CSDI,
-    ImagenTime
+    ImagenTime,FIDE
 )
 from .vae import VanillaVAE, TimeVAE, TimeVQVAE, KoVAE
 from .gan import TimeGAN, VanillaGAN, GTGAN, COSCIGAN, AST, PSAGAN, RCGAN
@@ -32,5 +32,6 @@ __all__ = [
     "TMDM",
     "DiffusionTS",
     "CSDI",
-    "ImagenTime"
+    "ImagenTime",
+    "FIDE"
 ]

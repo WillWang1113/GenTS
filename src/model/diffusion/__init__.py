@@ -9,6 +9,7 @@ from .tmdm.model import TMDM
 from .diffusionts.model import DiffusionTS
 from .csdi.model import CSDI
 from .imagentime.model import ImagenTime
+from .fide.model import FIDE
 
 
 __all__ = [
@@ -20,5 +21,6 @@ __all__ = [
     "TMDM",
     "DiffusionTS",
     "CSDI",
-    "ImagenTime"
+    "ImagenTime",
+    "FIDE"
 ]

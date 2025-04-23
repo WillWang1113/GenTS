@@ -4,12 +4,7 @@
 ## Installation
 Python: 3.10
 
-## Models 
-SOTA TS models included are list as follows, where 
-
-- $\triangle$: originally tensorflow implementation  
-- $\dag$: original implementation is different from paper
-
+## Model zoo
 |          Name          | Model Type |       Condition       |    Application    |      Finish?       |
 | :--------------------: | :--------: | :-------------------: | :---------------: | :----------------: |
 |       VanillaVAE       |    VAE     |           -           |        Syn        | :white_check_mark: |
@@ -18,7 +13,7 @@ SOTA TS models included are list as follows, where
 |         KoVAE          |    VAE     |           -           |    Syn(irreg)     | :white_check_mark: |
 |       VanillaGAN       |    GAN     |           -           |        Syn        | :white_check_mark: |
 |        TimeGAN         |    GAN     |           -           |        Syn        | :white_check_mark: |
-|          AST           |    GAN     |  :white_check_mark:   |    Fcst(point)    | :white_check_mark: |
+|      AST **(-!)**      |    GAN     |  :white_check_mark:   |    Fcst(point)    | :white_check_mark: |
 |       COSCI-GAN        |    GAN     |           -           |        Syn        | :white_check_mark: |
 |         GT-GAN         |    GAN     |           -           |    Syn(irreg)     | :white_check_mark: |
 |    PSA-GAN **(-G)**    |    GAN     |           -           |        Syn        | :white_check_mark: |
@@ -29,22 +24,22 @@ SOTA TS models included are list as follows, where
 |        LSTM-MAF        |    Flow    |  :white_check_mark:   |       Fcst        |   :white_circle:   |
 |          TFM           |    Flow    |           -           |       Fcst        |   :white_circle:   |
 |      VanillaDDPM       | Diffusion  |           -           |        Syn        | :white_check_mark: |
-|          ANT           | Diffusion  |  :white_check_mark:   | Syn, Fcst, Refine |   :white_circle:   |
-|      Diffusion-TS      | Diffusion  |  :white_check_mark:   | Syn, Fcst, Impute | :white_check_mark: |
-|          FIDE          | Diffusion  |           -           |        Syn        |   :white_circle:   |
-|      D3M **(-M)**      | Diffusion  |           -           |     Fcst, Imp     |   :white_circle:   |
-| FTS-Diffusion **(-M)** | Diffusion  |           -           |        Syn        |   :white_circle:   |
-|  TimeWeaver **(-M)**   | Diffusion  |  :white_check_mark:   |        Syn        |   :white_circle:   |
-|   TimeGrad **(-G)**    | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
 |          CSDI          | Diffusion  |  :white_check_mark:   |   Impute, Fcst    | :white_check_mark: |
-|     D3VAE **(-P)**     | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
-|    TSDiff **(-G)**     | Diffusion  | inference conditional | Syn, Fcst, Refine |   :white_circle:   |
+|      Diffusion-TS      | Diffusion  |  :white_check_mark:   | Syn, Fcst, Impute | :white_check_mark: |
 |          TMDM          | Diffusion  |  :white_check_mark:   |       Fcst        | :white_check_mark: |
 |        mr-diff         | Diffusion  |  :white_check_mark:   |       Fcst        | :white_check_mark: |
-|    MG-TSD **(-G)**     | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
 |          RATD          | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
 |    FourierDiffusion    | Diffusion  |           -           |        Syn        | :white_check_mark: |
 |       ImagenTime       | Diffusion  |  :white_check_mark:   |     Syn, Fcst     | :white_check_mark: |
+|      D3M **(-M)**      | Diffusion  |           -           |     Fcst, Imp     |   :white_circle:   |
+|  TimeWeaver **(-M)**   | Diffusion  |  :white_check_mark:   |        Syn        |   :white_circle:   |
+| FTS-Diffusion **(-M)** | Diffusion  |           -           |        Syn        |   :white_circle:   |
+|     FIDE **(-!)**      | Diffusion  |     block maxima      |        Syn        | :white_check_mark: |
+|      ANT **(-G)**      | Diffusion  |  :white_check_mark:   | Syn, Fcst, Refine |   :white_circle:   |
+|   TimeGrad **(-G)**    | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|    TSDiff **(-G)**     | Diffusion  | inference conditional | Syn, Fcst, Refine |   :white_circle:   |
+|    MG-TSD **(-G)**     | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|     D3VAE **(-P)**     | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
 |       Latent ODE       | Diff. Eq.  |           -           |        Syn        | :white_check_mark: |
 |        ODE-RNN         | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
 |       Neural SDE       | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
@@ -56,6 +51,7 @@ SOTA TS models included are list as follows, where
 - **(-G)** = GluonTS style code
 - **(-P)** = PaddlePaddle instead of torch
 - **(-M)** = Missing official codes
+- **(-!)** = Official codes are functionally different from the paper
 
 
 ## Custormization

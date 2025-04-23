@@ -19,7 +19,7 @@ model_names = src.model.__all__
 # model_names = ["ImagenTime", "VanillaVAE"]
 # model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
-model_names = ['VanillaGAN', 'VanillaVAE']
+model_names = ['FIDE', 'VanillaVAE']
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
@@ -29,10 +29,10 @@ model_names = ['VanillaGAN', 'VanillaVAE']
 # ]
 # conditions = ["impute", "predict"]
 # conditions = ['class', None]
-# conditions = [None, "class"]
+conditions = [None, "class"]
 # conditions = [None, "impute"]
 # conditions = ["impute", None]
-conditions = ["impute", None]
+# conditions = ["impute", None]
 batch_size = 128
 seq_len = 64
 add_coeffs = False
@@ -43,7 +43,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 20
+max_epochs = 100
 inference_batch_size = 4
 
 # hparams
@@ -86,11 +86,12 @@ for i in range(len(model_names)):
         add_coeffs = True
     else:
         add_coeffs = False
-    if model_names[i] == "AST":
+    if model_names[i] in ["AST", 'FIDE']:
         channel_independent = True
         hparams["seq_dim"] = 1
     else:
         channel_independent = False
+        hparams["seq_dim"] = 2
     for j in range(len(conditions)):
         c = conditions[j]
         if c == "predict":
@@ -208,6 +209,7 @@ for i in range(len(model_names)):
             axs[i, j].plot(range(seq_len), samples[0])
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
+        break
 
 fig.suptitle("Model Comparison")
 fig.tight_layout()
