@@ -1,86 +1,150 @@
+import numpy as np
 import torch
 import torch.nn as nn
+# from diff_models import diff_RATD
+
+# import torch
+# import torch.nn as nn
 import torch.nn.functional as F
 import math
-import numpy as np
 from linear_attention_transformer import LinearAttentionTransformer
+from ..csdi._backbones import (
+    get_linear_trans,
+    get_torch_trans,
+    Conv1d_with_init,
+    DiffusionEmbedding,
+)
+# from diffusers.models.attention import (
+#     Attention as CrossAttention,
+# )
+from einops import repeat, rearrange
+from torch import einsum
 
 
-def get_torch_trans(heads=8, layers=1, channels=64):
-    encoder_layer = nn.TransformerEncoderLayer(
-        d_model=channels, nhead=heads, dim_feedforward=64, activation="gelu"
-    )
-    return nn.TransformerEncoder(encoder_layer, num_layers=layers)
+def default(val, d):
+    return val if val is not None else d
 
 
-# ！Cancel linear attention transformer
-def get_linear_trans(heads=8, layers=1, channels=64, localheads=0, localwindow=0):
-    return LinearAttentionTransformer(
-        dim=channels,
-        depth=layers,
-        heads=heads,
-        max_seq_len=256,
-        n_local_attn_heads=0,
-        local_attn_window_size=0,
-    )
+class ReferenceModulatedCrossAttention(nn.Module):
+    def __init__(
+        self,
+        *,
+        dim,
+        heads=8,
+        dim_head=64,
+        context_dim=None,
+        dropout=0.0,
+        talking_heads=False,
+        prenorm=False,
+    ):
+        super().__init__()
+        context_dim = default(context_dim, dim)
+
+        self.norm = nn.LayerNorm(dim) if prenorm else nn.Identity()
+        self.context_norm = nn.LayerNorm(context_dim) if prenorm else nn.Identity()
+
+        self.heads = heads
+        self.scale = dim_head**-0.5
+        inner_dim = dim_head * heads
+
+        self.dropout = nn.Dropout(dropout)
+        self.context_dropout = nn.Dropout(dropout)
+
+        self.y_to_q = nn.Linear(dim, inner_dim, bias=False)
+        self.cond_to_k = nn.Linear(2 * dim + context_dim, inner_dim, bias=False)
+        self.ref_to_v = nn.Linear(dim + context_dim, inner_dim, bias=False)
+
+        self.to_out = nn.Linear(inner_dim, dim)
+        self.context_to_out = nn.Linear(inner_dim, context_dim)
+
+        self.talking_heads = (
+            nn.Conv2d(heads, heads, 1, bias=False) if talking_heads else nn.Identity()
+        )
+        self.context_talking_heads = (
+            nn.Conv2d(heads, heads, 1, bias=False) if talking_heads else nn.Identity()
+        )
+
+    def forward(
+        self,
+        x,
+        cond_info,
+        reference,
+        return_attn=False,
+    ):
+        B, C, K, L, h, device = (
+            x.shape[0],
+            x.shape[1],
+            x.shape[2],
+            x.shape[-1],
+            self.heads,
+            x.device,
+        )
+        x = self.norm(x)
+        reference = self.norm(reference)
+        cond_info = self.context_norm(cond_info)
+        reference = repeat(reference, "b n c -> (b f) n c", f=C)  # (B*C, K, L)
+        q_y = self.y_to_q(x.reshape(B * C, K, L))  # (B*C,K,ND)
+
+        cond = self.cond_to_k(
+            torch.cat(
+                (x.reshape(B * C, K, L), cond_info.reshape(B * C, K, L), reference),
+                dim=-1,
+            )
+        )  # (B*C,K,ND)
+        ref = self.ref_to_v(
+            torch.cat((x.reshape(B * C, K, L), reference), dim=-1)
+        )  # (B*C,K,ND)
+        q_y, cond, ref = map(
+            lambda t: rearrange(t, "b n (h d) -> b h n d", h=h), (q_y, cond, ref)
+        )  # (B*C, N, K, D)
+        sim = (
+            einsum("b h i d, b h j d -> b h i j", cond, ref) * self.scale
+        )  # (B*C, N, K, K)
+        attn = sim.softmax(dim=-1)
+        context_attn = sim.softmax(dim=-2)
+        # dropouts
+        attn = self.dropout(attn)
+        context_attn = self.context_dropout(context_attn)
+        attn = self.talking_heads(attn)
+        context_attn = self.context_talking_heads(context_attn)
+        out = einsum("b h i j, b h j d -> b h i d", attn, ref)
+        context_out = einsum("b h j i, b h j d -> b h i d", context_attn, cond)
+        # merge heads and combine out
+        out, context_out = map(
+            lambda t: rearrange(t, "b h n d -> b n (h d)"), (out, context_out)
+        )
+        out = self.to_out(out)
+        if return_attn:
+            return out, context_out, attn, context_attn
+
+        return out
 
 
-def Conv1d_with_init(in_channels, out_channels, kernel_size):
+def Reference_Modulated_Attention(in_channels, out_channels, kernel_size):
     layer = nn.Conv1d(in_channels, out_channels, kernel_size)
     nn.init.kaiming_normal_(layer.weight)
     return layer
 
 
-class DiffusionEmbedding(nn.Module):
-    def __init__(self, num_steps, embedding_dim=128, projection_dim=None):
-        super().__init__()
-        if projection_dim is None:
-            projection_dim = embedding_dim
-        self.register_buffer(
-            "embedding",
-            self._build_embedding(num_steps, embedding_dim / 2),
-            persistent=False,
-        )
-        self.projection1 = nn.Linear(embedding_dim, projection_dim)
-        self.projection2 = nn.Linear(projection_dim, projection_dim)
-
-    def forward(self, diffusion_step):
-        x = self.embedding[diffusion_step]
-        x = self.projection1(x)
-        x = F.silu(x)
-        x = self.projection2(x)
-        x = F.silu(x)
-        return x
-
-    def _build_embedding(self, num_steps, dim=64):
-        steps = torch.arange(num_steps).unsqueeze(1)  # (T,1)
-        frequencies = 10.0 ** (torch.arange(dim) / (dim - 1) * 4.0).unsqueeze(
-            0
-        )  # (1,dim)
-        table = steps * frequencies  # (T,dim)
-        table = torch.cat([torch.sin(table), torch.cos(table)], dim=1)  # (T,dim*2)
-        return table
-
-
-class diff_CSDI(nn.Module):
-    def __init__(self, config, inputdim=2):
+class diff_RATD(nn.Module):
+    def __init__(self, config, inputdim=2, use_ref=True):
         super().__init__()
         self.channels = config["channels"]
-
+        self.use_ref = use_ref
         self.diffusion_embedding = DiffusionEmbedding(
             num_steps=config["num_steps"],
             embedding_dim=config["diffusion_embedding_dim"],
         )
-
         self.input_projection = Conv1d_with_init(inputdim, self.channels, 1)
         self.output_projection1 = Conv1d_with_init(self.channels, self.channels, 1)
         self.output_projection2 = Conv1d_with_init(self.channels, 1, 1)
         nn.init.zeros_(self.output_projection2.weight)
-
         self.residual_layers = nn.ModuleList(
             [
                 ResidualBlock(
                     side_dim=config["side_dim"],
+                    ref_size=config["ref_size"],
+                    h_size=config["h_size"],
                     channels=self.channels,
                     diffusion_embedding_dim=config["diffusion_embedding_dim"],
                     nheads=config["nheads"],
@@ -90,19 +154,17 @@ class diff_CSDI(nn.Module):
             ]
         )
 
-    def forward(self, x, cond_info, diffusion_step):
+    def forward(self, x, cond_info, diffusion_step, reference=None):
         B, inputdim, K, L = x.shape
-
         x = x.reshape(B, inputdim, K * L)
         x = self.input_projection(x)
         x = F.relu(x)
         x = x.reshape(B, self.channels, K, L)
-
         diffusion_emb = self.diffusion_embedding(diffusion_step)
 
         skip = []
         for layer in self.residual_layers:
-            x, skip_connection = layer(x, cond_info, diffusion_emb)
+            x, skip_connection = layer(x, cond_info, diffusion_emb, reference)
             skip.append(skip_connection)
 
         x = torch.sum(torch.stack(skip), dim=0) / math.sqrt(len(self.residual_layers))
@@ -116,13 +178,35 @@ class diff_CSDI(nn.Module):
 
 class ResidualBlock(nn.Module):
     def __init__(
-        self, side_dim, channels, diffusion_embedding_dim, nheads, is_linear=False
+        self,
+        side_dim,
+        ref_size,
+        h_size,
+        channels,
+        diffusion_embedding_dim,
+        nheads,
+        is_linear=False,
     ):
         super().__init__()
         self.diffusion_projection = nn.Linear(diffusion_embedding_dim, channels)
-        self.cond_projection = Conv1d_with_init(side_dim, 2 * channels, 1)
+        self.cond_projection = Conv1d_with_init(side_dim, channels, 1)
         self.mid_projection = Conv1d_with_init(channels, 2 * channels, 1)
         self.output_projection = Conv1d_with_init(channels, 2 * channels, 1)
+        dim_heads = 8
+        self.fusion_type = 1
+        self.q_dim = nheads * dim_heads
+        # self.attn1 = CrossAttention(
+        #     query_dim=nheads * dim_heads,
+        #     heads=nheads,
+        #     dim_head=dim_heads,
+        #     dropout=0,
+        #     bias=False,
+        # )
+        self.RMA = ReferenceModulatedCrossAttention(
+            dim=ref_size + h_size, context_dim=ref_size * 3
+        )
+        self.line = nn.Linear(ref_size * 3, ref_size + h_size)
+        # self.line3 = nn.Linear(nheads*dim_heads, 2)
 
         self.is_linear = is_linear
         if is_linear:
@@ -137,8 +221,6 @@ class ResidualBlock(nn.Module):
             self.feature_layer = get_torch_trans(
                 heads=nheads, layers=1, channels=channels
             )
-        self.time_layer = get_torch_trans(heads=nheads, layers=1, channels=channels)
-        self.feature_layer = get_torch_trans(heads=nheads, layers=1, channels=channels)
 
     def forward_time(self, y, base_shape):
         B, channel, K, L = base_shape
@@ -165,7 +247,7 @@ class ResidualBlock(nn.Module):
         y = y.reshape(B, L, channel, K).permute(0, 2, 3, 1).reshape(B, channel, K * L)
         return y
 
-    def forward(self, x, cond_info, diffusion_emb):
+    def forward(self, x, cond_info, diffusion_emb, reference):
         B, channel, K, L = x.shape
         base_shape = x.shape
         x = x.reshape(B, channel, K * L)
@@ -174,16 +256,41 @@ class ResidualBlock(nn.Module):
             -1
         )  # (B,channel,1)
         y = x + diffusion_emb
+        # reference = repeat(reference, 'b n c -> (b f) n c', f=inputdim)
+        _, cond_dim, _, _ = cond_info.shape
+        cond_info = cond_info.reshape(B, cond_dim, K * L)
+        cond_info = self.cond_projection(cond_info)  # (B,2*channel,K*L)
+
+        if (reference is not None) and (self.fusion_type == 1):
+            cond_info = self.RMA(
+                y.reshape(B, channel, K, L),
+                cond_info.reshape(B, channel, K, L),
+                reference,
+            )
+            # reference = self.line(reference)
+            # reference = torch.sigmoid(reference)# (B,K,L)
+            # reference=reference.reshape(B, 1, K, L).permute(0,1,3,2)
+            # reference = repeat(reference, 'b a n c -> (b a f) n c', f=2*channel)# (B*2*channel, L,K)
+            # cond_info = torch.bmm(cond_info.reshape(B*2*channel, K , L), reference)# (B*2*channel, K, K)
+            # cond_info = torch.sigmoid(cond_info)
+            # cond_info = torch.bmm(cond_info, y.reshape(B*2*channel,K, L)).reshape(B,2*channel,K*L)
+            # y = y + cond_info
+        elif (reference is not None) and (self.fusion_type == 2):
+            reference = self.line(reference)
+            reference = torch.sigmoid(reference)  # (B,K,L)
+            reference = reference.reshape(B, 1, K, L)
+            reference = repeat(
+                reference, "b a n c -> b (a f) n c", f=channel
+            )  # (B*2*channel, L,K)
+            cond_info = cond_info + reference.reshape(B, channel, K * L)
+
+        y = y + cond_info.reshape(B, channel, K * L)
 
         y = self.forward_time(y, base_shape)
         y = self.forward_feature(y, base_shape)  # (B,channel,K*L)
         y = self.mid_projection(y)  # (B,2*channel,K*L)
 
-        _, cond_dim, _, _ = cond_info.shape
-        cond_info = cond_info.reshape(B, cond_dim, K * L)
-        cond_info = self.cond_projection(cond_info)  # (B,2*channel,K*L)
-        y = y + cond_info
-
+        # y = y + cond_info.reshape(B, 2*channel, K*L)
         gate, filter = torch.chunk(y, 2, dim=1)
         y = torch.sigmoid(gate) * torch.tanh(filter)  # (B,channel,K*L)
         y = self.output_projection(y)
@@ -195,12 +302,12 @@ class ResidualBlock(nn.Module):
         return (x + residual) / math.sqrt(2.0), skip
 
 
-class CSDI_base(nn.Module):
-    def __init__(self, target_dim, config):
+class RATD_base(nn.Module):
+    def __init__(self, target_dim, config, device):
         super().__init__()
-        # self.device = device
+        self.device = device
         self.target_dim = target_dim
-
+        self.use_reference = config["model"]["use_reference"]
         self.emb_time_dim = config["model"]["timeemb"]
         self.emb_feature_dim = config["model"]["featureemb"]
         self.is_unconditional = config["model"]["is_unconditional"]
@@ -212,17 +319,18 @@ class CSDI_base(nn.Module):
         self.embed_layer = nn.Embedding(
             num_embeddings=self.target_dim, embedding_dim=self.emb_feature_dim
         )
-
         config_diff = config["diffusion"]
         config_diff["side_dim"] = self.emb_total_dim
 
         input_dim = 1 if self.is_unconditional else 2
-        self.diffmodel = diff_CSDI(config_diff, input_dim)
+        self.diffmodel = diff_RATD(config_diff, input_dim)
 
+        self.pred_length = config_diff["ref_size"]
+        self.his_length = config_diff["h_size"]
         # parameters for diffusion models
         self.num_steps = config_diff["num_steps"]
         if config_diff["schedule"] == "quad":
-            beta = (
+            self.beta = (
                 np.linspace(
                     config_diff["beta_start"] ** 0.5,
                     config_diff["beta_end"] ** 0.5,
@@ -231,24 +339,21 @@ class CSDI_base(nn.Module):
                 ** 2
             )
         elif config_diff["schedule"] == "linear":
-            beta = np.linspace(
+            self.beta = np.linspace(
                 config_diff["beta_start"], config_diff["beta_end"], self.num_steps
             )
 
-        alpha_hat = 1 - beta
-        alpha = np.cumprod(alpha_hat)
-        alpha_torch = torch.tensor(alpha).float().unsqueeze(1).unsqueeze(1)
-
-        self.register_buffer("beta", torch.tensor(beta))
-        self.register_buffer("alpha_hat", torch.tensor(alpha_hat))
-        self.register_buffer("alpha", torch.tensor(alpha))
-        self.register_buffer("alpha_torch", alpha_torch)
+        self.alpha_hat = 1 - self.beta
+        self.alpha = np.cumprod(self.alpha_hat)
+        self.alpha_torch = (
+            torch.tensor(self.alpha).float().to(self.device).unsqueeze(1).unsqueeze(1)
+        )
 
     def time_embedding(self, pos, d_model=128):
-        pe = torch.zeros(pos.shape[0], pos.shape[1], d_model).to(pos.device)
+        pe = torch.zeros(pos.shape[0], pos.shape[1], d_model).to(self.device)
         position = pos.unsqueeze(2)
         div_term = 1 / torch.pow(
-            10000.0, torch.arange(0, d_model, 2).to(pos.device) / d_model
+            10000.0, torch.arange(0, d_model, 2).to(self.device) / d_model
         )
         pe[:, :, 0::2] = torch.sin(position * div_term)
         pe[:, :, 1::2] = torch.cos(position * div_term)
@@ -289,7 +394,7 @@ class CSDI_base(nn.Module):
         time_embed = self.time_embedding(observed_tp, self.emb_time_dim)  # (B,L,emb)
         time_embed = time_embed.unsqueeze(2).expand(-1, -1, K, -1)
         feature_embed = self.embed_layer(
-            torch.arange(self.target_dim).to(time_embed.device)
+            torch.arange(self.target_dim).to(self.device)
         )  # (K,emb)
         feature_embed = feature_embed.unsqueeze(0).unsqueeze(0).expand(B, L, -1, -1)
 
@@ -303,35 +408,54 @@ class CSDI_base(nn.Module):
         return side_info
 
     def calc_loss_valid(
-        self, observed_data, cond_mask, observed_mask, side_info, is_train
+        self,
+        observed_data,
+        cond_mask,
+        observed_mask,
+        side_info,
+        is_train,
+        reference=None,
     ):
+        if not self.use_reference:
+            reference = None
         loss_sum = 0
         for t in range(self.num_steps):  # calculate loss for all t
             loss = self.calc_loss(
-                observed_data, cond_mask, observed_mask, side_info, is_train, set_t=t
+                observed_data,
+                cond_mask,
+                observed_mask,
+                side_info,
+                is_train,
+                set_t=t,
+                reference=reference,
             )
             loss_sum += loss.detach()
         return loss_sum / self.num_steps
 
     def calc_loss(
-        self, observed_data, cond_mask, observed_mask, side_info, is_train, set_t=-1
+        self,
+        observed_data,
+        cond_mask,
+        observed_mask,
+        side_info,
+        is_train,
+        reference,
+        set_t=-1,
     ):
-        device = observed_data.device
         B, K, L = observed_data.shape
         if is_train != 1:  # for validation
-            t = (torch.ones(B) * set_t).long().to(device)
+            t = (torch.ones(B) * set_t).long().to(self.device)
         else:
-            t = torch.randint(0, self.num_steps, [B]).to(device)
+            t = torch.randint(0, self.num_steps, [B]).to(self.device)
         current_alpha = self.alpha_torch[t]  # (B,1,1)
         noise = torch.randn_like(observed_data)
         noisy_data = (current_alpha**0.5) * observed_data + (
             1.0 - current_alpha
         ) ** 0.5 * noise
-
         total_input = self.set_input_to_diffmodel(noisy_data, observed_data, cond_mask)
-
-        predicted = self.diffmodel(total_input, side_info, t)  # (B,K,L)
-
+        predicted = self.diffmodel(
+            total_input, side_info, t, reference=reference
+        )  # (B,K,L)
         target_mask = observed_mask - cond_mask
         residual = (noise - predicted) * target_mask
         num_eval = target_mask.sum()
@@ -349,10 +473,9 @@ class CSDI_base(nn.Module):
         return total_input
 
     def impute(self, observed_data, cond_mask, side_info, n_samples):
-        device = observed_data.device
         B, K, L = observed_data.shape
 
-        imputed_samples = torch.zeros(B, n_samples, K, L).to(device)
+        imputed_samples = torch.zeros(B, n_samples, K, L).to(self.device)
 
         for i in range(n_samples):
             # generate noisy observation for unconditional model
@@ -380,7 +503,7 @@ class CSDI_base(nn.Module):
                     noisy_target = ((1 - cond_mask) * current_sample).unsqueeze(1)
                     diff_input = torch.cat([cond_obs, noisy_target], dim=1)  # (B,2,K,L)
                 predicted = self.diffmodel(
-                    diff_input, side_info, torch.tensor([t]).to(device)
+                    diff_input, side_info, torch.tensor([t]).to(self.device)
                 )
 
                 coeff1 = 1 / self.alpha_hat[t] ** 0.5
@@ -395,7 +518,7 @@ class CSDI_base(nn.Module):
                     current_sample += sigma * noise
 
             imputed_samples[:, i] = current_sample.detach()
-        return imputed_samples.permute(0, 3, 2, 1)
+        return imputed_samples
 
     def forward(self, batch, is_train=1):
         (
@@ -414,11 +537,8 @@ class CSDI_base(nn.Module):
             )
         else:
             cond_mask = self.get_randmask(observed_mask)
-
         side_info = self.get_side_info(observed_tp, cond_mask)
-
         loss_func = self.calc_loss if is_train == 1 else self.calc_loss_valid
-
         return loss_func(observed_data, cond_mask, observed_mask, side_info, is_train)
 
     def evaluate(self, batch, n_samples):
@@ -434,95 +554,35 @@ class CSDI_base(nn.Module):
         with torch.no_grad():
             cond_mask = gt_mask
             target_mask = observed_mask - cond_mask
-
             side_info = self.get_side_info(observed_tp, cond_mask)
-
             samples = self.impute(observed_data, cond_mask, side_info, n_samples)
-
             for i in range(len(cut_length)):  # to avoid double evaluation
                 target_mask[i, ..., 0 : cut_length[i].item()] = 0
         return samples, observed_data, target_mask, observed_mask, observed_tp
 
 
-# class CSDI_PM25(CSDI_base):
-#     def __init__(self, config, target_dim=36):
-#         super(CSDI_PM25, self).__init__(target_dim, config)
-
-#     def process_data(self, batch):
-#         observed_data = batch["observed_data"].float()
-#         observed_mask = batch["observed_mask"].float()
-#         observed_tp = batch["timepoints"].float()
-#         gt_mask = batch["gt_mask"].float()
-#         cut_length = batch["cut_length"].long()
-#         for_pattern_mask = batch["hist_mask"].float()
-
-#         observed_data = observed_data.permute(0, 2, 1)
-#         observed_mask = observed_mask.permute(0, 2, 1)
-#         gt_mask = gt_mask.permute(0, 2, 1)
-#         for_pattern_mask = for_pattern_mask.permute(0, 2, 1)
-
-#         return (
-#             observed_data,
-#             observed_mask,
-#             observed_tp,
-#             gt_mask,
-#             for_pattern_mask,
-#             cut_length,
-#         )
-
-
-class CSDI_Physio(CSDI_base):
-    def __init__(self, config, target_dim=35):
-        super(CSDI_Physio, self).__init__(target_dim, config)
-
-    def process_data(self, batch):
-        observed_data = batch["observed_data"].float()
-        observed_mask = batch["observed_mask"].float()
-        observed_tp = batch["timepoints"].float()
-        gt_mask = batch["gt_mask"].float()
-
-        observed_data = observed_data.permute(0, 2, 1)
-        observed_mask = observed_mask.permute(0, 2, 1)
-        gt_mask = gt_mask.permute(0, 2, 1)
-
-        cut_length = torch.zeros(len(observed_data)).long().to(observed_data.device)
-        for_pattern_mask = observed_mask
-
-        return (
-            observed_data,
-            observed_mask,
-            observed_tp,
-            gt_mask,
-            for_pattern_mask,
-            cut_length,
-        )
-
-
-class CSDI_Forecasting(CSDI_base):
-    def __init__(self, config, target_dim):
-        super(CSDI_Forecasting, self).__init__(target_dim, config)
+class RATD_Forecasting(RATD_base):
+    def __init__(self, config, device, target_dim):
+        super(RATD_Forecasting, self).__init__(target_dim, config, device)
         self.target_dim_base = target_dim
         self.num_sample_features = config["model"]["num_sample_features"]
+        self.use_reference = config["model"]["use_reference"]
 
     def process_data(self, batch):
-        observed_data = batch["observed_data"].float()
-        observed_mask = batch["observed_mask"].float()
-        observed_tp = batch["timepoints"].float()
-        gt_mask = batch["gt_mask"].float()
-
+        observed_data = batch["observed_data"].to(self.device).float()
+        observed_mask = batch["observed_mask"].to(self.device).float()
+        observed_tp = batch["timepoints"].to(self.device).float()
+        gt_mask = batch["gt_mask"].to(self.device).float()
+        if self.use_reference:
+            reference = batch["reference"].to(self.device).float()
+            reference = reference.permute(0, 2, 1)
+        else:
+            reference = None
         observed_data = observed_data.permute(0, 2, 1)
         observed_mask = observed_mask.permute(0, 2, 1)
         gt_mask = gt_mask.permute(0, 2, 1)
-
-        cut_length = torch.zeros(len(observed_data)).long().to(observed_data.device)
+        cut_length = torch.zeros(len(observed_data)).long().to(self.device)
         for_pattern_mask = observed_mask
-
-        feature_id = (
-            torch.arange(self.target_dim_base)
-            .unsqueeze(0)
-            .expand(observed_data.shape[0], -1)
-            .to(observed_data.device)
-        )
 
         return (
             observed_data,
@@ -531,7 +591,7 @@ class CSDI_Forecasting(CSDI_base):
             gt_mask,
             for_pattern_mask,
             cut_length,
-            feature_id,
+            reference,
         )
 
     def sample_features(self, observed_data, observed_mask, feature_id, gt_mask):
@@ -555,21 +615,16 @@ class CSDI_Forecasting(CSDI_base):
         extracted_gt_mask = torch.stack(extracted_gt_mask, 0)
         return extracted_data, extracted_mask, extracted_feature_id, extracted_gt_mask
 
-    def get_side_info(self, observed_tp, cond_mask, feature_id=None):
+    def get_side_info(self, observed_tp, cond_mask):
         B, K, L = cond_mask.shape
 
         time_embed = self.time_embedding(observed_tp, self.emb_time_dim)  # (B,L,emb)
         time_embed = time_embed.unsqueeze(2).expand(-1, -1, self.target_dim, -1)
+        feature_embed = self.embed_layer(
+            torch.arange(self.target_dim).to(self.device)
+        )  # (K,emb)
+        feature_embed = feature_embed.unsqueeze(0).unsqueeze(0).expand(B, L, -1, -1)
 
-        if self.target_dim == self.target_dim_base:
-            feature_embed = self.embed_layer(
-                torch.arange(self.target_dim).to(time_embed.device)
-            )  # (K,emb)
-            feature_embed = feature_embed.unsqueeze(0).unsqueeze(0).expand(B, L, -1, -1)
-        else:
-            feature_embed = (
-                self.embed_layer(feature_id).unsqueeze(1).expand(-1, L, -1, -1)
-            )
         side_info = torch.cat([time_embed, feature_embed], dim=-1)  # (B,L,K,*)
         side_info = side_info.permute(0, 3, 2, 1)  # (B,*,K,L)
 
@@ -587,26 +642,23 @@ class CSDI_Forecasting(CSDI_base):
             gt_mask,
             _,
             _,
-            feature_id,
+            reference,
         ) = self.process_data(batch)
-        if is_train == 1 and (self.target_dim_base > self.num_sample_features):
-            observed_data, observed_mask, feature_id, gt_mask = self.sample_features(
-                observed_data, observed_mask, feature_id, gt_mask
-            )
-        else:
-            self.target_dim = self.target_dim_base
-            feature_id = None
 
         if is_train == 0:
             cond_mask = gt_mask
         else:  # test pattern
             cond_mask = self.get_test_pattern_mask(observed_mask, gt_mask)
-
-        side_info = self.get_side_info(observed_tp, cond_mask, feature_id)
-
+        side_info = self.get_side_info(observed_tp, cond_mask)
         loss_func = self.calc_loss if is_train == 1 else self.calc_loss_valid
-
-        return loss_func(observed_data, cond_mask, observed_mask, side_info, is_train)
+        return loss_func(
+            observed_data,
+            cond_mask,
+            observed_mask,
+            side_info,
+            is_train,
+            reference=reference,
+        )
 
     def evaluate(self, batch, n_samples):
         (
@@ -616,15 +668,12 @@ class CSDI_Forecasting(CSDI_base):
             gt_mask,
             _,
             _,
-            feature_id,
         ) = self.process_data(batch)
 
         with torch.no_grad():
             cond_mask = gt_mask
             target_mask = observed_mask * (1 - gt_mask)
-
             side_info = self.get_side_info(observed_tp, cond_mask)
-
             samples = self.impute(observed_data, cond_mask, side_info, n_samples)
 
         return samples, observed_data, target_mask, observed_mask, observed_tp

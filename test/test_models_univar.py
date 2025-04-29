@@ -1,40 +1,27 @@
 from math import sqrt
 from lightning import Trainer, seed_everything
 import src.model
-from src.data.datamodules import Spiral2D
+from src.data.datamodules import Spiral2D, SineND
 import matplotlib.pyplot as plt
 import torch
 
 
 seed_everything(3407, workers=True)
-gpu=0
+
+gpu = 0
 
 model_names = src.model.__all__
-# model_names = ['TimeVAE','TimeGAN', 'FourierDiffusion']
-# model_names = ['COSCIGAN', 'VanillaVAE']
-# model_names = ["PSAGAN", "VanillaVAE"]
-# model_names = ['COSCIGAN', 'RCGAN']
-# model_names = ['KoVAE', 'VanillaVAE', 'TimeVAE']
-# model_names = ["KoVAE", "GTGAN"]
-# model_names = ["ImagenTime", "VanillaVAE"]
-# model_names = ['VanillaVAE','TMDM']
-# model_names = ['MrDiff','VanillaVAE']
-model_names = ['FIDE', 'VanillaVAE']
-# model_names = model_names[:2]
 
-# TODO: iter all, Model Capability
-# conditions = [
-#     "predict",
-#     None,
-# ]
-# conditions = ["impute", "predict"]
-# conditions = ['class', None]
-conditions = [None, "class"]
-# conditions = [None, "impute"]
+model_names = ["VanillaVAE", "KoVAE"]
+
+# conditions = [None, "class"]
+conditions = ["impute", None]
 # conditions = ["impute", None]
 # conditions = ["impute", None]
 batch_size = 128
 seq_len = 64
+seq_dim = 2
+channel_independent = False
 add_coeffs = False
 # imputation
 missing_type = "random"
@@ -43,17 +30,19 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 100
+max_epochs = 10
 inference_batch_size = 4
 
 # hparams
 hparams = dict(
     seq_len=seq_len,
-    seq_dim=2,
+    seq_dim=seq_dim,
     covariate_dim=0,
-    delay=8, embedding=16,
+    delay=8,
+    embedding=16,
     use_stft=False,
-    n_fft=15, hop_length=8, 
+    n_fft=15,
+    hop_length=8,
     # n_classes=2,
     # latent_dim=20,
     hidden_size=128,
@@ -86,18 +75,19 @@ for i in range(len(model_names)):
         add_coeffs = True
     else:
         add_coeffs = False
-    if model_names[i] in ["AST", 'FIDE']:
-        channel_independent = True
-        hparams["seq_dim"] = 1
-    else:
-        channel_independent = False
-        hparams["seq_dim"] = 2
+    # if model_names[i] in ["AST", 'FIDE']:
+    #     channel_independent = True
+    #     hparams["seq_dim"] = 1
+    # else:
+    #     channel_independent = False
+    #     hparams["seq_dim"] = 2
     for j in range(len(conditions)):
         c = conditions[j]
         if c == "predict":
             dm = Spiral2D(
-                seq_len,
-                batch_size,
+                seq_len=seq_len,
+                # seq_dim=seq_dim,
+                batch_size=batch_size,
                 condition=c,
                 obs_len=obs_len,
                 add_coeffs=add_coeffs,
@@ -109,8 +99,9 @@ for i in range(len(model_names)):
             if model_names[i] == "KoVAE":
                 add_coeffs = True
             dm = Spiral2D(
-                seq_len,
-                batch_size,
+                seq_len=seq_len,
+                # seq_dim=seq_dim,
+                batch_size=batch_size,
                 condition=c,
                 missing_rate=missing_rate,
                 missing_type=missing_type,
@@ -121,8 +112,9 @@ for i in range(len(model_names)):
             cond_hparams = dict(**hparams, condition=c, missing_rate=missing_rate)
         elif c == "class":
             dm = Spiral2D(
-                seq_len,
-                batch_size,
+                seq_len=seq_len,
+                # seq_dim=seq_dim,
+                batch_size=batch_size,
                 condition=c,
                 add_coeffs=add_coeffs,
                 inference_batch_size=inference_batch_size,
@@ -131,8 +123,9 @@ for i in range(len(model_names)):
             cond_hparams = dict(**hparams, n_classes=2, condition=c)
         else:
             dm = Spiral2D(
-                seq_len,
-                batch_size,
+                seq_len=seq_len,
+                # seq_dim=seq_dim,
+                batch_size=batch_size,
                 condition=c,
                 add_coeffs=add_coeffs,
                 inference_batch_size=inference_batch_size,
@@ -142,14 +135,20 @@ for i in range(len(model_names)):
 
         test_model_cls = getattr(src.model, model_names[i])
         test_model = test_model_cls(**cond_hparams)
-        trainer = Trainer(devices=[gpu], max_epochs=max_epochs, log_every_n_steps=20, check_val_every_n_epoch=5)
-        
+        # trainer = Trainer(accelerator='cpu', max_epochs=max_epochs, log_every_n_steps=20, check_val_every_n_epoch=5, precision='32-true')
+        trainer = Trainer(
+            devices=[gpu],
+            max_epochs=max_epochs,
+            log_every_n_steps=20,
+            check_val_every_n_epoch=5,
+        )
+
         trainer.fit(test_model, dm)
         dm.setup("test")
 
         batch = next(iter(dm.test_dataloader()))
         for k in batch:
-            batch[k] = batch[k].to(f'cuda:{gpu}')
+            batch[k] = batch[k].to(f"cuda:{gpu}")
 
         test_cond = None
         # if c in ["predict", "impute"]:
@@ -184,10 +183,9 @@ for i in range(len(model_names)):
                     )
 
                 for ii in range(samples.shape[2]):
-
                     axs[i, j].scatter(
                         timeaxis,
-                        samples[0,:,ii].squeeze().mean(dim=-1),
+                        samples[0, :, ii].squeeze().mean(dim=-1),
                         c=f"C{ii + 2}",
                         alpha=0.5,
                     )

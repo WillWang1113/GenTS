@@ -19,7 +19,7 @@ Python: 3.10
 |    PSA-GAN **(-G)**    |    GAN     |           -           |        Syn        | :white_check_mark: |
 |         RCGAN          |    GAN     |           -           |        Syn        | :white_check_mark: |
 |       VanillaMAF       |    Flow    |           -           |        Syn        |   :white_circle:   |
-|      Fourier Flow      |    Flow    |           -           |        Syn        |   :white_circle:   |
+|      Fourier Flow      |    Flow    |           -           |        Syn        | :white_check_mark: |
 |          GANF          |    Flow    |           -           |        AD         |   :white_circle:   |
 |   LSTM-MAF **(-G)**    |    Flow    |  :white_check_mark:   |       Fcst        |   :white_circle:   |
 |          TFM           |    Flow    |           -           |       Fcst        |   :white_circle:   |

@@ -213,8 +213,8 @@ class KoVAE(BaseModel):
             cond = batch['c']
             x = x.masked_fill(cond.bool(), float("nan"))
             
-            x = batch['seq']
-            train_coeffs = batch['inter']  # .to(device)
+            X = batch['seq']
+            train_coeffs = batch['coeffs']  # .to(device)
             time = torch.arange(x.shape[1]).to(x)
             final_index = (torch.ones(x.shape[0]) * (self.seq_len-1)).to(x)
             x_rec, Z_enc, Z_enc_prior = self(train_coeffs, time, final_index)
@@ -245,8 +245,8 @@ class KoVAE(BaseModel):
             cond = batch['c']
             x = x.masked_fill(cond.bool(), float("nan"))
             
-            x = batch['seq']
-            train_coeffs = batch['inter']  # .to(device)
+            X = batch['seq']
+            train_coeffs = batch['coeffs']  # .to(device)
             time = torch.arange(x.shape[1]).to(x)
             final_index = (torch.ones(x.shape[0]) * (self.seq_len-1)).to(x)
             x_rec, Z_enc, Z_enc_prior = self(train_coeffs, time, final_index)
