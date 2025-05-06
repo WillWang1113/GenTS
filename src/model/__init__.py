@@ -11,7 +11,7 @@ from .diffusion import (
 )
 from .vae import VanillaVAE, TimeVAE, TimeVQVAE, KoVAE
 from .gan import TimeGAN, VanillaGAN, GTGAN, COSCIGAN, AST, PSAGAN, RCGAN
-from .flow import FourierFlow
+from .flow import VanillaMAF, FourierFlow
 
 __all__ = [
     "VanillaVAE",
@@ -35,5 +35,6 @@ __all__ = [
     "CSDI",
     "ImagenTime",
     "FIDE",
+    "VanillaMAF",
     "FourierFlow",
 ]

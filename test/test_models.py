@@ -19,7 +19,7 @@ model_names = src.model.__all__
 # model_names = ["ImagenTime", "VanillaVAE"]
 # model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
-model_names = ['FIDE', 'VanillaVAE']
+model_names = ['VanillaMAF', 'VanillaVAE']
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
@@ -27,9 +27,9 @@ model_names = ['FIDE', 'VanillaVAE']
 #     "predict",
 #     None,
 # ]
-# conditions = ["impute", "predict"]
+conditions = ["impute", "predict", None]
 # conditions = ['class', None]
-conditions = [None, "class"]
+# conditions = [None, "class"]
 # conditions = [None, "impute"]
 # conditions = ["impute", None]
 # conditions = ["impute", None]
@@ -43,7 +43,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 100
+max_epochs = 10
 inference_batch_size = 4
 
 # hparams
@@ -209,7 +209,6 @@ for i in range(len(model_names)):
             axs[i, j].plot(range(seq_len), samples[0])
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
-        break
 
 fig.suptitle("Model Comparison")
 fig.tight_layout()

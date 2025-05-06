@@ -130,7 +130,6 @@ class VanillaVAE(BaseModel):
         return loss_dict, z_prior, mu_prior, logvar_prior, z, mu, logvar
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
-        print(self.condition)
         if self.condition is None:
             z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
             all_samples = self.decode(z, condition)

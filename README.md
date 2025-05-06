@@ -18,11 +18,9 @@ Python: 3.10
 |         GT-GAN         |    GAN     |           -           |    Syn(irreg)     | :white_check_mark: |
 |    PSA-GAN **(-G)**    |    GAN     |           -           |        Syn        | :white_check_mark: |
 |         RCGAN          |    GAN     |           -           |        Syn        | :white_check_mark: |
-|       VanillaMAF       |    Flow    |           -           |        Syn        |   :white_circle:   |
+|       VanillaMAF       |    Flow    |           -           |        Syn        | :white_check_mark: |
 |      Fourier Flow      |    Flow    |           -           |        Syn        | :white_check_mark: |
-|          GANF          |    Flow    |           -           |        AD         |   :white_circle:   |
 |   LSTM-MAF **(-G)**    |    Flow    |  :white_check_mark:   |       Fcst        |   :white_circle:   |
-|          TFM           |    Flow    |           -           |       Fcst        |   :white_circle:   |
 |      VanillaDDPM       | Diffusion  |           -           |        Syn        | :white_check_mark: |
 |          CSDI          | Diffusion  |  :white_check_mark:   |   Impute, Fcst    | :white_check_mark: |
 |      Diffusion-TS      | Diffusion  |  :white_check_mark:   | Syn, Fcst, Impute | :white_check_mark: |
@@ -44,7 +42,9 @@ Python: 3.10
 |        ODE-RNN         | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
 |       Neural SDE       | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
 |          LS4           | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
+|          TFM           | Diff. Eq.  |           -           |       Fcst        |   :white_circle:   |
 |   SDformer **(-M)**    |  VAE+GPT   |  :white_check_mark:   |        Syn        |   :white_circle:   |
+|          <!--          |    GANF    |         Flow          |         -         |         AD         | :white_circle: | --> |
 
 
 *Notes*: 
