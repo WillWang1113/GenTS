@@ -19,7 +19,7 @@ model_names = src.model.__all__
 # model_names = ["ImagenTime", "VanillaVAE"]
 # model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
-model_names = ['VanillaMAF', 'VanillaVAE']
+model_names = ['LatentODE', 'VanillaVAE']
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
@@ -44,7 +44,7 @@ missing_rate = 0.2
 obs_len = 64
 max_steps = 1000
 max_epochs = 10
-inference_batch_size = 4
+inference_batch_size = 7
 
 # hparams
 hparams = dict(
@@ -57,6 +57,7 @@ hparams = dict(
     # n_classes=2,
     # latent_dim=20,
     hidden_size=128,
+    poisson=True,
     # w_kl=1e-4,
     # n_diff_steps=200,
     # d_ff=512,
@@ -150,13 +151,14 @@ for i in range(len(model_names)):
         batch = next(iter(dm.test_dataloader()))
         for k in batch:
             batch[k] = batch[k].to(f'cuda:{gpu}')
+        test_model.to(f'cuda:{gpu}')
 
         test_cond = None
         # if c in ["predict", "impute"]:
         #     test_cond = batch["c"].unsqueeze(0)
         samples = (
             test_model.sample(
-                inference_batch_size, condition=batch.get("c", None), **batch
+                10, condition=batch.get("c", None), **batch
             )
             .squeeze(0)
             .cpu()

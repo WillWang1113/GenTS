@@ -44,9 +44,10 @@ def _condition_shape_check(n_sample:int, condition:torch.Tensor, cond_type:str):
         elif condition.shape[0] == n_sample:
             pass
         else:
-            raise ValueError(
-                "The batch size of the given condition should be the same as n_sample or just 1."
-            )
+            # raise ValueError(
+            #     "The batch size of the given condition should be the same as n_sample or just 1."
+            # )
+            pass
 
     return condition
 

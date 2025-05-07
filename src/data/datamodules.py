@@ -123,12 +123,14 @@ class BaseDataModule(LightningDataModule, ABC):
         elif self.condition == "impute":
             mask = torch.ones_like(data)
             if self.missing_type == "random":
+                # 1: missing
+                # 0: non-missing
                 mask = torch.rand_like(data) < self.missing_rate
             # TODO: delete block missing?
             elif self.missing_type == "block":
                 delta = int(self.total_seq_len * self.missing_rate)
                 rand_start = torch.randint(
-                    0, self.total_seq_len - delta, (self.num_samples,)
+                    0, self.total_seq_len - delta, (data.shape[0],)
                 )
                 end = rand_start + delta
                 t = torch.arange(self.total_seq_len).view(1, -1)  # shape: [1, 200]
