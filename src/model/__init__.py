@@ -12,7 +12,7 @@ from .diffusion import (
 from .vae import VanillaVAE, TimeVAE, TimeVQVAE, KoVAE
 from .gan import TimeGAN, VanillaGAN, GTGAN, COSCIGAN, AST, PSAGAN, RCGAN
 from .flow import VanillaMAF, FourierFlow
-from .diffeq import LatentODE
+from .diffeq import LatentODE, LatentSDE
 
 __all__ = [
     "VanillaVAE",
@@ -39,4 +39,5 @@ __all__ = [
     "VanillaMAF",
     "FourierFlow",
     "LatentODE",
+    "LatentSDE",
 ]

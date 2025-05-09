@@ -13,7 +13,7 @@ class LatentODE(BaseModel):
         seq_len,
         seq_dim,
         latent_dim=6,
-        z0_encoder="rnn",
+        z0_encoder="odernn",
         rec_layers=1,
         rec_dim=20,
         gen_layers=1,
@@ -26,6 +26,7 @@ class LatentODE(BaseModel):
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
+        assert z0_encoder in ['odernn', 'rnn']
         # device = kwargs.get("device", self.device)
         self.seq_len = seq_len
 
@@ -123,15 +124,15 @@ class LatentODE(BaseModel):
             mask = batch["c"]
             # 1: missing
             # 0: non-missing
-            data = x.clone()
-            data[mask] = 0.0
+            observed_data = x.clone()
+            observed_data[mask] = 0.0
             mask = 1 - mask.float()
 
             batch_dict = {
                 "tp_to_predict": t,
                 "observed_tp": t,
-                "observed_data": data,
-                "data_to_predict": data,
+                "observed_data": observed_data,
+                "data_to_predict": x,
                 "observed_mask": mask,
                 "mask_predicted_data": None,
                 "labels": None,

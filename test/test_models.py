@@ -19,15 +19,16 @@ model_names = src.model.__all__
 # model_names = ["ImagenTime", "VanillaVAE"]
 # model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
-model_names = ['LatentODE', 'VanillaVAE']
+model_names = ['LatentSDE', 'VanillaVAE']
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
-# conditions = [
-#     "predict",
-#     None,
-# ]
-conditions = ["impute", "predict", None]
+conditions = [
+    None,
+    "predict",
+    "impute"
+]
+# conditions = ["impute", "predict", None]
 # conditions = ['class', None]
 # conditions = [None, "class"]
 # conditions = [None, "impute"]
