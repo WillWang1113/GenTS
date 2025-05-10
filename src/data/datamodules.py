@@ -79,15 +79,21 @@ class BaseDataModule(LightningDataModule, ABC):
                 train_cond = cond[starts["fit"] : ends["fit"]]
                 val_cond = cond[starts["validate"] : ends["validate"]]
 
-            self.train_ds = TSDataset(train_data, train_cond, **self.hparams)
-            self.val_ds = TSDataset(val_data, val_cond, **self.hparams)
+            self.train_ds = TSDataset(
+                train_data, train_cond, cond_type=self.condition, **self.hparams
+            )
+            self.val_ds = TSDataset(
+                val_data, val_cond, cond_type=self.condition, **self.hparams
+            )
 
         if stage == "test":
             test_data = data[starts["test"] : ends["test"]]
             test_cond = None
             if add_cond:
                 test_cond = cond[starts["test"] : ends["test"]]
-            self.test_ds = TSDataset(test_data, test_cond, **self.hparams)
+            self.test_ds = TSDataset(
+                test_data, test_cond, cond_type=self.condition, **self.hparams
+            )
 
     def prepare_data(self) -> None:
         data_file_pth = self.data_dir / f"data_sl{self.total_seq_len}.pt"
@@ -120,6 +126,7 @@ class BaseDataModule(LightningDataModule, ABC):
             cond = class_cond
         elif self.condition == "predict":
             cond = data[:, : self.obs_len, :]
+        # TODO: giving condition=data with nan?
         elif self.condition == "impute":
             mask = torch.ones_like(data)
             if self.missing_type == "random":
@@ -171,7 +178,7 @@ class Spiral2D(BaseDataModule):
         condition: str = None,
         scale: bool = True,
         inference_batch_size: int = 1024,
-        add_coeffs: bool = False,
+        add_coeffs: str = None,
         time_idx_last: bool = False,
         channel_independent: bool = False,
         **kwargs,
@@ -237,7 +244,7 @@ class SineND(BaseDataModule):
         condition: str = None,
         scale: bool = True,
         inference_batch_size: int = 1024,
-        add_coeffs: bool = False,
+        add_coeffs: str = None,
         time_idx_last: bool = False,
         channel_independent: bool = False,
         **kwargs,

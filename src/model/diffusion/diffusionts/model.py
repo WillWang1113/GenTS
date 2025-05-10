@@ -148,6 +148,7 @@ class DiffusionTS(BaseModel):
             torch.sqrt(alphas) * torch.sqrt(1.0 - alphas_cumprod) / betas / 100,
         )
 
+        # TODO: change to torch.utils.swa_utils.AveragedModel
         self.ema = EMA(self.model, beta=ema_decay, update_every=ema_update_every)
 
     def predict_noise_from_start(self, x_t, t, x0):
@@ -656,7 +657,7 @@ class DiffusionTS(BaseModel):
         model_kwargs = {}
         model_kwargs["coef"] = kwargs.get("coef", 1e-1)
         model_kwargs["learning_rate"] = kwargs.get("stepsize", 1e-1)
-        self.model.load_state_dict(self.ema.ema_model.state_dict())
+        # self.model.load_state_dict(self.ema.ema_model.state_dict())
 
         if self.condition is None:
             sample = self.generate_mts(batch_size=n_sample)
@@ -707,3 +708,7 @@ class DiffusionTS(BaseModel):
             betas=[0.9, 0.96],
         )
         return optim
+
+    def on_fit_end(self):
+        self.model.load_state_dict(self.ema.ema_model.state_dict())
+        # return super().on_fit_end()

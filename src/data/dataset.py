@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 from einops import repeat
-
+import torchcde
 
 
 class TSDataset(Dataset):
@@ -21,12 +21,16 @@ class TSDataset(Dataset):
         self,
         data: torch.Tensor,
         cond: torch.Tensor = None,
-        add_coeffs: bool = False,
+        cond_type: str = None,
+        add_coeffs: str = None,
         time_idx_last: bool = False,
-        channel_independent: bool = False, **kwargs
+        channel_independent: bool = False,
+        **kwargs,
     ):
         super().__init__()
         assert data.dim() == 3
+        assert add_coeffs in [None, "linear", "cubic_spline"]
+        assert cond_type in [None, "predict", "impute"]
         self.data = data
         self.data_shape = data.shape
         self.sample_chnl = False
@@ -45,16 +49,27 @@ class TSDataset(Dataset):
         self.cond_shape = None
         if cond is not None:
             self.cond_shape = tuple(cond.shape[1:])
-        if add_coeffs:
-            from torchcde import natural_cubic_spline_coeffs
+        if add_coeffs is not None:
+            if add_coeffs == "linear":
+                interp_fn = torchcde.linear_interpolation_coeffs
+            else:
+                interp_fn = torchcde.natural_cubic_spline_coeffs
+
+            # from torchcde import natural_cubic_spline_coeffs, linear_interpolation_coeffs
 
             t = torch.arange(data.shape[1]).float()
-            if cond is None:
-                data_nan = data
-            else:
-                # assert cond.type() == "torch.bool"
+            
+            if (cond_type == 'impute') and (cond is not None):
                 data_nan = data.masked_fill(cond.bool(), float("nan"))
-            self.coeffs = natural_cubic_spline_coeffs(data_nan, t)
+            else:
+                data_nan = data
+                
+            # if cond is None:
+            #     data_nan = data
+            # elif cond_type == "impute":
+            #     # assert cond.type() == "torch.bool"
+            #     data_nan = data.masked_fill(cond.bool(), float("nan"))
+            self.coeffs = interp_fn(data_nan, t)
         else:
             self.coeffs = None
 
@@ -76,4 +91,3 @@ class TSDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
-

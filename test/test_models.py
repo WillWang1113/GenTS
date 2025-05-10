@@ -7,7 +7,7 @@ import torch
 
 
 seed_everything(3407, workers=True)
-gpu=0
+gpu = 0
 
 model_names = src.model.__all__
 # model_names = ['TimeVAE','TimeGAN', 'FourierDiffusion']
@@ -19,14 +19,14 @@ model_names = src.model.__all__
 # model_names = ["ImagenTime", "VanillaVAE"]
 # model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
-model_names = ['LatentSDE', 'VanillaVAE']
+model_names = ["SDEGAN", "VanillaVAE"]
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
 conditions = [
     None,
-    "predict",
-    "impute"
+    # "predict",
+    "impute",
 ]
 # conditions = ["impute", "predict", None]
 # conditions = ['class', None]
@@ -52,9 +52,11 @@ hparams = dict(
     seq_len=seq_len,
     seq_dim=2,
     covariate_dim=0,
-    delay=8, embedding=16,
+    delay=8,
+    embedding=16,
     use_stft=False,
-    n_fft=15, hop_length=8, 
+    n_fft=15,
+    hop_length=8,
     # n_classes=2,
     # latent_dim=20,
     hidden_size=128,
@@ -85,10 +87,13 @@ fig, axs = plt.subplots(n_row, n_col, figsize=[3 * n_col, 3 * n_row], sharex="co
 
 for i in range(len(model_names)):
     if model_names[i] == "GTGAN":
-        add_coeffs = True
+        add_coeffs = "cubic_spline"
+    elif model_names[i] == "SDEGAN":
+        add_coeffs = "linear"
+
     else:
-        add_coeffs = False
-    if model_names[i] in ["AST", 'FIDE']:
+        add_coeffs = None
+    if model_names[i] in ["AST", "FIDE"]:
         channel_independent = True
         hparams["seq_dim"] = 1
     else:
@@ -109,7 +114,7 @@ for i in range(len(model_names)):
             cond_hparams = dict(**hparams, obs_len=obs_len, condition=c)
         elif c == "impute":
             if model_names[i] == "KoVAE":
-                add_coeffs = True
+                add_coeffs = "cubic_spline"
             dm = Spiral2D(
                 seq_len,
                 batch_size,
@@ -144,23 +149,26 @@ for i in range(len(model_names)):
 
         test_model_cls = getattr(src.model, model_names[i])
         test_model = test_model_cls(**cond_hparams)
-        trainer = Trainer(devices=[gpu], max_epochs=max_epochs, log_every_n_steps=20, check_val_every_n_epoch=5)
-        
+        trainer = Trainer(
+            devices=[gpu],
+            max_epochs=max_epochs,
+            log_every_n_steps=20,
+            check_val_every_n_epoch=5,
+        )
+
         trainer.fit(test_model, dm)
         dm.setup("test")
 
         batch = next(iter(dm.test_dataloader()))
         for k in batch:
-            batch[k] = batch[k].to(f'cuda:{gpu}')
-        test_model.to(f'cuda:{gpu}')
+            batch[k] = batch[k].to(f"cuda:{gpu}")
+        test_model.to(f"cuda:{gpu}")
 
         test_cond = None
         # if c in ["predict", "impute"]:
         #     test_cond = batch["c"].unsqueeze(0)
         samples = (
-            test_model.sample(
-                10, condition=batch.get("c", None), **batch
-            )
+            test_model.sample(10, condition=batch.get("c", None), **batch)
             .squeeze(0)
             .cpu()
         )
@@ -187,10 +195,9 @@ for i in range(len(model_names)):
                     )
 
                 for ii in range(samples.shape[2]):
-
                     axs[i, j].scatter(
                         timeaxis,
-                        samples[0,:,ii].squeeze().mean(dim=-1),
+                        samples[0, :, ii].squeeze().mean(dim=-1),
                         c=f"C{ii + 2}",
                         alpha=0.5,
                     )
