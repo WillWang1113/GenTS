@@ -19,13 +19,13 @@ model_names = src.model.__all__
 # model_names = ["ImagenTime", "VanillaVAE"]
 # model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
-model_names = ["SDEGAN", "VanillaVAE"]
+model_names = ["LS4", "VanillaVAE"]
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
 conditions = [
     None,
-    # "predict",
+    "predict",
     "impute",
 ]
 # conditions = ["impute", "predict", None]
@@ -44,7 +44,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 10
+max_epochs = 100
 inference_batch_size = 7
 
 # hparams

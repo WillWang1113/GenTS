@@ -9,19 +9,18 @@ This script contains the implementation for the spectral filter module of the Fo
 
 from __future__ import absolute_import, division, print_function
 
+import sys
+import warnings
+
 import numpy as np
 import torch
 import torch.nn as nn
-
-from src.model.base import BaseModel
-from ._spectral import SpectralFilter
-from ._fourier import DFT, myDFT
-
 from torch.distributions.multivariate_normal import MultivariateNormal
 
-import sys
+from src.model.base import BaseModel
 
-import warnings
+from ._fourier import DFT, myDFT
+from ._spectral import SpectralFilter
 
 warnings.filterwarnings("ignore")
 

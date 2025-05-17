@@ -174,3 +174,4 @@ scripts/kovae_rebuttal.py
 configs/dataset/
 src/model/flow/temporalflow
 src/model/diffusion/ratd
+src/model/diffeq/tfm

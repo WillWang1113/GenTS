@@ -42,10 +42,10 @@ Python: 3.10
 |   Latent ODE w. RNN    | Diff. Eq.  |           -           |  Syn, Fcst, Imp   | :white_check_mark: |
 |       Latent SDE       | Diff. Eq.  |           -           | Syn, (Fcst, Imp)  | :white_check_mark: |
 |         SDEGAN         | Diff. Eq.  |           -           |    Syn(irreg)     | :white_check_mark: |
-|          TFM           | Diff. Eq.  |           -           |       Fcst        |   :white_circle:   |
-|          LS4           | Diff. Eq.  |           -           |        Syn        |   :white_circle:   |
-|   SDformer **(-M)**    |  VAE+GPT   |  :white_check_mark:   |        Syn        |   :white_circle:   |
-|          <!--          |    GANF    |         Flow          |         -         |         AD         | :white_circle: | --> |
+|          LS4           | Diff. Eq.  |           -           |        Syn        | :white_check_mark: |
+<!-- |   SDformer **(-M)**    |  VAE+GPT   |  :white_check_mark:   |        Syn        |   :white_circle:   | -->
+<!-- |          TFM           | Diff. Eq.  |           -           |       Fcst        |   :white_circle:   | -->
+<!-- |          <!--          |    GANF    |         Flow          |         -         |         AD         | :white_circle: | --> | -->
 
 
 *Notes*: 
