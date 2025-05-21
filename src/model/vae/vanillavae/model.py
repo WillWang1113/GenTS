@@ -3,7 +3,8 @@ from torch.nn import functional as F
 from torchvision.ops import MLP
 
 from src.model.base import BaseModel
-from src.utils.losses import kl_loss
+from src.common._losses import kl_loss
+# from src.utils.losses import kl_loss
 
 from src.common._modules import MLPDecoder, MLPEncoder
 

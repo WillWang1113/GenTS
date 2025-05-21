@@ -3,7 +3,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from src.model.base import BaseModel
-from src.utils.losses import kl_loss
+# from src.utils.losses import kl_loss
+from src.common._losses import kl_loss
+
 from src.common._utils import reparameterize
 from ._backbones import VKDecoder, VKEncoder, VKEncoderIrregular
 
