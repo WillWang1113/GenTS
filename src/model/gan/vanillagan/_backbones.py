@@ -12,7 +12,7 @@ class Generator(nn.Module):
         condition = kwargs.get("condition")
         if condition:
             if condition == "predict":
-                assert kwargs.get("obs_len") is not None
+                # assert kwargs.get("obs_len") is not None
                 obs_len = kwargs.get("obs_len")
                 self.cond_net = MLPEncoder(
                     obs_len, seq_dim, latent_dim, hidden_size_list, **kwargs
@@ -53,7 +53,7 @@ class Discriminator(nn.Module):
         condition = kwargs.get("condition")
         if condition:
             if condition == "predict":
-                assert kwargs.get("obs_len") is not None
+                # assert kwargs.get("obs_len") is not None
                 obs_len = kwargs.get("obs_len")
                 self.cond_net = MLPEncoder(
                     obs_len, seq_dim, latent_dim, hidden_size_list, **kwargs

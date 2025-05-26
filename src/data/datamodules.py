@@ -129,24 +129,25 @@ class BaseDataModule(LightningDataModule, ABC):
         # TODO: giving condition=data with nan?
         elif self.condition == "impute":
             mask = torch.ones_like(data)
-            if self.missing_type == "random":
+            # if self.missing_type == "random":
                 # 1: missing
                 # 0: non-missing
-                mask = torch.rand_like(data) < self.missing_rate
-            # TODO: delete block missing?
-            elif self.missing_type == "block":
-                delta = int(self.total_seq_len * self.missing_rate)
-                rand_start = torch.randint(
-                    0, self.total_seq_len - delta, (data.shape[0],)
-                )
-                end = rand_start + delta
-                t = torch.arange(self.total_seq_len).view(1, -1)  # shape: [1, 200]
-                mask_2d = (t >= rand_start.view(-1, 1)) & (
-                    t <= end.view(-1, 1)
-                )  # shape [1000, 200]
-                mask = mask_2d.unsqueeze(-1).expand_as(data)
-                mask = ~mask
-            cond = mask
+            mask = torch.rand_like(data) < self.missing_rate
+            missing_data = data.masked_fill(mask.bool(), float("nan"))
+            # # TODO: delete block missing?
+            # elif self.missing_type == "block":
+            #     delta = int(self.total_seq_len * self.missing_rate)
+            #     rand_start = torch.randint(
+            #         0, self.total_seq_len - delta, (data.shape[0],)
+            #     )
+            #     end = rand_start + delta
+            #     t = torch.arange(self.total_seq_len).view(1, -1)  # shape: [1, 200]
+            #     mask_2d = (t >= rand_start.view(-1, 1)) & (
+            #         t <= end.view(-1, 1)
+            #     )  # shape [1000, 200]
+            #     mask = mask_2d.unsqueeze(-1).expand_as(data)
+            #     mask = ~mask
+            cond = missing_data
         else:
             cond = None
         return cond

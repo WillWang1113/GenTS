@@ -60,15 +60,11 @@ class TSDataset(Dataset):
             t = torch.arange(data.shape[1]).float()
             
             if (cond_type == 'impute') and (cond is not None):
-                data_nan = data.masked_fill(cond.bool(), float("nan"))
+                data_nan = cond
+                # data_nan = data.masked_fill(cond.bool(), float("nan"))
             else:
                 data_nan = data
-                
-            # if cond is None:
-            #     data_nan = data
-            # elif cond_type == "impute":
-            #     # assert cond.type() == "torch.bool"
-            #     data_nan = data.masked_fill(cond.bool(), float("nan"))
+             
             self.coeffs = interp_fn(data_nan, t)
         else:
             self.coeffs = None

@@ -19,14 +19,14 @@ model_names = src.model.__all__
 # model_names = ["ImagenTime", "VanillaVAE"]
 # model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
-model_names = ["LS4", "VanillaVAE"]
+model_names = ["VanillaMAF","VanillaDDPM", ]
 # model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
 conditions = [
-    None,
-    "predict",
     "impute",
+    None,
+    # "predict",
 ]
 # conditions = ["impute", "predict", None]
 # conditions = ['class', None]
@@ -44,7 +44,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 100
+max_epochs = 500
 inference_batch_size = 7
 
 # hparams
@@ -151,6 +151,7 @@ for i in range(len(model_names)):
         test_model = test_model_cls(**cond_hparams)
         trainer = Trainer(
             devices=[gpu],
+            # max_steps=max_steps,
             max_epochs=max_epochs,
             log_every_n_steps=20,
             check_val_every_n_epoch=5,
@@ -168,7 +169,7 @@ for i in range(len(model_names)):
         # if c in ["predict", "impute"]:
         #     test_cond = batch["c"].unsqueeze(0)
         samples = (
-            test_model.sample(10, condition=batch.get("c", None), **batch)
+            test_model.sample(10, condition=batch.get("c"), **batch)
             .squeeze(0)
             .cpu()
         )
@@ -180,8 +181,8 @@ for i in range(len(model_names)):
             pass
 
         if c == "impute":
-            obs = batch["seq"].masked_fill(batch["c"].bool(), float("nan"))
-            real = batch["seq"].masked_fill(~batch["c"].bool(), float("nan"))
+            mask = torch.isnan(batch["c"])
+            real = batch["seq"].masked_fill(~mask, float("nan"))
             timeaxis = torch.arange(seq_len)
 
             axs[i, j].plot(timeaxis, batch["seq"].squeeze()[0])
@@ -189,18 +190,20 @@ for i in range(len(model_names)):
             axs[i, j].scatter(timeaxis, real.squeeze()[0, ..., 1], c="C1")
 
             if samples.ndim == 4:
-                for iii in range(samples.shape[0]):
+                for iii in range(samples.shape[-1]):
                     samples[..., iii] = samples[..., iii].masked_fill(
-                        ~batch["c"].bool(), float("nan")
+                        ~mask, float("nan")
                     )
 
                 for ii in range(samples.shape[2]):
-                    axs[i, j].scatter(
-                        timeaxis,
-                        samples[0, :, ii].squeeze().mean(dim=-1),
-                        c=f"C{ii + 2}",
-                        alpha=0.5,
-                    )
+                    for jj in range(samples.shape[-1]):
+                        axs[i, j].scatter(
+                            timeaxis,
+                            samples[0, :, ii, jj].squeeze(),
+                            # samples[0, :, ii].squeeze().mean(dim=-1),
+                            c=f"C{ii + 2}",
+                            alpha=0.5,
+                        )
             else:
                 axs[i, j].plot(range(seq_len), samples[0])
         elif c == "predict":
@@ -219,7 +222,7 @@ for i in range(len(model_names)):
             axs[i, j].plot(range(seq_len), samples[0])
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
-
+        break
 fig.suptitle("Model Comparison")
 fig.tight_layout()
 fig.savefig("test_model.png", bbox_inches="tight")

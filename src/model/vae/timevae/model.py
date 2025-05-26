@@ -1,36 +1,53 @@
+from typing import List, Tuple
+
 from ..vanillavae.model import VanillaVAE
 from ._backbones import ConvDecoder, ConvEncoder, TrendSeasonalDecoder
 
 
 class TimeVAE(VanillaVAE):
+    """TimeVAE"""
+    
     ALLOW_CONDITION = [None]
 
     def __init__(
         self,
         seq_len: int,
         seq_dim: int,
+        condition: str = None,
         latent_dim: int = 128,
         hidden_size_list=[64, 128, 256],
-        beta: float = 1e-3,
+        w_kl: float = 5e-3,
+        trend_poly: int = 2,
+        custom_seas: List[Tuple[int, int]] = None,
+        use_residual_conn: bool = True,
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
-        trend_poly=2,
-        custom_seas=None,
-        use_residual_conn=True,
         **kwargs,
     ):
         """
-        hidden_layer_sizes: list of number of filters in convolutional layers in encoder and residual connection of decoder.
-        trend_poly: integer for number of orders for trend component. e.g. setting trend_poly = 2 will include linear and quadratic term.
-        custom_seas: list of tuples of (num_seasons, len_per_season).
-            num_seasons: number of seasons per cycle.
-            len_per_season: number of epochs (time-steps) per season.
-        use_residual_conn: boolean value indicating whether to use a residual connection for reconstruction in addition to
-        trend, generic and custom seasonalities.
+        Args:
+            seq_len (int): Target sequence length
+            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+            condition (str, optional): Given conditions, allowing [None, 'predict', 'impute']. Defaults to None.
+            latent_dim (int, optional): Latent dimension for z. Defaults to 128.
+            hidden_size_list (list, optional): Hidden size for encoder and decoder. Defaults to [64, 128, 256].
+            w_kl (float, optional): Loss weight of KL div. Defaults to 1e-4.
+            trend_poly (int, optional): integer for number of orders for trend component. e.g. setting trend_poly = 2 will include linear and quadratic term.
+            custom_seas (List[Tuple[int, int]], optional): list of tuples of (num_seasons, len_per_season). num_seasons: number of seasons per cycle. len_per_season: number of epochs (time-steps) per season.
+            use_residual_conn (bool, optional): boolean value indicating whether to use a residual connection for reconstruction in addition to trend, generic and custom seasonalities.
+            lr (float, optional): Learning rate. Defaults to 1e-3.
+            weight_decay (float, optional): Weight decay. Defaults to 1e-5.
         """
 
         super().__init__(
-            seq_len, seq_dim, latent_dim, hidden_size_list, beta, lr, weight_decay
+            seq_len,
+            seq_dim,
+            condition,
+            latent_dim,
+            hidden_size_list,
+            w_kl,
+            lr,
+            weight_decay,
         )
         self.save_hyperparameters()
 

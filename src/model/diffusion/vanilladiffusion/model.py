@@ -8,35 +8,41 @@ from ._utils import linear_schedule, cosine_schedule
 
 
 class VanillaDDPM(BaseModel):
-    ALLOW_CONDITION = [None, "predict", "impute"]
-    """VanillaDDPM model with MLP backbone.
+    """Vanilla DDPM with MLP backbone."""
 
-    Args:
-        BaseDiffusion (_type_): _description_
-    """
+    ALLOW_CONDITION = [None, "predict", "impute"]
 
     def __init__(
         self,
         seq_len: int,
         seq_dim: int,
+        condition: str = None,
         latent_dim: int = 128,
         hidden_size_list: list = [64, 128, 256],
+        noise_schedule: str = "cosine",
+        n_diff_steps: int = 1000,
+        pred_x0: bool = True,
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
-        noise_schedule: str = "cosine",
-        n_diff_steps=1000,
-        pred_x0=True,
-        condition: str = None,
         **kwargs,
     ) -> None:
-        super().__init__(seq_len, seq_dim, condition)
+        """
+        Args:
+            seq_len (int): Target sequence length
+            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+            condition (str, optional): Given conditions, allowing [None, 'predict', 'impute']. Defaults to None.
+            latent_dim (int, optional): Latent dim. Defaults to 128.
+            hidden_size_list (list, optional): Hidden size for Denoiser MLP. Defaults to [64, 128, 256].
+            noise_schedule (str, optional): Noise schedule of DDPM, ['cosine', 'linear']. Defaults to "cosine".
+            n_diff_steps (int, optional): Total diffusion steps. Defaults to 1000.
+            pred_x0 (bool, optional): Predict x_0 or noise. Defaults to True.
+            lr (float, optional): Learning rate. Defaults to 1e-3.
+            weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        """
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
-        # self.backbone = DiT(**self.hparams)
         self.backbone = Denoiser(**self.hparams)
         self.seq_length = seq_len
-        # self.norm = norm
-        # self.lr = lr
-        # self.weight_decay = weight_decay
         self.loss_fn = F.mse_loss
         self.n_diff_steps = n_diff_steps
         self.pred_x0 = pred_x0
@@ -52,7 +58,6 @@ class VanillaDDPM(BaseModel):
         self.register_buffer("alphas", noise_schedule["alphas"])
         self.register_buffer("betas", noise_schedule["betas"])
         self.register_buffer("alpha_bars", noise_schedule["alpha_bars"])
-        self.save_hyperparameters()
 
     def configure_optimizers(self):
         return torch.optim.Adam(
@@ -70,7 +75,7 @@ class VanillaDDPM(BaseModel):
         return x_noisy, noise
 
     def training_step(self, batch, batch_idx):
-        x = batch.pop("seq")
+        x = batch.pop("seq")[:, -self.hparams_initial.seq_len :]
         loss = self._get_loss(x, batch)
         log_dict = {"train_loss": loss}
         self.log_dict(
@@ -79,7 +84,7 @@ class VanillaDDPM(BaseModel):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x = batch.pop("seq")
+        x = batch.pop("seq")[:, -self.hparams_initial.seq_len :]
         loss = self._get_loss(x, batch)
         log_dict = {
             "val_loss": loss,
@@ -97,11 +102,12 @@ class VanillaDDPM(BaseModel):
             ).to(self.device)
             all_samples = self.sample_loop(x)
         else:
-            if self.condition == "impute":
-                print(condition.device)
-                print(kwargs['seq'].device)
-                condition = kwargs["seq"] * (~condition).int()
-                condition = condition.to(self.device)
+            # if self.condition == "impute":
+            # condition = kwargs["seq"] * (~condition).int()
+            condition = condition.to(self.device)
+            condition = (
+                torch.nan_to_num(condition) if self.condition == "impute" else condition
+            )
 
             all_samples = []
             for i in range(n_sample):
@@ -110,8 +116,9 @@ class VanillaDDPM(BaseModel):
                         condition.shape[0],
                         self.hparams_initial.seq_len,
                         self.hparams_initial.seq_dim,
-                    )
-                ).type_as(next(iter(self.parameters())))
+                    ),
+                    device=self.device,
+                )
                 x = self.sample_loop(x, condition)
                 all_samples.append(x)
             all_samples = torch.stack(all_samples, dim=-1)
@@ -120,9 +127,11 @@ class VanillaDDPM(BaseModel):
 
     def _get_loss(self, x, condition: dict = None):
         batch_size = x.shape[0]
-        cond = condition.get("c", None)
-        if self.condition == "impute":
-            cond = x * (~cond).int()
+        c = condition.get("c")
+        c = torch.nan_to_num(c) if self.condition == "impute" else c
+
+        # if self.condition == "impute":
+        #     cond = x * (~cond).int()
         # sample t, x_T
         t = torch.randint(0, self.n_diff_steps, (batch_size,)).to(self.device)
 
@@ -130,7 +139,7 @@ class VanillaDDPM(BaseModel):
         x_noisy, noise = self.degrade(x, t)
 
         # eps_theta
-        eps_theta = self.backbone(x_noisy, t, cond)
+        eps_theta = self.backbone(x_noisy, t, c)
 
         # compute loss
         if self.pred_x0:

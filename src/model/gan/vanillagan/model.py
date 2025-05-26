@@ -5,23 +5,36 @@ from ._backbones import Generator, Discriminator
 
 
 class VanillaGAN(BaseModel):
+    """Vanilla GAN model with MLP Generator and Discriminator ."""
+
     ALLOW_CONDITION = [None, "predict", "impute"]
 
     def __init__(
         self,
         seq_len: int,
         seq_dim: int,
+        condition: str = None,
         latent_dim: int = 128,
         hidden_size_list: list = [64, 128, 256],
-        beta: float = 1e-3,
-        lr: float = 1e-3,
-        weight_decay: float = 1e-5,
         clip_value: float = 0.01,
         n_critic: int = 5,
-        condition: str = None,
+        lr: float = 1e-3,
+        weight_decay: float = 1e-5,
         **kwargs,
     ):
-        super().__init__(seq_len, seq_dim, condition)
+        """
+        Args:
+            seq_len (int): Target sequence length
+            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+            condition (str, optional): Given conditions, allowing [None, 'predict', 'impute']. Defaults to None.
+            latent_dim (int, optional): Latent dimension for z. Defaults to 128.
+            hidden_size_list (list, optional): Hidden size for encoder and decoder. Defaults to [64, 128, 256].
+            clip_value (float, optional): Gradient clip value. Defaults to 0.01.
+            n_critic (int, optional): D/G update times. Defaults to 5.
+            lr (float, optional): Learning rate. Defaults to 1e-3.
+            weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        """
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         self.automatic_optimization = False
 
@@ -30,11 +43,13 @@ class VanillaGAN(BaseModel):
         self.hparams.hidden_size_list.reverse()
         self.generator = Generator(**self.hparams)
 
-    def training_step(self, batch):
-        x = batch["seq"]
-        c = batch.get("c", None)
-        if self.condition == "impute":
-            c = x * (~c).int()
+    def training_step(self, batch, batch_idx):
+        x = batch["seq"][:, -self.hparams_initial.seq_len :]
+        c = batch.get("c")
+        c = torch.nan_to_num(c) if self.condition == "impute" else c
+
+        # if self.condition == "impute":
+        #     c = x * (~c).int()
 
         optimizer_g, optimizer_d = self.optimizers()
 
@@ -79,10 +94,12 @@ class VanillaGAN(BaseModel):
             self.log_dict(loss_dict)
 
     def validation_step(self, batch, batch_idx):
-        x = batch["seq"]
-        c = batch.get("c", None)
-        if self.condition == "impute":
-            c = x * (~c).int()
+        x = batch["seq"][:, -self.hparams_initial.seq_len :]
+        c = batch.get("c")
+        c = torch.nan_to_num(c) if self.condition == "impute" else c
+
+        # if self.condition == "impute":
+        #     c = x * (~c).int()
         z = torch.randn(x.shape[0], self.hparams.latent_dim).type_as(x)
 
         w_distance = torch.mean(self.discriminator(x, c)) - torch.mean(
@@ -108,9 +125,10 @@ class VanillaGAN(BaseModel):
             z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
             all_samples = self.generator(z, condition)
         else:
-            if self.condition == "impute":
-                c = kwargs["seq"] * (~condition).int()
-                c = c.to(self.device)
+            # if self.condition == "impute":
+            # c = kwargs["seq"] * (~condition).int()
+            c = condition.to(self.device)
+            c = torch.nan_to_num(c) if self.condition == "impute" else c
             all_samples = []
             for i in range(n_sample):
                 z = torch.randn((c.shape[0], self.hparams_initial.latent_dim)).to(

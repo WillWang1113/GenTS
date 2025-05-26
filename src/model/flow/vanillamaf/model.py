@@ -10,28 +10,42 @@ from src.model.base import BaseModel
 
 
 class VanillaMAF(BaseModel):
-    ALLOW_CONDITION = [None, 'predict', 'impute']
+    """Vanilla Masked Autoregressive Flow with MADE."""
+
+    ALLOW_CONDITION = [None, "predict", "impute"]
+
     def __init__(
         self,
         seq_len: int,
         seq_dim: int,
-        latent_dim: int = 128,
+        condition: str = None,
         hidden_size_list: List[int] = [64, 128, 256],
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
-        condition: str = None,
         **kwargs,
     ):
-        super().__init__(seq_len, seq_dim, condition)
+        """_summary_
+
+        Args:
+            seq_len (int): Target sequence length
+            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+            condition (str, optional): Given conditions, allowing [None, 'predict', 'impute']. Defaults to None.
+            hidden_size_list (List[int], optional): Hidden size for MADE. Defaults to [64, 128, 256].
+            lr (float, optional): Learning rate. Defaults to 1e-3.
+            weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        """
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         modules = []
         if condition:
-            if condition == "predict":
-                assert kwargs.get("obs_len") is not None
-                obs_len = kwargs.get("obs_len")
-                cond_input = obs_len * seq_dim
-            elif condition == "impute":
-                cond_input = seq_dim * seq_len
+            # if condition == "predict":
+            #     assert kwargs.get("obs_len") is not None
+            #     obs_len = kwargs.get("obs_len")
+            #     cond_input = obs_len * seq_dim
+            # elif condition == "impute":
+            #     cond_input = seq_dim * seq_len
+            cond_seq_len = self.obs_len if condition == "predict" else seq_len
+            cond_input = cond_seq_len * seq_dim
         else:
             cond_input = None
         for i in range(len(hidden_size_list)):
@@ -49,16 +63,16 @@ class VanillaMAF(BaseModel):
 
     def training_step(self, batch, batch_idx):
         x = batch["seq"]
-        c = batch.get("c", None)
+        c = batch.get("c")
         if c is not None:
             if self.condition == "impute":
-                c = x * (~c).int()
-            elif self.condition == 'predict':
-                x = x[:,-self.hparams_initial.seq_len:]
+                c = torch.nan_to_num(c)
+            elif self.condition == "predict":
+                x = x[:, -self.hparams_initial.seq_len :]
             c = c.flatten(1).to(x)
-            
+
         x = x.flatten(1)
-        
+
         loss = -self.flow.log_probs(x, c).mean()
         loss_dict = {"train_loss": loss}
         self.log_dict(
@@ -71,12 +85,12 @@ class VanillaMAF(BaseModel):
         c = batch.get("c", None)
         if c is not None:
             if self.condition == "impute":
-                c = x * (~c).int()
-            elif self.condition == 'predict':
-                x = x[:,-self.hparams_initial.seq_len:]
+                c = torch.nan_to_num(c)
+            elif self.condition == "predict":
+                x = x[:, -self.hparams_initial.seq_len :]
             c = c.flatten(1).to(x)
         x = x.flatten(1)
-        
+
         loss = -self.flow.log_probs(x, c).mean()
         loss_dict = {"val_loss": loss}
         self.log_dict(
@@ -91,12 +105,12 @@ class VanillaMAF(BaseModel):
             )
         else:
             all_samples = []
-            if self.condition == "impute":
-                assert kwargs.get("seq", None) is not None, "provide full sequence"
-                c = kwargs["seq"] * (~condition).int()
-            else:
-                c = condition
-            
+            # if self.condition == "impute":
+            #     assert kwargs.get("seq", None) is not None, "provide full sequence"
+            #     c = kwargs["seq"] * (~condition).int()
+            # else:
+            #     c = condition
+            c = torch.nan_to_num(condition) if self.condition == "impute" else condition
             c = c.flatten(1)
 
             for i in range(n_sample):

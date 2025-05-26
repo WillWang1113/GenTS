@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any, Dict, Union
 
 import torch
 import torch.nn.functional as F
@@ -23,21 +23,20 @@ class TimeVQVAE(BaseModel):
 
     def __init__(
         self,
-        seq_len,
-        seq_dim,
-        n_classes=0,
-        resnet_init_dim=4,
-        hidden_size=128,
-        n_fft=4,
-        n_resnet_blocks=2,
-        downsampled_width_l=8,
-        downsampled_width_h=32,
-        codebook_size=1024,
-        # n_classes=None,
-        lr=1e-3,
-        stage_split=0.5,
-        cfg_scale=0.5,
-        prior_model_l_config=dict(
+        seq_len: int,
+        seq_dim: int,
+        condition: str = None,
+        resnet_init_dim: int = 4,
+        hidden_size: int = 128,
+        n_fft: int = 4,
+        n_resnet_blocks: int = 2,
+        downsampled_width_l: int = 8,
+        downsampled_width_h: int = 32,
+        codebook_size: int = 1024,
+        lr: float = 1e-3,
+        stage_split: float = 0.5,
+        cfg_scale: float = 0.5,
+        prior_model_l_config: Dict[str, Any] = dict(
             hidden_dim=128,
             n_layers=4,
             heads=2,
@@ -47,7 +46,7 @@ class TimeVQVAE(BaseModel):
             model_dropout=0.3,
             emb_dropout=0.3,
         ),
-        prior_model_h_config=dict(
+        prior_model_h_config: Dict[str, Any] = dict(
             hidden_dim=32,
             n_layers=1,
             heads=1,
@@ -57,16 +56,36 @@ class TimeVQVAE(BaseModel):
             model_dropout=0.3,
             emb_dropout=0.3,
         ),
-        choice_temperatures={"lf": 10, "hf": 0},
-        dec_iter_step={"lf": 10, "hf": 10},
-        condition=None,
+        choice_temperatures: Dict[str, Any] = {"lf": 10, "hf": 0},
+        dec_iter_step: Dict[str, int] = {"lf": 10, "hf": 10},
         **kwargs,
     ):
-        super().__init__(seq_len, seq_dim, condition)
+        """
+        Args:
+            seq_len (int): Target sequence length
+            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+            condition (str, optional): Given conditions, allowing [None, 'predict', 'impute']. Defaults to None.
+            resnet_init_dim (int, optional): Initial d_model of resnet. Defaults to 4.
+            hidden_size (int, optional): Hidden size. Defaults to 128.
+            n_fft (int, optional): Size of Fourier transform. Defaults to 4.
+            n_resnet_blocks (int, optional): Blocks of Resnet. Defaults to 2.
+            downsampled_width_l (int, optional): Low-frequency downsampled width. Defaults to 8.
+            downsampled_width_h (int, optional): High-frequency downsampled width. Defaults to 32.
+            codebook_size (int, optional): VQ codebook. Defaults to 1024.
+            lr (float, optional): Learning rate. Defaults to 1e-3.
+            stage_split (float, optional): Training stage splite ratio, [0, 1]. Defaults to 0.5.
+            cfg_scale (float, optional): Classifier free guidance rate for conditional generation, [0, 1]. Defaults to 0.5.
+            prior_model_l_config (Dict[str, Any], optional): Prior model config for low-frequency. Defaults to dict( hidden_dim=128, n_layers=4, heads=2, ff_mult=1, use_rmsnorm=True, p_unconditional=0.2, model_dropout=0.3, emb_dropout=0.3, ).
+            prior_model_h_config (Dict[str, Any], optional): Prior model config for high-frequency. Defaults to dict( hidden_dim=32, n_layers=1, heads=1, ff_mult=1, use_rmsnorm=True, p_unconditional=0.2, model_dropout=0.3, emb_dropout=0.3, ).
+            choice_temperatures (Dict[str, Any], optional): Temperatures for randomness. Defaults to {"lf": 10, "hf": 0}.
+            dec_iter_step (Dict[str, int],, optional): Decoding iteration steps. Defaults to {"lf": 10, "hf": 10}.
+        """
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
 
         self.save_hyperparameters()
         self.automatic_optimization = False
-        if self.condition == 'class':
+        n_classes = kwargs.get("n_classes", 0)
+        if self.condition == "class":
             assert n_classes > 0
         self.seq_len = seq_len
         self.T = dec_iter_step
@@ -346,6 +365,8 @@ class TimeVQVAE(BaseModel):
         return recons_loss, vq_losses, perplexities
 
     def configure_optimizers(self):
+        assert self.trainer.max_steps > 0, "Trainer max_steps must be set in TimeVQVAE"
+        self.total_steps = self.trainer.max_steps
         stage1_param = (
             list(self.encoder_h.parameters())
             + list(self.encoder_l.parameters())
@@ -357,7 +378,7 @@ class TimeVQVAE(BaseModel):
         opt1 = torch.optim.AdamW(stage1_param, lr=self.hparams_initial.lr)
         scheduler1 = linear_warmup_cosine_annealingLR(
             opt1,
-            int(self.trainer.max_steps * self.hparams_initial.stage_split),
+            int(self.total_steps * self.hparams_initial.stage_split),
             # self.config["exp_params"]["linear_warmup_rate"],
             # min_lr=self.config["exp_params"]["min_lr"],
         )
@@ -368,8 +389,7 @@ class TimeVQVAE(BaseModel):
         opt2 = torch.optim.AdamW(stage2_param, lr=self.hparams_initial.lr)
         scheduler2 = linear_warmup_cosine_annealingLR(
             opt2,
-            self.trainer.max_steps
-            - int(self.trainer.max_steps * self.hparams_initial.stage_split),
+            self.total_steps - int(self.total_steps * self.hparams_initial.stage_split),
             # self.config["exp_params"]["linear_warmup_rate"],
             # min_lr=self.config["exp_params"]["min_lr"],
         )
@@ -379,9 +399,7 @@ class TimeVQVAE(BaseModel):
     def training_step(self, batch, batch_idx):
         opt1, opt2 = self.optimizers()
         sch1, sch2 = self.lr_schedulers()
-        if self.global_step < int(
-            self.trainer.max_steps * self.hparams_initial.stage_split
-        ):
+        if self.global_step < int(self.total_steps * self.hparams_initial.stage_split):
             # print(111111111111)
             self.toggle_optimizer(opt1)
             recons_loss, vq_losses, perplexities = self.loss_stage1(batch, batch_idx)
@@ -445,9 +463,7 @@ class TimeVQVAE(BaseModel):
             self.untoggle_optimizer(opt2)
 
     def validation_step(self, batch, batch_idx):
-        if self.global_step < int(
-            self.trainer.max_steps * self.hparams_initial.stage_split
-        ):
+        if self.global_step < int(self.total_steps * self.hparams_initial.stage_split):
             recons_loss, vq_losses, perplexities = self.loss_stage1(batch, batch_idx)
             loss = (
                 (recons_loss["LF.time"] + recons_loss["HF.time"])
@@ -721,15 +737,9 @@ class TimeVQVAE(BaseModel):
         else:
             return xhat
 
-    @torch.no_grad()
-    def _sample_impl(
-        self,
-        n_sample: int,
-        condition=None,
-        return_representations=False,
-        batch_size=None,
-        **kwargs,
-    ):
+    def _sample_impl(self, n_sample: int, condition: torch.Tensor = None, **kwargs):
+        batch_size = kwargs.get("batch_size")
+        return_representations = kwargs.get("return_representations", False)
         if batch_size is None:
             batch_size = n_sample
 

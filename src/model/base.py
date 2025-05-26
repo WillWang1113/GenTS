@@ -5,13 +5,13 @@ import torch
 from torch.nn import functional as F
 
 
-def _condition_shape_check(n_sample:int, condition:torch.Tensor, cond_type:str):
+def _condition_shape_check(n_sample: int, condition: torch.Tensor, cond_type: str):
     if n_sample < 1:
         raise ValueError("n_sample should be greater than 0.")
-    
-    if cond_type == 'class':
+
+    if cond_type == "class":
         cond_batch_size = condition.shape[0]
-            
+
         if cond_batch_size == 1 and n_sample > 1:
             condition = condition.repeat(
                 n_sample, *[1 for _ in range(len(condition.shape) - 1)]
@@ -22,19 +22,17 @@ def _condition_shape_check(n_sample:int, condition:torch.Tensor, cond_type:str):
             raise ValueError(
                 "The batch size of the given condition should be the same as n_sample or just 1."
             )
-    elif cond_type in ['predict', 'impute']:
+    elif cond_type in ["predict", "impute"]:
         if condition is None:
-            raise ValueError(
-                "Condition should not be None for prediction."
-            )
-    
-    elif cond_type is None: ...
+            raise ValueError("Condition should not be None for prediction.")
+
+    elif cond_type is None:
+        ...
         # if condition is not None:
         #     raise ValueError(
         #         "Condition should be None for unconditional generation."
         #     )
-    
-    
+
     assert n_sample >= 1
     if cond_type is not None:
         if condition.shape[0] == 1:
@@ -76,10 +74,20 @@ class BaseModel(ABC, LightningModule):
             ValueError: Condition type not allowed for this model
         """
         super().__init__()
+        
+        # check
         if condition not in self.ALLOW_CONDITION:
             raise ValueError(
                 f"Condition '{condition}' not allowed. Choose from {self.ALLOW_CONDITION}"
             )
+        if condition == "predict":
+            obs_len = kwargs.get("obs_len")
+            if obs_len is None:
+                raise ValueError("obs_len should be provided for prediction.")
+            elif obs_len < 0:
+                raise ValueError("obs_len should be greater than 0.")
+            self.obs_len = obs_len
+
         self.condition = condition
 
     @torch.no_grad()  # wrap with torch.no_grad()

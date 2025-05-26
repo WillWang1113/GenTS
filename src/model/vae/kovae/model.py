@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from src.model.base import BaseModel
+
 # from src.utils.losses import kl_loss
 from src.common._losses import kl_loss
 
@@ -11,12 +12,16 @@ from ._backbones import VKDecoder, VKEncoder, VKEncoderIrregular
 
 
 class KoVAE(BaseModel):
+    """KoVAE: Koopman Variational Autoencoder for both Regular and Irregular Time Series"""
+
     # 'impute' condition for input missing data
-    ALLOW_CONDITION = [None, 'impute']
+    ALLOW_CONDITION = [None, "impute"]
+
     def __init__(
         self,
         seq_len: int,
         seq_dim: int,
+        condition: str = None,
         latent_dim: int = 16,
         hidden_size: int = 20,
         num_layers: int = 3,
@@ -28,11 +33,27 @@ class KoVAE(BaseModel):
         koopman_nstep: int = 1,
         lr: float = 7e-4,
         weight_decay: float = 0.0,
-        condition: str = None,
         **kwargs,
     ):
-        super().__init__(seq_len, seq_dim, condition)
-        
+        """
+        Args:
+            seq_len (int): Target sequence length
+            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+            condition (str, optional): Given conditions, allowing [None, 'impute']. 'impute' condition for input missing data, not for real imputation. Defaults to None.
+            latent_dim (int, optional): Latent dimension for z. Defaults to 16.
+            hidden_size (int, optional): Hidden size. Defaults to 20.
+            num_layers (int, optional): RNN layers. Defaults to 3.
+            batch_norm (bool, optional): Batch norm or not. Defaults to True.
+            w_rec (float, optional): Loss weight of reconstruction. Defaults to 1.0.
+            w_kl (float, optional): Loss weight of KL divergance. Defaults to 0.007.
+            w_pred_prior (float, optional): Loss weight of prior distribution learning. Defaults to 0.005.
+            pinv_solver (bool, optional): Directly calculate pseudoinverse or not. Defaults to False.
+            koopman_nstep (int, optional): N step ahead dynamic learning. Defaults to 1.
+            lr (float, optional): Learning rate. Defaults to 7e-4.
+            weight_decay (float, optional): Weight decay. Defaults to 0.0.
+        """
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
+
         self.save_hyperparameters()
         self.koopman_nstep = koopman_nstep
         self.latent_dim = latent_dim  # latent
@@ -211,14 +232,14 @@ class KoVAE(BaseModel):
         if self.missing_value:
             # imputation task
 
-            x = batch["seq"]
-            cond = batch['c']
-            x = x.masked_fill(cond.bool(), float("nan"))
-            
-            X = batch['seq']
-            train_coeffs = batch['coeffs']  # .to(device)
-            time = torch.arange(x.shape[1]).to(x)
-            final_index = (torch.ones(x.shape[0]) * (self.seq_len-1)).to(x)
+            # x = batch["seq"]
+            # cond = batch["c"]
+            # x = x.masked_fill(cond.bool(), float("nan"))
+
+            X = batch["seq"]
+            train_coeffs = batch["coeffs"]  # .to(device)
+            time = torch.arange(X.shape[1]).to(X)
+            final_index = (torch.ones(X.shape[0]) * (self.seq_len - 1)).to(X)
             x_rec, Z_enc, Z_enc_prior = self(train_coeffs, time, final_index)
 
         else:
@@ -235,7 +256,8 @@ class KoVAE(BaseModel):
                 "train_kl_loss": losses[2],
                 "train_pred_loss": losses[3],
             },
-            prog_bar=True, on_epoch=True
+            prog_bar=True,
+            on_epoch=True,
         )
         return losses[0]
 
@@ -244,13 +266,13 @@ class KoVAE(BaseModel):
             # imputation task
 
             x = batch["seq"]
-            cond = batch['c']
+            cond = batch["c"]
             x = x.masked_fill(cond.bool(), float("nan"))
-            
-            X = batch['seq']
-            train_coeffs = batch['coeffs']  # .to(device)
+
+            X = batch["seq"]
+            train_coeffs = batch["coeffs"]  # .to(device)
             time = torch.arange(x.shape[1]).to(x)
-            final_index = (torch.ones(x.shape[0]) * (self.seq_len-1)).to(x)
+            final_index = (torch.ones(x.shape[0]) * (self.seq_len - 1)).to(x)
             x_rec, Z_enc, Z_enc_prior = self(train_coeffs, time, final_index)
 
         else:
@@ -267,7 +289,8 @@ class KoVAE(BaseModel):
                 "val_kl_loss": losses[2],
                 "val_pred_loss": losses[3],
             },
-            prog_bar=True, on_epoch=True
+            prog_bar=True,
+            on_epoch=True,
         )
         # return losses[0]
 
