@@ -1,8 +1,25 @@
 # GenTS: A library for generative time series analysis
 
 
-## Installation(TODO:details)
-Python: 3.10
+## Installation
+You should first create a virtual environment, and activate the environment. Then you can install the necessary libraries by running the following command.
+```
+conda create -n gents python=3.10
+conda activate gents
+pip install -r requirements.txt
+```
+
+## Quick start (TODO)
+```
+from src.model import VanillaVAE
+from src.data import XXX
+from lightning import Trainer
+
+model = VanillaVAE()
+trainer = Trainer()
+trainer.fit()
+model.sample()
+```
 
 ## Model zoo
 |          Name          |    Model Type     |       Condition       |    Application     |      Finish?       |
@@ -80,4 +97,5 @@ The former three are standard ```lightning``` methods for model training; The la
 - [x] Flow-based model (5.15)
 - [x] ODE-based model (5.15)
 - [x] Evaluation (TSGBench + new metrics J-FTSD, ICML2024) (5.31)
-- [ ] Benchmark datasets (6.15)
+- [ ] Model testing
+- [ ] Benchmark datasets

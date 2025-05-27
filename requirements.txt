@@ -1,0 +1,32 @@
+# datautils==1.0.3
+einops==0.8.1
+ema_pytorch==0.7.7
+extensions==0.4
+# gluonts==0.16.1
+# ipython==8.12.3
+lightning==2.4.0
+linear_attention_transformer==0.19.1
+matplotlib==3.10.3
+# mkl==2025.1.0
+numpy==2.2.6
+opt_einsum==3.4.0
+pandas==2.2.3
+# pts==1.4.8
+# pykeops==2.3
+pytorch_lightning==2.4.0
+PyYAML==6.0.2
+scikit_learn==1.6.1
+scipy==1.15.3
+setuptools==75.1.0
+six==1.17.0
+torch==2.5.1
+torchaudio==2.5.1
+torchcde==0.2.5
+torchdiffeq==0.2.5
+TorchDiffEqPack==1.0.1
+# TorchDiffEqPack==1.0.1
+# torchdyn==1.0.6
+torchsde==0.2.6
+torchvision==0.20.1
+tqdm==4.66.6
+# wandb==0.19.11

@@ -20,7 +20,6 @@ model_names = src.model.__all__
 # model_names = ['VanillaVAE','TMDM']
 # model_names = ['MrDiff','VanillaVAE']
 model_names = ["VanillaMAF","VanillaDDPM", ]
-# model_names = model_names[:2]
 
 # TODO: iter all, Model Capability
 conditions = [
@@ -28,12 +27,7 @@ conditions = [
     None,
     # "predict",
 ]
-# conditions = ["impute", "predict", None]
-# conditions = ['class', None]
-# conditions = [None, "class"]
-# conditions = [None, "impute"]
-# conditions = ["impute", None]
-# conditions = ["impute", None]
+
 batch_size = 128
 seq_len = 64
 add_coeffs = False
@@ -44,7 +38,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 500
+max_epochs = 50
 inference_batch_size = 7
 
 # hparams

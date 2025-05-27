@@ -15,7 +15,7 @@ import torch.nn.functional as F
 
 # import utils
 # from torch.autograd import grad
-from IPython import embed
+# from IPython import embed
 from torch.autograd import Function, Variable
 
 from src.common._modules import LayerNorm
@@ -624,7 +624,10 @@ class Embedding(nn.Module):
             output = torch.cat((x, onehot_embed), dim=-1)
             output = self.embed2(self.embed1(output))
         except:
-            embed()
+            raise Exception(
+            "Masking not implemented for this attention type. Please use a mask with the same shape as scores."
+        )
+            # embed()
         return output
 
 
@@ -771,8 +774,11 @@ def attention(query, key, value, params, mask=None, dropout=None, alpha=None):
     if mask is not None:
         try:
             scores = scores.masked_fill(mask == 0, -1e9)
-        except:
-            embed()
+        except: 
+            raise Exception(
+            "Masking not implemented for this attention type. Please use a mask with the same shape as scores."
+        )
+            # embed()
 
     if params.attn_type == "softmax":
         p_attn = F.softmax(scores, dim=-1)
