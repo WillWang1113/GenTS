@@ -6,6 +6,7 @@ from torch.optim.swa_utils import AveragedModel
 
 
 class SDEGAN(BaseModel):
+    # Allow for irregular time series as inputs, but not for imputation.
     ALLOW_CONDITION = [None, "impute"]
 
     def __init__(

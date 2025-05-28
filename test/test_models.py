@@ -10,22 +10,21 @@ seed_everything(3407, workers=True)
 gpu = 0
 
 model_names = src.model.__all__
-# model_names = ['TimeVAE','TimeGAN', 'FourierDiffusion']
-# model_names = ['COSCIGAN', 'VanillaVAE']
-# model_names = ["PSAGAN", "VanillaVAE"]
-# model_names = ['COSCIGAN', 'RCGAN']
-# model_names = ['KoVAE', 'VanillaVAE', 'TimeVAE']
-# model_names = ["KoVAE", "GTGAN"]
-# model_names = ["ImagenTime", "VanillaVAE"]
-# model_names = ['VanillaVAE','TMDM']
-# model_names = ['MrDiff','VanillaVAE']
-model_names = ["VanillaMAF","VanillaDDPM", ]
+
+# VAE + vanilla models
+# 1. diffusion + 2. gan + 3. flow
+
+
+model_names = [
+    "LS4",
+    "VanillaMAF",
+]
 
 # TODO: iter all, Model Capability
 conditions = [
-    "impute",
     None,
-    # "predict",
+    "impute",
+    "predict",
 ]
 
 batch_size = 128
@@ -38,7 +37,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 50
+max_epochs = 200
 inference_batch_size = 7
 
 # hparams
@@ -160,12 +159,15 @@ for i in range(len(model_names)):
         test_model.to(f"cuda:{gpu}")
 
         test_cond = None
-        # if c in ["predict", "impute"]:
-        #     test_cond = batch["c"].unsqueeze(0)
+
+        # predict/imputation
+        # sample shape: [batch_size, seq_len, seq_dim, n_samples=10]
+
+        # unconditional sampling
+        # sample shape: [n_samples=10, seq_len, seq_dim]
+
         samples = (
-            test_model.sample(10, condition=batch.get("c"), **batch)
-            .squeeze(0)
-            .cpu()
+            test_model.sample(10, condition=batch.get("c"), **batch).squeeze(0).cpu()
         )
         print(samples.shape)
         batch["seq"] = batch["seq"].cpu()
@@ -216,7 +218,7 @@ for i in range(len(model_names)):
             axs[i, j].plot(range(seq_len), samples[0])
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
-        break
+    break
 fig.suptitle("Model Comparison")
 fig.tight_layout()
 fig.savefig("test_model.png", bbox_inches="tight")

@@ -136,8 +136,8 @@ class LS4(BaseModel):
         self.model = VAE(config)
         self.seq_len = seq_len
         self.seq_dim = seq_dim
-        if condition == 'predict':
-            self.obs_len = kwargs.get('obs_len')
+        if condition == "predict":
+            self.obs_len = kwargs.get("obs_len")
             assert self.obs_len > 0
 
     def training_step(self, batch, batch_idx):
@@ -197,17 +197,15 @@ class LS4(BaseModel):
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
         self.model.setup_rnn()
-        total_seq_len = self.seq_len
-        if self.condition == "predict":
-            total_seq_len += self.obs_len
-        t = torch.linspace(
-            20.0 / total_seq_len,
-            20.0,
-            total_seq_len,
-        ).to(self.device)
 
         if self.condition == "predict":
-            total_seq_len += self.obs_len
+            total_seq_len = self.seq_len + self.obs_len
+            t = torch.linspace(
+                20.0 / total_seq_len,
+                20.0,
+                total_seq_len,
+            ).to(self.device)
+
             tp_to_predict = t[self.obs_len :]
             observed_tp = t[: self.obs_len]
             observed_data = condition
@@ -227,14 +225,23 @@ class LS4(BaseModel):
                 all_samples.append(trajs)
             all_samples = torch.stack(all_samples, dim=-1)
 
-        # ! condition for impute should be data, not masks
         elif self.condition == "impute":
-            data = kwargs.get("seq").clone()
-            data[condition] = 0.0
+            # data = kwargs.get("seq").clone()
+            # condition = torch.isnan(condition)
+            # data[condition] = 0.0
+            total_seq_len = self.seq_len
+            t = torch.linspace(
+                20.0 / total_seq_len,
+                20.0,
+                total_seq_len,
+            ).to(self.device)
+
+            observed_data = torch.nan_to_num(condition)
+            mask = ~torch.isnan(condition)
+            mask = mask.float()
 
             tp_to_predict = t
             observed_tp = t
-            observed_data = data
             mask_predicted_data = torch.ones(
                 [observed_data.shape[0], self.seq_len, self.seq_dim]
             ).to(observed_data)
@@ -266,17 +273,19 @@ class LS4(BaseModel):
             data = batch["seq"]
             tp = torch.linspace(20.0 / data.shape[1], 20.0, data.shape[1]).to(data)
             mask = torch.ones_like(batch["seq"])
-            mask[:, :self.obs_len] = 0.0
-                
+            mask[:, : self.obs_len] = 0.0
+
             labels = None
 
         elif self.condition == "impute":
-            data = batch["seq"].clone()
-            mask = batch["c"]
-            data[mask] = 0.0
+            data = torch.nan_to_num(batch["c"])
+            mask = torch.isnan(batch["c"])
+            mask = 1 - mask.float()
+            # data = batch["seq"].clone()
+            # mask = batch["c"]
+            # data[mask] = 0.0
 
             tp = torch.linspace(20.0 / data.shape[1], 20.0, data.shape[1]).to(data)
-            mask = 1 - mask.float()
             labels = None
 
         return data, tp, mask, labels

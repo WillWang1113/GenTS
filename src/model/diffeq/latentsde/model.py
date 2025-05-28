@@ -5,7 +5,7 @@ import torch
 
 
 class LatentSDE(BaseModel):
-    ALLOW_CONDITION = [None, "impute", "predict"]
+    ALLOW_CONDITION = [None]
 
     def __init__(
         self,
@@ -28,13 +28,14 @@ class LatentSDE(BaseModel):
         self.seq_len = seq_len
         self.total_seq_len = seq_len
 
-        # put checking_fn into BaseModel
-        if condition == "predict":
-            self.obs_len = kwargs.get("obs_len", None)
-            assert self.obs_len is not None
-            assert self.obs_len > 0
-            self.total_seq_len += self.obs_len
-        input_dim = seq_dim * 2 if self.condition == "impute" else seq_dim
+        # # put checking_fn into BaseModel
+        # if condition == "predict":
+        #     # self.obs_len = kwargs.get("obs_len", None)
+        #     # assert self.obs_len is not None
+        #     # assert self.obs_len > 0
+        #     self.total_seq_len += self.obs_len
+        input_dim = seq_dim
+        # input_dim = seq_dim * 2 if self.condition == "impute" else seq_dim
 
         self.net = LatentSDENet(
             input_dim, latent_size, context_size, hidden_size, output_size=seq_dim
@@ -51,23 +52,30 @@ class LatentSDE(BaseModel):
             self.total_seq_len,
         ).to(batch["seq"].device)
 
-        if self.condition == "predict":
-            xs = batch["c"]
-            tp_to_predict = t[self.obs_len :]
-            xs_target = batch["seq"][:, -self.seq_len :]
-            flip = False
-        elif self.condition == "impute":
-            mask = (~batch["c"]).int()
-            masked_data = mask * batch["seq"]
-            xs = torch.concat([masked_data, mask], dim=-1)
-            tp_to_predict = t
-            xs_target = batch["seq"]
-            flip = True
-        else:
-            xs = batch["seq"]
-            tp_to_predict = t
-            xs_target = batch["seq"]
-            flip = True
+        
+        xs = batch["seq"]
+        tp_to_predict = t
+        xs_target = batch["seq"]
+        flip = True
+        
+        # if self.condition == "predict":
+        #     xs = batch["c"]
+        #     tp_to_predict = t[self.obs_len :]
+        #     xs_target = batch["seq"][:, -self.seq_len :]
+        #     flip = False
+        # elif self.condition == "impute":
+        #     mask = torch.isnan(batch["c"])
+        #     mask = (~mask).int()
+        #     masked_data = mask * batch["seq"]
+        #     xs = torch.concat([masked_data, mask], dim=-1)
+        #     tp_to_predict = t
+        #     xs_target = batch["seq"]
+        #     flip = True
+        # else:
+        #     xs = batch["seq"]
+        #     tp_to_predict = t
+        #     xs_target = batch["seq"]
+        #     flip = True
 
         preds, kld = self.net(
             xs, tp_to_predict, self.noise_std, self.adjoint, self.solver, flip=flip
@@ -101,44 +109,47 @@ class LatentSDE(BaseModel):
             self.total_seq_len,
         ).to(self.device)
 
-        if self.condition is None:
-            trajs = self.net.sample(n_sample, t)
-            trajs = trajs.permute(1, 0, 2)
-        else:
-            if self.condition == "predict":
-                xs = condition
-                tp_to_predict = t[self.obs_len :]
-                flip = False
-            elif self.condition == "impute":
-                mask = (~condition).int()
-                masked_data = mask * kwargs["seq"]
-                xs = torch.concat([masked_data, mask], dim=-1)
-                tp_to_predict = t
-                flip = True
+        trajs = self.net.sample(n_sample, t)
+        trajs = trajs.permute(1, 0, 2)
+        # if self.condition is None:
+            # trajs = self.net.sample(n_sample, t)
+            # trajs = trajs.permute(1, 0, 2)
+        # else:
+        #     if self.condition == "predict":
+        #         xs = condition
+        #         tp_to_predict = t[self.obs_len :]
+        #         flip = False
+        #     elif self.condition == "impute":
+        #         condition = torch.isnan(condition)
+        #         mask = (~condition).int()
+        #         masked_data = mask * kwargs["seq"]
+        #         xs = torch.concat([masked_data, mask], dim=-1)
+        #         tp_to_predict = t
+        #         flip = True
 
-            if flip:
-                ctx = self.net.encoder(torch.flip(xs, dims=(1,)))
-            else:
-                ctx = self.net.encoder(xs)
+        #     if flip:
+        #         ctx = self.net.encoder(torch.flip(xs, dims=(1,)))
+        #     else:
+        #         ctx = self.net.encoder(xs)
 
-            ctx = torch.flip(ctx, dims=(1,))
-            self.net.contextualize((tp_to_predict, ctx))
-            qz0_mean, qz0_logstd = self.net.qz0_net(ctx[:, 0]).chunk(chunks=2, dim=1)
+        #     ctx = torch.flip(ctx, dims=(1,))
+        #     self.net.contextualize((tp_to_predict, ctx))
+        #     qz0_mean, qz0_logstd = self.net.qz0_net(ctx[:, 0]).chunk(chunks=2, dim=1)
 
-            trajs = []
-            for _ in range(n_sample):
-                z0 = qz0_mean + qz0_logstd.exp() * torch.randn_like(qz0_mean)
-                zs = torchsde.sdeint(
-                    self.net,
-                    z0,
-                    tp_to_predict,
-                    names={"drift": "h"},
-                    dt=1e-3,
-                    method=self.solver,
-                )
-                trajs.append(self.net.projector(zs))
-            trajs = torch.stack(trajs, dim=-1)
-            trajs = trajs.permute(1, 0, 2, 3)
+        #     trajs = []
+        #     for _ in range(n_sample):
+        #         z0 = qz0_mean + qz0_logstd.exp() * torch.randn_like(qz0_mean)
+        #         zs = torchsde.sdeint(
+        #             self.net,
+        #             z0,
+        #             tp_to_predict,
+        #             names={"drift": "h"},
+        #             dt=1e-3,
+        #             method=self.solver,
+        #         )
+        #         trajs.append(self.net.projector(zs))
+        #     trajs = torch.stack(trajs, dim=-1)
+        #     trajs = trajs.permute(1, 0, 2, 3)
         return trajs
 
     def configure_optimizers(self):

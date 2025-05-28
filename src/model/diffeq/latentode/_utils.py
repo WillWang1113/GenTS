@@ -3,91 +3,19 @@
 # Author: Yulia Rubanova
 ###########################
 
-import logging
 import os
 import pickle
 
 import numpy as np
-import sklearn as sk
 import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import LRScheduler
-
-
-def makedirs(dirname):
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-
-
-def save_checkpoint(state, save, epoch):
-    if not os.path.exists(save):
-        os.makedirs(save)
-    filename = os.path.join(save, "checkpt-%04d.pth" % epoch)
-    torch.save(state, filename)
-
-
-def get_logger(
-    logpath, filepath, package_files=[], displaying=True, saving=True, debug=False
-):
-    logger = logging.getLogger()
-    if debug:
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
-    logger.setLevel(level)
-    if saving:
-        info_file_handler = logging.FileHandler(logpath, mode="w")
-        info_file_handler.setLevel(level)
-        logger.addHandler(info_file_handler)
-    if displaying:
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(level)
-        logger.addHandler(console_handler)
-    logger.info(filepath)
-
-    for f in package_files:
-        logger.info(f)
-        with open(f, "r") as package_f:
-            logger.info(package_f.read())
-
-    return logger
-
-
-def inf_generator(iterable):
-    """Allows training with DataLoaders in a single infinite loop:
-    for i, (x, y) in enumerate(inf_generator(train_loader)):
-    """
-    iterator = iterable.__iter__()
-    while True:
-        try:
-            yield iterator.__next__()
-        except StopIteration:
-            iterator = iterable.__iter__()
-
-
-def dump_pickle(data, filename):
-    with open(filename, "wb") as pkl_file:
-        pickle.dump(data, pkl_file)
 
 
 def load_pickle(filename):
     with open(filename, "rb") as pkl_file:
         filecontent = pickle.load(pkl_file)
     return filecontent
-
-
-def make_dataset(dataset_type="spiral", **kwargs):
-    if dataset_type == "spiral":
-        data_path = "data/spirals.pickle"
-        dataset = load_pickle(data_path)["dataset"]
-        chiralities = load_pickle(data_path)["chiralities"]
-    elif dataset_type == "chiralspiral":
-        data_path = "data/chiral-spirals.pickle"
-        dataset = load_pickle(data_path)["dataset"]
-        chiralities = load_pickle(data_path)["chiralities"]
-    else:
-        raise Exception("Unknown dataset type " + dataset_type)
-    return dataset, chiralities
 
 
 def split_last_dim(data):
@@ -107,10 +35,6 @@ def init_network_weights(net, std=0.1):
         if isinstance(m, nn.Linear):
             nn.init.normal_(m.weight, mean=0, std=std)
             nn.init.constant_(m.bias, val=0)
-
-
-def flatten(x, dim):
-    return x.reshape(x.size()[:dim] + (-1,))
 
 
 def subsample_timepoints(data, time_steps, mask, n_tp_to_sample=None):
@@ -330,13 +254,6 @@ def create_net(n_inputs, n_outputs, n_layers=1, n_units=100, nonlinear=nn.Tanh):
     return nn.Sequential(*layers)
 
 
-def get_item_from_pickle(pickle_file, item_name):
-    from_pickle = load_pickle(pickle_file)
-    if item_name in from_pickle:
-        return from_pickle[item_name]
-    return None
-
-
 def get_dict_template():
     return {
         "observed_data": None,
@@ -348,53 +265,6 @@ def get_dict_template():
         "labels": None,
     }
 
-
-def normalize_data(data):
-    reshaped = data.reshape(-1, data.size(-1))
-
-    att_min = torch.min(reshaped, 0)[0]
-    att_max = torch.max(reshaped, 0)[0]
-
-    # we don't want to divide by zero
-    att_max[att_max == 0.0] = 1.0
-
-    if (att_max != 0.0).all():
-        data_norm = (data - att_min) / att_max
-    else:
-        raise Exception("Zero!")
-
-    if torch.isnan(data_norm).any():
-        raise Exception("nans!")
-
-    return data_norm, att_min, att_max
-
-
-def normalize_masked_data(data, mask, att_min, att_max):
-    # we don't want to divide by zero
-    att_max[att_max == 0.0] = 1.0
-
-    if (att_max != 0.0).all():
-        data_norm = (data - att_min) / att_max
-    else:
-        raise Exception("Zero!")
-
-    if torch.isnan(data_norm).any():
-        raise Exception("nans!")
-
-    # set masked out elements back to zero
-    data_norm[mask == 0] = 0
-
-    return data_norm, att_min, att_max
-
-
-def shift_outputs(outputs, first_datapoint=None):
-    outputs = outputs[:, :, :-1, :]
-
-    if first_datapoint is not None:
-        n_traj, n_dims = first_datapoint.size()
-        first_datapoint = first_datapoint.reshape(1, n_traj, 1, n_dims)
-        outputs = torch.cat((first_datapoint, outputs), 2)
-    return outputs
 
 
 def split_data_extrap(data_dict, dataset=""):
@@ -538,129 +408,6 @@ def split_and_subsample_batch(data_dict, args, data_type="train"):
     # 	processed_dict = subsample_observed_data(processed_dict,
     # 		n_tp_to_sample = args.sample_tp)
     return processed_dict
-
-
-def compute_loss_all_batches(
-    model,
-    test_dataloader,
-    args,
-    n_batches,
-    experimentID,
-    device,
-    n_traj_samples=1,
-    kl_coef=1.0,
-    max_samples_for_eval=None,
-):
-    total = {}
-    total["loss"] = 0
-    total["likelihood"] = 0
-    total["mse"] = 0
-    total["kl_first_p"] = 0
-    total["std_first_p"] = 0
-    total["pois_likelihood"] = 0
-    total["ce_loss"] = 0
-
-    n_test_batches = 0
-
-    classif_predictions = torch.Tensor([]).to(device)
-    all_test_labels = torch.Tensor([]).to(device)
-
-    for i in range(n_batches):
-        print("Computing loss... " + str(i))
-
-        batch_dict = get_next_batch(test_dataloader)
-
-        results = model.compute_all_losses(
-            batch_dict, n_traj_samples=n_traj_samples, kl_coef=kl_coef
-        )
-
-        if args.classif:
-            n_labels = model.n_labels  # batch_dict["labels"].size(-1)
-            n_traj_samples = results["label_predictions"].size(0)
-
-            classif_predictions = torch.cat(
-                (
-                    classif_predictions,
-                    results["label_predictions"].reshape(n_traj_samples, -1, n_labels),
-                ),
-                1,
-            )
-            all_test_labels = torch.cat(
-                (all_test_labels, batch_dict["labels"].reshape(-1, n_labels)), 0
-            )
-
-        for key in total.keys():
-            if key in results:
-                var = results[key]
-                if isinstance(var, torch.Tensor):
-                    var = var.detach()
-                total[key] += var
-
-        n_test_batches += 1
-
-        # # for speed
-        # if max_samples_for_eval is not None:
-        # 	if n_batches * batch_size >= max_samples_for_eval:
-        # 		break
-
-    if n_test_batches > 0:
-        for key, value in total.items():
-            total[key] = total[key] / n_test_batches
-
-    if args.classif:
-        if args.dataset == "physionet":
-            # all_test_labels = all_test_labels.reshape(-1)
-            # For each trajectory, we get n_traj_samples samples from z0 -- compute loss on all of them
-            all_test_labels = all_test_labels.repeat(n_traj_samples, 1, 1)
-
-            idx_not_nan = ~torch.isnan(all_test_labels)
-            classif_predictions = classif_predictions[idx_not_nan]
-            all_test_labels = all_test_labels[idx_not_nan]
-
-            dirname = "plots/" + str(experimentID) + "/"
-            os.makedirs(dirname, exist_ok=True)
-
-            total["auc"] = 0.0
-            if torch.sum(all_test_labels) != 0.0:
-                print(
-                    "Number of labeled examples: {}".format(
-                        len(all_test_labels.reshape(-1))
-                    )
-                )
-                print(
-                    "Number of examples with mortality 1: {}".format(
-                        torch.sum(all_test_labels == 1.0)
-                    )
-                )
-
-                # Cannot compute AUC with only 1 class
-                total["auc"] = sk.metrics.roc_auc_score(
-                    all_test_labels.cpu().numpy().reshape(-1),
-                    classif_predictions.cpu().numpy().reshape(-1),
-                )
-            else:
-                print(
-                    "Warning: Couldn't compute AUC -- all examples are from the same class"
-                )
-
-        if args.dataset == "activity":
-            all_test_labels = all_test_labels.repeat(n_traj_samples, 1, 1)
-
-            labeled_tp = torch.sum(all_test_labels, -1) > 0.0
-
-            all_test_labels = all_test_labels[labeled_tp]
-            classif_predictions = classif_predictions[labeled_tp]
-
-            # classif_predictions and all_test_labels are in on-hot-encoding -- convert to class ids
-            _, pred_class_id = torch.max(classif_predictions, -1)
-            _, class_labels = torch.max(all_test_labels, -1)
-
-            pred_class_id = pred_class_id.reshape(-1)
-
-            total["accuracy"] = sk.metrics.accuracy_score(
-                class_labels.cpu().numpy(), pred_class_id.cpu().numpy()
-            )
-    return total
 
 
 def check_mask(data, mask):

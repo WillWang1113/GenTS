@@ -30,11 +30,6 @@ class LatentODE(BaseModel):
         # device = kwargs.get("device", self.device)
         self.seq_len = seq_len
 
-        if condition == "predict":
-            self.obs_len = kwargs.get("obs_len", None)
-            assert self.obs_len is not None
-            assert self.obs_len > 0
-
         args = Namespace(
             latents=latent_dim,
             units=d_model,
@@ -82,11 +77,10 @@ class LatentODE(BaseModel):
                 tp_to_predict, observed_data, observed_tp, observed_mask, n_sample
             )
             trajs = trajs.permute(1, 2, 3, 0)
-        # ! condition for impute should be data, not masks
+
         elif self.condition == "impute":
-            data = kwargs.get("seq").clone()
-            data[condition] = 0.0
-            mask = 1 - condition.float()
+            data = torch.nan_to_num(condition)
+            mask = 1 - torch.isnan(condition).float()
 
             tp_to_predict = t
             observed_tp = t
@@ -103,6 +97,7 @@ class LatentODE(BaseModel):
         return trajs
 
     def _reform_batch(self, batch):
+        
         x = batch["seq"]
         # ! force override !
         t = torch.linspace(20.0 / x.shape[1], 20.0, x.shape[1]).to(x)
@@ -113,7 +108,11 @@ class LatentODE(BaseModel):
                 "observed_tp": t[: self.obs_len],
                 "observed_data": batch["c"],
                 "data_to_predict": batch["seq"][:, self.obs_len :, :],
+                # observed_mask = mask over observed_data, 
+                # 1 is observed, 0 is not
                 "observed_mask": mask,
+                # mask_predicted_data = mask over data_to_predict (for loss computing), 
+                # 1 is observed, 0 is not
                 "mask_predicted_data": None,
                 "labels": None,
                 "mode": "extrap",
@@ -121,7 +120,8 @@ class LatentODE(BaseModel):
             # print(batch_dict['observed_data'].shape)
             # print(batch_dict['data_to_predict'].shape)
         elif self.condition == "impute":
-            mask = batch["c"]
+            mask = torch.isnan(batch["c"])
+            # mask = batch["c"]
             # 1: missing
             # 0: non-missing
             observed_data = x.clone()
@@ -134,7 +134,7 @@ class LatentODE(BaseModel):
                 "observed_data": observed_data,
                 "data_to_predict": x,
                 "observed_mask": mask,
-                "mask_predicted_data": None,
+                "mask_predicted_data": mask,
                 "labels": None,
                 "mode": "interp",
             }
@@ -146,7 +146,7 @@ class LatentODE(BaseModel):
                 "observed_data": x,
                 "data_to_predict": x,
                 "observed_mask": mask,
-                "mask_predicted_data": None,
+                "mask_predicted_data": mask,
                 "labels": None,
                 "mode": "interp",
             }

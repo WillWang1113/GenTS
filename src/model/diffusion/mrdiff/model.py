@@ -52,7 +52,7 @@ class MrDiff(BaseModel):
         condition="predict",
         **kwargs,
     ):
-        super(MrDiff, self).__init__(seq_len, seq_dim, condition)
+        super(MrDiff, self).__init__(seq_len, seq_dim, condition, **kwargs)
         self.condition = "predict"
         self.save_hyperparameters()
         args = Namespace(**self.hparams_initial)
