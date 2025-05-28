@@ -31,6 +31,8 @@ class CSDI(BaseModel):
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
+        self.seq_len = seq_len
+        self.seq_dim = seq_dim
         config = dict(
             model=dict(
                 is_unconditional=0,
@@ -87,10 +89,11 @@ class CSDI(BaseModel):
             )
         else:
             observed_mask = ~torch.isnan(total_seq)
-            target_mask = ~batch["c"]
+            target_mask = torch.isnan(batch["c"])
+            target_mask = ~target_mask
             # print(target_mask[0,:,0])
             train_batch = dict(
-                observed_data=total_seq,
+                observed_data=torch.nan_to_num(batch['c']),
                 observed_mask=observed_mask,
                 gt_mask=target_mask,
                 timepoints=timepoints,
@@ -114,6 +117,50 @@ class CSDI(BaseModel):
         return loss
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
+        batch_size = condition.shape[0]
+        timepoints = kwargs.get("t")
+        if timepoints is None:
+            timepoints = torch.arange(self.seq_len).to(self.device)
+
+        if self.condition == "predict":
+            seq_shape = (condition.shape[0], self.obs_len + self.seq_len, self.seq_dim)
+            observed_data = torch.concat(
+                [
+                    condition,
+                    torch.zeros((condition.shape[0], self.seq_len, self.seq_dim)).to(self.device),
+                ],
+                dim=1,
+            )
+            observed_mask = torch.ones(seq_shape).to(self.device)
+            target_mask = torch.ones(seq_shape).to(self.device)
+            target_mask[:, -self.seq_len :] = 0.0
+            test_batch = dict(
+                observed_data=observed_data,
+                observed_mask=observed_mask,
+                gt_mask=target_mask,
+                timepoints=timepoints.to(self.device),
+                feature_id=torch.arange(self.seq_dim)
+                .unsqueeze(0)
+                .expand(batch_size, -1)
+                .to(self.device)
+                * 1.0,
+            )
+        else:
+            seq_shape = (condition.shape[0], self.seq_len, self.seq_dim)
+
+            observed_mask = kwargs.get(
+                "observed_mask", torch.ones(seq_shape).to(self.device)
+            )
+            target_mask = torch.isnan(condition)
+            target_mask = ~target_mask
+            # print(target_mask[0,:,0])
+            test_batch = dict(
+                observed_data=torch.nan_to_num(condition),
+                observed_mask=observed_mask,
+                gt_mask=target_mask,
+                timepoints=timepoints,
+            )
+
         test_batch = self._rebuild_batch(kwargs)
         samples, observed_data, target_mask, observed_mask, observed_tp = (
             self.model.evaluate(test_batch, n_samples=n_sample)

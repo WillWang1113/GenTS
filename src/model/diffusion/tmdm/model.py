@@ -46,7 +46,7 @@ class TMDM(BaseModel):
         condition="predict",
         **kwargs,
     ):
-        super().__init__(seq_len, seq_dim, condition)
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         self.condition = "predict"
         args = Namespace(**self.hparams_initial)

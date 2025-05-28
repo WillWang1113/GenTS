@@ -21,7 +21,6 @@ class DiffusionTS(BaseModel):
         self,
         seq_len,
         seq_dim,
-        obs_len=0,
         condition=None,
         n_layer_enc=3,
         n_layer_dec=6,
@@ -44,27 +43,25 @@ class DiffusionTS(BaseModel):
         lr=1e-3,
         **kwargs,
     ):
-        super(DiffusionTS, self).__init__(seq_len, seq_dim, condition)
+        super(DiffusionTS, self).__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
-        if self.condition == "predict":
-            assert obs_len > 0, "obs_len must be set when condition is predict"
+        
         self.eta, self.use_ff = eta, use_ff
-        self.seq_length = seq_len + obs_len
-        print(self.seq_length)
+        self.total_seq_len = seq_len + self.obs_len if condition == "predict" else seq_len
         self.predict_length = seq_len
         self.feature_size = seq_dim
-        self.ff_weight = default(reg_weight, math.sqrt(self.seq_length) / 5)
+        self.ff_weight = default(reg_weight, math.sqrt(self.total_seq_len) / 5)
 
         self.model = Transformer(
             n_feat=seq_dim,
-            n_channel=self.seq_length,
+            n_channel=self.total_seq_len,
             n_layer_enc=n_layer_enc,
             n_layer_dec=n_layer_dec,
             n_heads=n_heads,
             attn_pdrop=attn_pd,
             resid_pdrop=resid_pd,
             mlp_hidden_times=mlp_hidden_times,
-            max_len=self.seq_length,
+            max_len=self.total_seq_len,
             n_embd=d_model,
             conv_params=[kernel_size, padding_size],
             **kwargs,
@@ -181,7 +178,7 @@ class DiffusionTS(BaseModel):
     def model_predictions(self, x, t, clip_x_start=False, padding_masks=None):
         if padding_masks is None:
             padding_masks = torch.ones(
-                x.shape[0], self.seq_length, dtype=bool, device=x.device
+                x.shape[0], self.total_seq_len, dtype=bool, device=x.device
             )
 
         maybe_clip = (
@@ -273,7 +270,7 @@ class DiffusionTS(BaseModel):
         return img
 
     def generate_mts(self, batch_size=16, model_kwargs=None, cond_fn=None):
-        feature_size, seq_length = self.feature_size, self.seq_length
+        feature_size, seq_length = self.feature_size, self.total_seq_len
         if cond_fn is not None:
             sample_fn = (
                 self.fast_sample_cond if self.fast_sampling else self.sample_cond
@@ -664,17 +661,17 @@ class DiffusionTS(BaseModel):
             # samples = np.row_stack([samples, sample.detach().cpu().numpy()])
             return sample
         else:
-            x_shape = (condition.shape[0], self.seq_length, self.feature_size)
+            x_shape = (condition.shape[0], self.total_seq_len, self.feature_size)
             x = kwargs.get("seq", None)
             assert x is not None, "x must be provided for sampling"
-            assert x.shape[1] == self.seq_length
+            assert x.shape[1] == self.total_seq_len
             
             if self.condition == "predict":
-                t_m = torch.ones(x_shape)
+                t_m = torch.ones(x_shape).to(self.device)
                 t_m[:, -self.predict_length :, :] = 0
                 t_m = t_m.bool()
             else:
-                t_m = condition.bool()
+                t_m = ~torch.isnan(condition)
 
             all_samples = []
             for i in range(n_sample):

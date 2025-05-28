@@ -16,15 +16,15 @@ model_names = src.model.__all__
 
 
 model_names = [
-    "LS4",
+    "ImagenTime",
     "VanillaMAF",
 ]
 
 # TODO: iter all, Model Capability
 conditions = [
-    None,
     "impute",
     "predict",
+    None,
 ]
 
 batch_size = 128
@@ -37,7 +37,7 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 200
+max_epochs = 50
 inference_batch_size = 7
 
 # hparams
@@ -167,7 +167,7 @@ for i in range(len(model_names)):
         # sample shape: [n_samples=10, seq_len, seq_dim]
 
         samples = (
-            test_model.sample(10, condition=batch.get("c"), **batch).squeeze(0).cpu()
+            test_model.sample(5, condition=batch.get("c"), **batch).squeeze(0).cpu()
         )
         print(samples.shape)
         batch["seq"] = batch["seq"].cpu()

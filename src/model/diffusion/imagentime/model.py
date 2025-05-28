@@ -15,7 +15,6 @@ class ImagenTime(BaseModel):
         self,
         seq_len,
         seq_dim,
-        obs_len=0,
         missing_rate=0,
         condition=None,
         n_diff_steps=18,
@@ -42,17 +41,17 @@ class ImagenTime(BaseModel):
         T         : Diffusion Steps
         """
 
-        super().__init__(seq_len, seq_dim, condition)
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
-        if self.condition == "predict":
-            assert obs_len > 0, "obs_len must be greater than 0 for prediction"
-        elif self.condition == "impute":
+        
+        if self.condition == "impute":
             assert missing_rate > 0, "mask_rate must be greater than 0 for imputation"
         
         if self.condition is not None:
             assert not use_stft, "STFT embedding is not supported for imputation or prediction"
             
         args = Namespace(**self.hparams_initial)
+        args.obs_len = self.obs_len if self.condition == "predict" else 0
         args.diffusion_steps = n_diff_steps
         args.input_channels = seq_dim
         args.deterministic = deterministic_sampling
@@ -319,7 +318,9 @@ class ImagenTime(BaseModel):
             x_ts = batch["seq"]
             if self.condition == "impute":
                 # --- generate random mask and mask x as it time series --- #
-                mask_ts = (~batch["c"]).float()
+                mask_ts = ~torch.isnan(batch['c'])
+                mask_ts = mask_ts.float()
+                # mask_ts = (~batch["c"]).float()
             else:
                 mask_ts = torch.zeros_like(x_ts)
                 mask_ts[:, : self.hparams.obs_len] = 1.0
@@ -360,7 +361,9 @@ class ImagenTime(BaseModel):
             x_ts = kwargs["seq"]
             if self.condition == "impute":
                 # --- generate random mask and mask x as it time series --- #
-                mask_ts = (~condition).float()
+                mask_ts = ~torch.isnan(condition)
+                mask_ts = mask_ts.float()
+                # mask_ts = (~condition).float()
             else:
                 mask_ts = torch.zeros_like(x_ts)
                 mask_ts[:, : self.hparams.obs_len] = 1.0

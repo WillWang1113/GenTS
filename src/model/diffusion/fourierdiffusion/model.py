@@ -41,7 +41,7 @@ class FourierDiffusion(BaseModel):
         condition: str = None,
         **kwargs,
     ) -> None:
-        super().__init__(seq_len, seq_dim, condition)
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
         # Hyperparameters
         self.max_len = seq_len
         self.n_channels = seq_dim
