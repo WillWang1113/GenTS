@@ -11,6 +11,7 @@ from __future__ import absolute_import, division, print_function
 
 import torch
 import torch.nn as nn
+from ._module import RNN
 
 from torch.distributions.multivariate_normal import MultivariateNormal
 
@@ -23,7 +24,6 @@ warnings.filterwarnings("ignore")
 if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
-# from models.sequential import RNN
 
 
 class SpectralFilter(nn.Module):
@@ -46,16 +46,14 @@ class SpectralFilter(nn.Module):
 
     """
 
-    def __init__(self, d, k, FFT, hidden, flip=False):
+    def __init__(self, d, k, FFT, hidden, flip=False, RNN=False):
         super().__init__()
 
         self.d, self.k = d, k
 
         if FFT:
-            self.out_size = self.d - self.k
-            self.pz_size = self.d
-            # self.out_size = self.d - self.k + 1
-            # self.pz_size = self.d + 1
+            self.out_size = self.d - self.k + 1
+            self.pz_size = self.d + 1
             self.in_size = self.k
 
         else:
@@ -67,7 +65,8 @@ class SpectralFilter(nn.Module):
             self.in_size, self.out_size = self.out_size, self.in_size
 
         self.sig_net = (
-            nn.Sequential(  # RNN(mode="RNN", HIDDEN_UNITS=20, INPUT_SIZE=1,),
+            nn.Sequential(  
+                # RNN(mode="RNN", HIDDEN_UNITS=20, INPUT_SIZE=1,),
                 nn.Linear(self.in_size, hidden),
                 nn.Sigmoid(),  # nn.LeakyReLU(),
                 nn.Linear(hidden, hidden),
@@ -76,18 +75,17 @@ class SpectralFilter(nn.Module):
             )
         )
 
-        self.mu_net = nn.Sequential(  # RNN(mode="RNN", HIDDEN_UNITS=20, INPUT_SIZE=1,),
+        self.mu_net = nn.Sequential(  
+            # RNN(mode="RNN", HIDDEN_UNITS=20, INPUT_SIZE=1,),
             nn.Linear(self.in_size, hidden),
             nn.Sigmoid(),  # nn.LeakyReLU(),
             nn.Linear(hidden, hidden),
             nn.Sigmoid(),  # nn.Tanh(),
             nn.Linear(hidden, self.out_size),
         )
-        self.register_buffer("base_mu", torch.zeros(self.pz_size))
-        self.register_buffer("base_cov", torch.eye(self.pz_size))
 
-        # base_mu, base_cov = torch.zeros(self.pz_size), torch.eye(self.pz_size)
-        # self.base_dist = MultivariateNormal(base_mu, base_cov)
+        base_mu, base_cov = torch.zeros(self.pz_size), torch.eye(self.pz_size)
+        self.base_dist = MultivariateNormal(base_mu, base_cov)
 
     def forward(self, x, flip=False):
         """forward steps
@@ -113,8 +111,7 @@ class SpectralFilter(nn.Module):
 
         z_hat = torch.cat([z1, z2], dim=-1)
 
-        log_pz = MultivariateNormal(self.base_mu, self.base_cov).log_prob(z_hat)
-        # log_pz = self.base_dist.log_prob(z_hat)
+        log_pz = self.base_dist.log_prob(z_hat)
         log_jacob = sig.sum(-1)
 
         return z_hat, log_pz, log_jacob
@@ -136,116 +133,114 @@ class SpectralFilter(nn.Module):
         return torch.cat([x1, x2], -1)
 
 
-# class AttentionFilter(nn.Module):
+class AttentionFilter(nn.Module):
+    """
+    Attention Filter torch module
 
-#     """
-#     Attention Filter torch module
+    >> attributes <<
 
-#     >> attributes <<
+    :d: number of input dimensions
 
-#     :d: number of input dimensions
+    :k: dimension of split in the input space
 
-#     :k: dimension of split in the input space
+    :FFT: number of FFT components
 
-#     :FFT: number of FFT components
+    :hidden: number of hidden units in the spectral filter layer
 
-#     :hidden: number of hidden units in the spectral filter layer
+    :flip: boolean indicator on whether to flip the split dimensions
 
-#     :flip: boolean indicator on whether to flip the split dimensions
+    :RNN: boolean indicator on whether to use an RNN in spectral filtering
 
-#     :RNN: boolean indicator on whether to use an RNN in spectral filtering
+    """
 
-#     """
+    def __init__(self, d, k, FFT, hidden, flip=False):
+        super().__init__()
 
-#     def __init__(self, d, k, FFT, hidden, flip=False):
+        self.d, self.k = d, k
 
-#         super().__init__()
+        if FFT:
+            self.out_size = self.d - self.k + 1
+            self.pz_size = self.d + 1
+            self.in_size = self.k
 
-#         self.d, self.k = d, k
+        else:
+            self.out_size = self.d - self.k
+            self.pz_size = self.d
+            self.in_size = self.k
 
-#         if FFT:
+        if flip:
+            self.in_size, self.out_size = self.out_size, self.in_size
 
-#             self.out_size = self.d - self.k + 1
-#             self.pz_size = self.d + 1
-#             self.in_size = self.k
+        self.sig_net = nn.Sequential(
+            RNN(
+                mode="LSTM",
+                HIDDEN_UNITS=20,
+                INPUT_SIZE=1,
+            ),
+            nn.Linear(self.in_size, hidden),
+            nn.Sigmoid(),  # nn.LeakyReLU(),
+            nn.Linear(hidden, hidden),
+            nn.Sigmoid(),  # nn.Tanh(),
+            nn.Linear(hidden, self.out_size),
+        )
 
-#         else:
+        self.mu_net = nn.Sequential(
+            RNN(
+                mode="LSTM",
+                HIDDEN_UNITS=20,
+                INPUT_SIZE=1,
+            ),
+            nn.Linear(self.in_size, hidden),
+            nn.Sigmoid(),  # nn.LeakyReLU(),
+            nn.Linear(hidden, hidden),
+            nn.Sigmoid(),  # nn.Tanh(),
+            nn.Linear(hidden, self.out_size),
+        )
 
-#             self.out_size = self.d - self.k
-#             self.pz_size = self.d
-#             self.in_size = self.k
+        base_mu, base_cov = torch.zeros(self.pz_size), torch.eye(self.pz_size)
+        self.base_dist = MultivariateNormal(base_mu, base_cov)
 
-#         if flip:
+    def forward(self, x, flip=False):
+        """forward steps
 
-#             self.in_size, self.out_size = self.out_size, self.in_size
+        Similar to RealNVP, see:
+        Dinh, Laurent, Jascha Sohl-Dickstein, and Samy Bengio.
+        "Density estimation using real nvp." arXiv preprint arXiv:1605.08803 (2016).
 
-#         self.sig_net = nn.Sequential(
-#             RNN(mode="LSTM", HIDDEN_UNITS=20, INPUT_SIZE=1,),
-#             nn.Linear(self.in_size, hidden),
-#             nn.Sigmoid(),  # nn.LeakyReLU(),
-#             nn.Linear(hidden, hidden),
-#             nn.Sigmoid(),  # nn.Tanh(),
-#             nn.Linear(hidden, self.out_size),
-#         )
+        """
 
-#         self.mu_net = nn.Sequential(
-#             RNN(mode="LSTM", HIDDEN_UNITS=20, INPUT_SIZE=1,),
-#             nn.Linear(self.in_size, hidden),
-#             nn.Sigmoid(),  # nn.LeakyReLU(),
-#             nn.Linear(hidden, hidden),
-#             nn.Sigmoid(),  # nn.Tanh(),
-#             nn.Linear(hidden, self.out_size),
-#         )
+        x1, x2 = x[:, : self.k], x[:, self.k :]
 
-#         base_mu, base_cov = torch.zeros(self.pz_size), torch.eye(self.pz_size)
-#         self.base_dist = MultivariateNormal(base_mu, base_cov)
+        if flip:
+            x2, x1 = x1, x2
 
-#     def forward(self, x, flip=False):
+        # forward
 
-#         """forward steps
+        sig = self.sig_net(x1).view(-1, self.out_size)
+        z1, z2 = x1, x2 * torch.exp(sig) + self.mu_net(x1).view(-1, self.out_size)
 
-#            Similar to RealNVP, see:
-#            Dinh, Laurent, Jascha Sohl-Dickstein, and Samy Bengio.
-#            "Density estimation using real nvp." arXiv preprint arXiv:1605.08803 (2016).
+        if flip:
+            z2, z1 = z1, z2
 
-#         """
+        z_hat = torch.cat([z1, z2], dim=-1)
 
-#         x1, x2 = x[:, : self.k], x[:, self.k :]
+        log_pz = self.base_dist.log_prob(z_hat)
+        log_jacob = sig.sum(-1)
 
-#         if flip:
+        return z_hat, log_pz, log_jacob
 
-#             x2, x1 = x1, x2
+    def inverse(self, Z, flip=False):
+        z1, z2 = Z[:, : self.k], Z[:, self.k :]
 
-#         # forward
+        if flip:
+            z2, z1 = z1, z2
 
-#         sig = self.sig_net(x1).view(-1, self.out_size)
-#         z1, z2 = x1, x2 * torch.exp(sig) + self.mu_net(x1).view(-1, self.out_size)
+        x1 = z1
 
-#         if flip:
+        sig_in = self.sig_net(z1).view(-1, self.out_size)
+        x2 = (z2 - self.mu_net(z1).view(-1, self.out_size)) * torch.exp(-sig_in)
 
-#             z2, z1 = z1, z2
+        if flip:
+            x2, x1 = x1, x2
 
-#         z_hat = torch.cat([z1, z2], dim=-1)
-
-#         log_pz = self.base_dist.log_prob(z_hat)
-#         log_jacob = sig.sum(-1)
-
-#         return z_hat, log_pz, log_jacob
-
-#     def inverse(self, Z, flip=False):
-
-#         z1, z2 = Z[:, : self.k], Z[:, self.k :]
-
-#         if flip:
-#             z2, z1 = z1, z2
-
-#         x1 = z1
-
-#         sig_in = self.sig_net(z1).view(-1, self.out_size)
-#         x2 = (z2 - self.mu_net(z1).view(-1, self.out_size)) * torch.exp(-sig_in)
-
-#         if flip:
-
-#             x2, x1 = x1, x2
-
-#         return torch.cat([x1, x2], -1)
+        return torch.cat([x1, x2], -1)

@@ -1,9 +1,7 @@
-# Copyright (c) 2021, Ahmed M. Alaa
-# Licensed under the BSD 3-clause license (see LICENSE.txt)
-
 """
 
 This script contains the implementation for the spectral filter module of the Fourier flow
+Only on CPU and seq_dim=1
 
 """
 
@@ -19,7 +17,7 @@ from torch.distributions.multivariate_normal import MultivariateNormal
 
 from src.model.base import BaseModel
 
-from ._fourier import DFT, myDFT
+from ._fourier import DFT
 from ._spectral import SpectralFilter
 
 warnings.filterwarnings("ignore")
@@ -29,12 +27,13 @@ if not sys.warnoptions:
 
 
 class FourierFlow(BaseModel):
+    """ Only on CPU and seq_dim=1"""
     ALLOW_CONDITION = [None]
 
     def __init__(
         self,
         seq_len,
-        seq_dim,
+        seq_dim=1,
         d_model=64,
         n_flows=10,
         condition=None,
@@ -47,10 +46,10 @@ class FourierFlow(BaseModel):
     ):
         super().__init__(seq_len, seq_dim, condition)
         self.save_hyperparameters()
-        fft_size = seq_len
+        self.seq_len = seq_len
+        fft_size = seq_len + 1 if seq_len % 2 == 0 else seq_len
+        self.d = fft_size
         self.k = int(fft_size / 2) + 1
-        self.d = self.k * 2
-        # self.d = fft_size
         self.fft_size = fft_size
         self.FFT = FFT
         self.normalize = normalize
@@ -70,8 +69,8 @@ class FourierFlow(BaseModel):
             ]
         )
 
-        self.FourierTransform = myDFT(N_fft=self.fft_size)
-        # self.FourierTransform = DFT(N_fft=self.fft_size)
+        # self.FourierTransform = myDFT(N_fft=self.fft_size)
+        self.FourierTransform = DFT(N_fft=self.fft_size)
 
     def forward(self, x):
         if self.FFT:
@@ -80,13 +79,13 @@ class FourierFlow(BaseModel):
             if self.normalize:
                 x = (x - self.fft_mean) / self.fft_std
 
-            x = x.flatten(1)
-            # x = x.view(-1, self.d + 1)
+            x = x.view(-1, self.d + 1)
 
         log_jacobs = []
 
         for bijector, f in zip(self.bijectors, self.flips):
             x, log_pz, lj = bijector(x, flip=f)
+
             log_jacobs.append(lj)
 
         return x, log_pz, sum(log_jacobs)
@@ -97,10 +96,9 @@ class FourierFlow(BaseModel):
 
         if self.FFT:
             if self.normalize:
-                z = z * self.fft_std.flatten(1) + self.fft_mean.flatten(1)
-                # z = z * self.fft_std.view(-1, self.d + 1) + self.fft_mean.view(
-                #     -1, self.d + 1
-                # )
+                z = z * self.fft_std.view(-1, self.d + 1) + self.fft_mean.view(
+                    -1, self.d + 1
+                )
 
             z = self.FourierTransform.inverse(z)
 
@@ -109,6 +107,12 @@ class FourierFlow(BaseModel):
     def training_step(self, batch, batch_idx):
         # Must be univariate time series
         X_train = batch["seq"].squeeze(-1)
+
+        if X_train.shape[1] % 2 == 0:
+            # If the sequence length is odd, we need to add zero on the first time step
+            # to make it compatible with the Fourier Transform
+            warnings.warn("Sequence length is odd, adding zeros to time step.")
+            X_train = torch.cat([X_train[:, [0]], X_train], dim=1)
 
         z, log_pz, log_jacob = self(X_train)
         loss = (-log_pz - log_jacob).mean()
@@ -120,6 +124,11 @@ class FourierFlow(BaseModel):
         # Must be univariate time series
         X_train = batch["seq"].squeeze(-1)
 
+        if X_train.shape[1] % 2 == 0:
+            # If the sequence length is odd, we need to add zero on the first time step
+            # to make it compatible with the Fourier Transform
+            warnings.warn("Sequence length is odd, adding zeros to time step.")
+            X_train = torch.cat([X_train[:, [0]], X_train], dim=1)
         z, log_pz, log_jacob = self(X_train)
         loss = (-log_pz - log_jacob).mean()
 
@@ -128,8 +137,8 @@ class FourierFlow(BaseModel):
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
         if self.FFT:
-            mu, cov = torch.zeros(self.d), torch.eye(self.d)
-            # mu, cov = torch.zeros(self.d + 1), torch.eye(self.d + 1)
+            # mu, cov = torch.zeros(self.d), torch.eye(self.d)
+            mu, cov = torch.zeros(self.d + 1), torch.eye(self.d + 1)
 
         else:
             mu, cov = torch.zeros(self.d), torch.eye(self.d)
@@ -139,6 +148,12 @@ class FourierFlow(BaseModel):
         z = p_Z.rsample(sample_shape=(n_sample,))
 
         X_sample = self.inverse(z)
+        if self.seq_len % 2 == 0:
+            # If the sequence length is odd, we need to remove the first time step
+            # to make it compatible with the Fourier Transform
+            warnings.warn("Sequence length is odd, removing zeros from time step.")
+            X_sample = X_sample[:, 1:]
+        X_sample = X_sample
 
         return X_sample
 
@@ -157,11 +172,15 @@ class FourierFlow(BaseModel):
         dl = self.trainer.datamodule.train_dataloader()
         seq_data = dl.dataset.data
         assert seq_data.shape[-1] == 1
-        seq_data = seq_data.squeeze(-1).to(self.device)
-        
+        if seq_data.shape[1] % 2 == 0:
+            # If the sequence length is odd, we need to add zero on the first time step
+            # to make it compatible with the Fourier Transform
+            warnings.warn("Sequence length is odd, adding zeros to time step.")
+            seq_data = torch.cat([seq_data[:, [0]], seq_data], dim=1)
+        seq_data = seq_data.squeeze(-1)
+
         X_train_spectral = self.FourierTransform(seq_data)[0]
         self.fft_mean = torch.mean(X_train_spectral, dim=0)
         self.fft_std = torch.std(X_train_spectral, dim=0)
-        self.k = X_train_spectral.shape[-1]
-        # self.d = seq_data.shape[1]
-        self.d = self.k * 2
+        self.d = seq_data.shape[1]
+        self.k = int(np.floor(seq_data.shape[1] / 2))

@@ -4,7 +4,6 @@ from functools import partial
 import torch
 import torch.nn.functional as F
 from einops import reduce
-from torch import nn
 from tqdm.auto import tqdm
 from ema_pytorch import EMA
 from src.common._utils import default, extract, identity

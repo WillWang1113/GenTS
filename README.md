@@ -74,6 +74,13 @@ model.sample()
 
 ## Arena (TODO: experiments)
 
+Datasets:
+- **Synthesis**: SineND$^*$, Stocks, Energy, ECG
+- **Forecasting**: M4, Electricity, Traffic, Exchange
+- **Imputation**: MoJoCo$^*$, Physionet, Air quality, ETTh
+
+$^*$: Simulated
+
 Till XX 2025, the top three models for five different tasks are:
 
 | Model Rank | Synthesis | Forecasting | Imputation |
@@ -97,5 +104,6 @@ The former three are standard ```lightning``` methods for model training; The la
 - [x] Flow-based model (5.15)
 - [x] ODE-based model (5.15)
 - [x] Evaluation (TSGBench + new metrics J-FTSD, ICML2024) (5.31)
-- [ ] Model testing
-- [ ] Benchmark datasets
+- [ ] Model testing (6.15)
+- [ ] Benchmark datasets (6.15)
+- [ ] Project webpage for benchmarking? [Example](https://huggingface.co/spaces/Salesforce/GIFT-Eval)

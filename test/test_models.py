@@ -1,7 +1,7 @@
 from math import sqrt
 from lightning import Trainer, seed_everything
 import src.model
-from src.data.datamodules import Spiral2D
+from src.data.datamodules import Spiral2D, SineND
 import matplotlib.pyplot as plt
 import torch
 
@@ -16,19 +16,19 @@ model_names = src.model.__all__
 
 
 model_names = [
-    "ImagenTime",
+    "FourierFlow",
     "VanillaMAF",
 ]
 
 # TODO: iter all, Model Capability
 conditions = [
-    "impute",
-    "predict",
     None,
+    "impute",
+    # "predict",
 ]
 
 batch_size = 128
-seq_len = 64
+seq_len = 101
 add_coeffs = False
 # imputation
 missing_type = "random"
@@ -37,13 +37,13 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 50
+max_epochs = 200
 inference_batch_size = 7
 
 # hparams
 hparams = dict(
     seq_len=seq_len,
-    seq_dim=2,
+    seq_dim=1,
     covariate_dim=0,
     delay=8,
     embedding=16,
@@ -91,7 +91,7 @@ for i in range(len(model_names)):
         hparams["seq_dim"] = 1
     else:
         channel_independent = False
-        hparams["seq_dim"] = 2
+        hparams["seq_dim"] = 1
     for j in range(len(conditions)):
         c = conditions[j]
         if c == "predict":
@@ -130,20 +130,31 @@ for i in range(len(model_names)):
             )
             cond_hparams = dict(**hparams, n_classes=2, condition=c)
         else:
-            dm = Spiral2D(
-                seq_len,
-                batch_size,
+            dm = SineND(
+                seq_len=seq_len,
+                seq_dim=1,
+                batch_size=batch_size,
                 condition=c,
-                add_coeffs=add_coeffs,
                 inference_batch_size=inference_batch_size,
+                add_coeffs=None,
+                time_idx_last=False,
                 channel_independent=channel_independent,
             )
+            # dm = Spiral2D(
+            #     seq_len,
+            #     batch_size,
+            #     condition=c,
+            #     add_coeffs=add_coeffs,
+            #     inference_batch_size=inference_batch_size,
+            #     channel_independent=channel_independent,
+            # )
             cond_hparams = hparams
 
         test_model_cls = getattr(src.model, model_names[i])
         test_model = test_model_cls(**cond_hparams)
         trainer = Trainer(
-            devices=[gpu],
+            # devices=[gpu],
+            accelerator="cpu",
             # max_steps=max_steps,
             max_epochs=max_epochs,
             log_every_n_steps=20,
@@ -154,9 +165,9 @@ for i in range(len(model_names)):
         dm.setup("test")
 
         batch = next(iter(dm.test_dataloader()))
-        for k in batch:
-            batch[k] = batch[k].to(f"cuda:{gpu}")
-        test_model.to(f"cuda:{gpu}")
+        # for k in batch:
+        #     batch[k] = batch[k].to(f"cuda:{gpu}")
+        # test_model.to(f"cuda:{gpu}")
 
         test_cond = None
 
@@ -167,7 +178,7 @@ for i in range(len(model_names)):
         # sample shape: [n_samples=10, seq_len, seq_dim]
 
         samples = (
-            test_model.sample(5, condition=batch.get("c"), **batch).squeeze(0).cpu()
+            test_model.sample(5, condition=batch.get("c"), **batch).cpu()
         )
         print(samples.shape)
         batch["seq"] = batch["seq"].cpu()
@@ -218,7 +229,9 @@ for i in range(len(model_names)):
             axs[i, j].plot(range(seq_len), samples[0])
 
         axs[i, j].set_title(model_names[i] + "_" + f"{c if c is not None else 'syn'}")
+        break
     break
+
 fig.suptitle("Model Comparison")
 fig.tight_layout()
 fig.savefig("test_model.png", bbox_inches="tight")
