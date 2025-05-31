@@ -16,19 +16,19 @@ model_names = src.model.__all__
 
 
 model_names = [
-    "FourierFlow",
-    "VanillaMAF",
+    "MrDiff",
+    "VanillaVAE",
 ]
 
 # TODO: iter all, Model Capability
 conditions = [
+    "predict",
     None,
-    "impute",
-    # "predict",
+    # "impute",
 ]
 
-batch_size = 128
-seq_len = 101
+batch_size = 64
+seq_len = 64
 add_coeffs = False
 # imputation
 missing_type = "random"
@@ -37,13 +37,13 @@ missing_rate = 0.2
 # forecast
 obs_len = 64
 max_steps = 1000
-max_epochs = 200
+max_epochs = 100
 inference_batch_size = 7
 
 # hparams
 hparams = dict(
     seq_len=seq_len,
-    seq_dim=1,
+    seq_dim=2,
     covariate_dim=0,
     delay=8,
     embedding=16,
@@ -52,8 +52,8 @@ hparams = dict(
     hop_length=8,
     # n_classes=2,
     # latent_dim=20,
-    hidden_size=128,
-    poisson=True,
+    hidden_size=64,
+    poisson=False,
     # w_kl=1e-4,
     # n_diff_steps=200,
     # d_ff=512,
@@ -62,15 +62,25 @@ hparams = dict(
     # lr={'G':1e-4, 'D':1e-4},
     # lr=1e-3,
     # beta=1e-1,
-    # n_critic=1,
+    n_critic=2,
     # epoch_fade_in=2 * 25,
-    ks_conv=7,
-    ks_value=1,
-    ks_key=1,
-    ks_query=1,
+    ks_conv=9,
+    # ks_value=1,
+    # ks_key=1,
+    # ks_query=1,
+    cnf_hidden_dims=(64, 64),
+    solver='euler',
     # key_features=1,
     # value_features=1,
     # gamma = 1.0,
+    # enc_n_layers=2,
+    # dec_n_layers=2,
+    # enc_ff_layers=1,
+    # dec_ff_layers=1,
+    dec_dropout=0.1,
+    enc_dropout=0.1,
+    prior_dropout=0.1,
+    num_layers=3,
 )
 
 
@@ -91,7 +101,7 @@ for i in range(len(model_names)):
         hparams["seq_dim"] = 1
     else:
         channel_independent = False
-        hparams["seq_dim"] = 1
+        # hparams["seq_dim"] = seq_dim
     for j in range(len(conditions)):
         c = conditions[j]
         if c == "predict":
@@ -108,6 +118,17 @@ for i in range(len(model_names)):
         elif c == "impute":
             if model_names[i] == "KoVAE":
                 add_coeffs = "cubic_spline"
+            # dm = SineND(
+            #     seq_len=seq_len,
+            #     seq_dim=hparams["seq_dim"],
+            #     batch_size=batch_size,
+            #     condition=c,
+            #     inference_batch_size=inference_batch_size,
+            #     add_coeffs=add_coeffs,
+            #     channel_independent=channel_independent,
+            #     missing_rate=missing_rate,
+            #     missing_type=missing_type
+            # )
             dm = Spiral2D(
                 seq_len,
                 batch_size,
@@ -132,12 +153,11 @@ for i in range(len(model_names)):
         else:
             dm = SineND(
                 seq_len=seq_len,
-                seq_dim=1,
+                seq_dim=hparams["seq_dim"],
                 batch_size=batch_size,
                 condition=c,
                 inference_batch_size=inference_batch_size,
-                add_coeffs=None,
-                time_idx_last=False,
+                add_coeffs=add_coeffs,
                 channel_independent=channel_independent,
             )
             # dm = Spiral2D(
@@ -153,11 +173,11 @@ for i in range(len(model_names)):
         test_model_cls = getattr(src.model, model_names[i])
         test_model = test_model_cls(**cond_hparams)
         trainer = Trainer(
-            # devices=[gpu],
-            accelerator="cpu",
+            devices=[gpu],
+            # accelerator="cpu",
             # max_steps=max_steps,
             max_epochs=max_epochs,
-            log_every_n_steps=20,
+            # log_every_n_steps=20,
             check_val_every_n_epoch=5,
         )
 
@@ -165,9 +185,9 @@ for i in range(len(model_names)):
         dm.setup("test")
 
         batch = next(iter(dm.test_dataloader()))
-        # for k in batch:
-        #     batch[k] = batch[k].to(f"cuda:{gpu}")
-        # test_model.to(f"cuda:{gpu}")
+        for k in batch:
+            batch[k] = batch[k].to(f"cuda:{gpu}")
+        test_model.to(f"cuda:{gpu}")
 
         test_cond = None
 

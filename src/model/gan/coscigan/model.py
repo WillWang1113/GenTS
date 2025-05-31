@@ -12,12 +12,12 @@ class COSCIGAN(BaseModel):
         self,
         seq_len,
         seq_dim,
-        latent_dim=32,
+        condition=None,
+        latent_dim=64,
         DG_type="LSTM",
         central_disc_type="MLP",
         gamma=5.0,
         lr={"G": 1e-3, "D": 1e-3, "CD": 1e-4},
-        condition=None,
         **kwargs,
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
@@ -171,7 +171,6 @@ class COSCIGAN(BaseModel):
             on_epoch=True,
             on_step=False,
         )
-        # TODO: ES for GAN?
 
     def validation_step(self, batch, batch_idx): ...
 

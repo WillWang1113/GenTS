@@ -82,6 +82,8 @@ class SDEGAN(BaseModel):
         if self.global_step > self.swa_step_start:
             self.averaged_generator.update_parameters(self.generator)
             self.averaged_discriminator.update_parameters(self.discriminator)
+        
+        self.log("train_loss", loss)
 
     def validation_step(self, batch, batch_idx):
         batch_size = batch["seq"].shape[0]

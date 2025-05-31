@@ -1,4 +1,5 @@
 from argparse import Namespace
+from einops import repeat
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -21,7 +22,7 @@ class GTGAN(BaseModel):
         self,
         seq_len,
         seq_dim,
-        hidden_size,
+        hidden_size=64,
         num_layers_r=2,
         num_layers_d=2,
         num_layers_mlp=3,
@@ -41,7 +42,7 @@ class GTGAN(BaseModel):
         rademacher=True,
         layer_type="concat",
         reconstruction=0.01,
-        kinetic_energy=0.05,
+        kinetic_energy=0.5,
         jacobian_norm2=0.1,
         directional_penalty=0.01,
         total_deriv=None,
@@ -114,7 +115,9 @@ class GTGAN(BaseModel):
         # x = batch['data'].to(device)
         # train_coeffs = batch['inter']#.to(device)
         # original_x = batch['original_data'].to(device)
-        obs = kwargs.get("t")
+        # obs = kwargs.get("t")
+        obs = torch.arange(self.hparams.seq_len).to(self.device).float()
+        obs = repeat(obs, "t -> b t", b=n_sample)
         assert obs is not None
         assert obs.shape[0] == n_sample
         # x = x[:, :, :-1]
@@ -159,10 +162,11 @@ class GTGAN(BaseModel):
 
     def training_step(self, batch, batch_idx):
         max_steps = self.trainer.max_epochs
-        x = batch["seq"]
-        cond = batch.get("c", None)
-        if (cond is not None) and (self.condition == "impute"):
-            x = x.masked_fill(cond.bool(), float("nan"))
+        x = batch["seq"] if self.condition is None else batch["c"]
+        
+        # cond = batch.get("c", None)
+        # if (cond is not None) and (self.condition == "impute"):
+        #     x = x.masked_fill(cond.bool(), float("nan"))
         batch_size = x.shape[0]
         t = batch["t"]
         time = torch.arange(x.shape[1]).to(x)
@@ -195,6 +199,7 @@ class GTGAN(BaseModel):
             self.untoggle_optimizer(optimizer_er)
             self.log("loss_e_0", loss_e_0)
         else:
+            self.toggle_optimizer(optimizer_d)
             for _ in range(2):
                 # self.generator.train()
                 # self.supervisor.train()
@@ -230,6 +235,7 @@ class GTGAN(BaseModel):
                     # loss_d.backward()
                     optimizer_d.step()
                     # torch.cuda.empty_cache()
+                self.untoggle_optimizer(optimizer_d)
                 self.log("loss_d", loss_d)
                 # self.untoggle_optimizer(optimizer_d)
 
@@ -250,7 +256,7 @@ class GTGAN(BaseModel):
                 optimizer_er.step()
                 self.log("loss_e", loss_e)
 
-                # torch.cuda.empty_cache()
+                torch.cuda.empty_cache()
                 self.untoggle_optimizer(optimizer_er)
 
             self.toggle_optimizer(optimizer_gs)

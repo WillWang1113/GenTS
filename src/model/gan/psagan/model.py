@@ -26,11 +26,11 @@ class PSAGAN(BaseModel):
         # gamma: float = 1.0,
         **kwargs,
     ):
-        super().__init__(seq_len, seq_dim, condition)
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
         if condition == "predict":
-            context_len = kwargs.get("obs_len", None)
-            assert context_len is not None
-            self.context_len = context_len
+            # context_len = kwargs.get("obs_len", None)
+            # assert context_len is not None
+            self.context_len = self.obs_len
         else:
             self.context_len = 0
 

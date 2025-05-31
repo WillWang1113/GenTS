@@ -30,6 +30,7 @@ class FourierDiffusion(BaseModel):
         self,
         seq_len: int,
         seq_dim: int,
+        condition: str = None,
         noise_schedule: str = "vpsde",
         # fourier_noise_scaling: bool = True,
         hidden_size: int = 72,
@@ -38,7 +39,6 @@ class FourierDiffusion(BaseModel):
         n_diff_steps: int = 1000,
         lr: float = 1e-4,
         likelihood_weighting: bool = False,
-        condition: str = None,
         **kwargs,
     ) -> None:
         super().__init__(seq_len, seq_dim, condition, **kwargs)

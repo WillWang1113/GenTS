@@ -33,10 +33,10 @@ model.sample()
 |      AST **(-!)**      |        GAN        |  :white_check_mark:   |    Fcst(point)     | :white_check_mark: |
 |       COSCI-GAN        |        GAN        |           -           |        Syn         | :white_check_mark: |
 |         GT-GAN         |        GAN        |           -           |     Syn(irreg)     | :white_check_mark: |
-|    PSA-GAN **(-G)**    |        GAN        |           -           |        Syn         | :white_check_mark: |
+|    PSA-GAN **(-G)** $^1$   |        GAN        |           -           |        Syn         | :white_check_mark: |
 |         RCGAN          |        GAN        |           -           |        Syn         | :white_check_mark: |
 |       VanillaMAF       |       Flow        |           -           | Syn, Fcst, Impute  | :white_check_mark: |
-|      Fourier Flow      |       Flow        |           -           |        Syn         | :white_check_mark: |
+| Fourier Flow $^1$ |       Flow        |           -           |        Syn         | :white_check_mark: |
 |   LSTM-MAF **(-G)**    |       Flow        |  :white_check_mark:   |        Fcst        |   :white_circle:   |
 |      VanillaDDPM       |     Diffusion     |           -           |        Syn         | :white_check_mark: |
 |          CSDI          |     Diffusion     |  :white_check_mark:   |    Fcst, Impute    | :white_check_mark: |
@@ -60,10 +60,10 @@ model.sample()
 |       Latent SDE       |     Diff. Eq.     |           -           |  Syn, (Fcst, Imp)  | :white_check_mark: |
 |         SDEGAN         |     Diff. Eq.     |           -           |     Syn(irreg)     | :white_check_mark: |
 |          LS4           |     Diff. Eq.     |           -           |        Syn         | :white_check_mark: |
-<!--          | SDformer **(-M)** |        VAE+GPT        | :white_check_mark: |        Syn         | :white_circle: | -->            
-<!--          |        TFM        |       Diff. Eq.       |         -          |        Fcst        | :white_circle: | -->            
-<!--          |       <!--        |         GANF          |        Flow        |         -          | AD             | :white_circle: | --> 
-
+<!-- |          <!--          | SDformer **(-M)** |        VAE+GPT        | :white_check_mark: |        Syn         | :white_circle: | -->            |
+|          <!--          |        TFM        |       Diff. Eq.       |         -          |        Fcst        | :white_circle: | -->            |
+|          <!--          |       <!--        |         GANF          |        Flow        |         -          | AD             | :white_circle: | --> |
+ -->
 
 *Notes*: 
 - **(-G)** = GluonTS style code

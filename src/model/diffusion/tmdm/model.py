@@ -15,7 +15,6 @@ class TMDM(BaseModel):
     def __init__(
         self,
         seq_len,
-        obs_len,
         seq_dim,
         emb_add_pos=True,
         emb_add_temporal=False,
@@ -49,6 +48,7 @@ class TMDM(BaseModel):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         self.condition = "predict"
+        obs_len = self.obs_len
         args = Namespace(**self.hparams_initial)
         args.seq_len = obs_len
         args.pred_len = seq_len

@@ -22,7 +22,6 @@ class MrDiff(BaseModel):
     def __init__(
         self,
         seq_len,
-        obs_len,
         seq_dim=1,
         n_diff_steps=100,
         smoothed_factors=[5, 25, 51],
@@ -56,6 +55,7 @@ class MrDiff(BaseModel):
         self.condition = "predict"
         self.save_hyperparameters()
         args = Namespace(**self.hparams_initial)
+        obs_len = self.obs_len
         args.seq_len = obs_len
         args.pred_len = seq_len
         args.label_len = obs_len
