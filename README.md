@@ -1,24 +1,38 @@
 # GenTS: A library for generative time series analysis
 
+(TODO: introduction) This project ...
 
 ## Installation
-You should first create a virtual environment, and activate the environment. Then you can install the necessary libraries by running the following command.
-```
+We recommand to first create a virtual environment, and activate the environment. Then you can install the necessary libraries by running the following command.
+```bash
 conda create -n gents python=3.10
 conda activate gents
 pip install -r requirements.txt
 ```
 
-## Quick start (TODO)
-```
-from src.model import VanillaVAE
-from src.data import XXX
+## Quick start
+To 
+```python
+import torch
+from src.model import VanillaDDPM
+from src.data import SineND
+from src.evaluation import visualization
 from lightning import Trainer
 
-model = VanillaVAE()
-trainer = Trainer()
-trainer.fit()
-model.sample()
+# setup
+dm = SineND(seq_len=64, seq_dim=2, batch_size=64)
+model = VanillaDDPM(seq_len=64, seq_dim=2)
+
+# training (on CPU for example)
+trainer = Trainer(max_epochs=100, accelerator="cpu")
+trainer.fit(model, dm)
+
+# testing
+dm.setup("test")
+real_data = torch.cat([batch["seq"] for batch in dm.test_dataloader()])  # [N, 64, 2]
+gen_data = model.sample(n_sample=len(real_data))  # [N, 64, 2]
+
+visualization(real_data, gen_data, analysis="tsne")
 ```
 
 ## Model zoo
@@ -60,10 +74,10 @@ model.sample()
 |       Latent SDE       |     Diff. Eq.     |           -           |  Syn, (Fcst, Imp)  | :white_check_mark: |
 |         SDEGAN         |     Diff. Eq.     |           -           |     Syn(irreg)     | :white_check_mark: |
 |          LS4           |     Diff. Eq.     |           -           |        Syn         | :white_check_mark: |
-<!-- |          <!--          | SDformer **(-M)** |        VAE+GPT        | :white_check_mark: |        Syn         | :white_circle: | -->            |
-|          <!--          |        TFM        |       Diff. Eq.       |         -          |        Fcst        | :white_circle: | -->            |
-|          <!--          |       <!--        |         GANF          |        Flow        |         -          | AD             | :white_circle: | --> |
- -->
+
+<!-- |          <!--          | SDformer **(-M)** |        VAE+GPT        | :white_check_mark: |        Syn         | :white_circle: | -->            
+ <!--          |        TFM        |       Diff. Eq.       |         -          |        Fcst        | :white_circle: | -->           
+ <!--          |       <!--        |         GANF          |        Flow        |         -          | AD             | :white_circle: | --> 
 
 *Notes*: 
 - **(-G)** = GluonTS style code
@@ -75,9 +89,9 @@ model.sample()
 ## Arena (TODO: experiments)
 
 Datasets:
-- **Synthesis**: SineND$^*$, Stocks, Energy, ECG
+- **Synthesis**: SineND $^*$, Stocks, Energy, ECG
 - **Forecasting**: M4, Electricity, Traffic, Exchange
-- **Imputation**: MoJoCo$^*$, Physionet, Air quality, ETTh
+- **Imputation**: MoJoCo $^*$, Physionet, Air quality, ETTh
 
 $^*$: Simulated
 

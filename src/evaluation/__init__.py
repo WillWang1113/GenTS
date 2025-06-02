@@ -7,3 +7,12 @@ from .model_based.ds import discriminative_score
 from .model_based.ps import predictive_score
 from .model_free.errors import crps, mse
 from .visual import visualization
+
+__all__ = [
+    "visualization",
+    "crps",
+    "mse",
+    "predictive_score",
+    "discriminative_score",
+    "context_fid",
+]
