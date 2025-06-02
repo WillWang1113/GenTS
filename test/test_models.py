@@ -1,7 +1,7 @@
 from math import sqrt
 from lightning import Trainer, seed_everything
 import src.model
-from src.data.datamodules import Spiral2D, SineND
+from src.dataset import Spiral2D, SineND
 import matplotlib.pyplot as plt
 import torch
 

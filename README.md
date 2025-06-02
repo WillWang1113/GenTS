@@ -19,7 +19,7 @@ from src.data import SineND
 from src.evaluation import visualization
 from lightning import Trainer
 
-# setup
+# setup dataset and model
 dm = SineND(seq_len=64, seq_dim=2, batch_size=64)
 model = VanillaDDPM(seq_len=64, seq_dim=2)
 
@@ -32,6 +32,7 @@ dm.setup("test")
 real_data = torch.cat([batch["seq"] for batch in dm.test_dataloader()])  # [N, 64, 2]
 gen_data = model.sample(n_sample=len(real_data))  # [N, 64, 2]
 
+# visualization with tsne
 visualization(real_data, gen_data, analysis="tsne")
 ```
 
@@ -118,6 +119,6 @@ The former three are standard ```lightning``` methods for model training; The la
 - [x] Flow-based model (5.15)
 - [x] ODE-based model (5.15)
 - [x] Evaluation (TSGBench + new metrics J-FTSD, ICML2024) (5.31)
-- [ ] Model testing (6.15)
+- [x] Model testing (6.15)
 - [ ] Benchmark datasets (6.15)
 - [ ] Project webpage for benchmarking? [Example](https://huggingface.co/spaces/Salesforce/GIFT-Eval)

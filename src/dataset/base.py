@@ -1,12 +1,13 @@
-from abc import ABC, abstractmethod
 import logging
 import os
+from abc import ABC, abstractmethod
 from pathlib import Path
+
 import torch
-from torch.utils.data import DataLoader
+import torchcde
+from einops import repeat
 from lightning import LightningDataModule
-from .dataset import TSDataset
-import numpy as np
+from torch.utils.data import DataLoader, Dataset
 
 
 class BaseDataModule(LightningDataModule, ABC):
@@ -47,22 +48,27 @@ class BaseDataModule(LightningDataModule, ABC):
         )
 
     def setup(self, stage):
+        # tsl = total seq len
+        # tsd = total seq dim
         data = torch.load(
-            os.path.join(self.data_dir, f"data_sl{self.total_seq_len}.pt")
+            os.path.join(
+                self.data_dir, f"data_tsl{self.total_seq_len}_tsd{self.seq_dim}.pt"
+            )
         )
         cond = None
         if self.condition is not None:
             cond = torch.load(
                 os.path.join(
-                    self.data_dir, f"{self.condition}_cond_sl{self.total_seq_len}.pt"
+                    self.data_dir,
+                    f"{self.condition}_cond_tsl{self.total_seq_len}_tsd{self.seq_dim}.pt",
                 )
             )
         add_cond = cond is not None
 
         # train/val/test
         num_train = int(len(data) * 0.7)
-        num_test = int(len(data) * 0.2)
-        num_vali = len(data) - num_train - num_test
+        num_vali = int(len(data) * 0.2)
+        num_test = len(data) - num_train - num_vali
 
         starts = dict(
             fit=0,
@@ -96,9 +102,12 @@ class BaseDataModule(LightningDataModule, ABC):
             )
 
     def prepare_data(self) -> None:
-        data_file_pth = self.data_dir / f"data_sl{self.total_seq_len}.pt"
+        data_file_pth = (
+            self.data_dir / f"data_tsl{self.total_seq_len}_tsd{self.seq_dim}.pt"
+        )
         cond_file_pth = (
-            self.data_dir / f"{self.condition}_cond_sl{self.total_seq_len}.pt"
+            self.data_dir
+            / f"{self.condition}_cond_tsl{self.total_seq_len}_tsd{self.seq_dim}.pt"
         )
         exist_data = data_file_pth.exists()
         exist_cond = cond_file_pth.exists()
@@ -119,7 +128,7 @@ class BaseDataModule(LightningDataModule, ABC):
                     cond_file_pth,
                 )
 
-    def prepare_cond(self, data, class_cond=None):
+    def prepare_cond(self, data: torch.Tensor, class_cond: torch.Tensor = None):
         # Condition save
         if self.condition == "class":
             assert class_cond is not None
@@ -130,8 +139,8 @@ class BaseDataModule(LightningDataModule, ABC):
         elif self.condition == "impute":
             mask = torch.ones_like(data)
             # if self.missing_type == "random":
-                # 1: missing
-                # 0: non-missing
+            # 1: missing
+            # 0: non-missing
             mask = torch.rand_like(data) < self.missing_rate
             missing_data = data.masked_fill(mask.bool(), float("nan"))
             # # TODO: delete block missing?
@@ -169,133 +178,86 @@ class BaseDataModule(LightningDataModule, ABC):
     def dataset_name(self): ...
 
 
-class Spiral2D(BaseDataModule):
+class TSDataset(Dataset):
+    """Time series dataset. A batch conatins:
+
+    A batch
+        "seq": (B, T, C) Target time series window
+        "t": (B, T) Time index at each time step in the window.
+        Could be either the last axis of input data, or default [0,1,...,T-1]
+        "c": (B, T/OBS, C) Condition. Empty if unconditional.
+        "coeffs": (B, T, C) Coefficients of cubic spline of NCDE-related models.
+        Empty if add_coeffs is False.
+        "chnl_id": (1,) channel id if channel_independent is True
+    """
+
     def __init__(
         self,
-        seq_len: int = 200,
-        num_samples: int = 1000,
-        batch_size: int = 32,
-        data_dir: Path | str = Path.cwd() / "data",
-        condition: str = None,
-        scale: bool = True,
-        inference_batch_size: int = 1024,
+        data: torch.Tensor,
+        cond: torch.Tensor = None,
+        cond_type: str = None,
         add_coeffs: str = None,
         time_idx_last: bool = False,
         channel_independent: bool = False,
         **kwargs,
     ):
-        super().__init__(
-            seq_len,
-            2,
-            condition,
-            batch_size,
-            inference_batch_size,
-            data_dir,
-            add_coeffs=add_coeffs,
-            time_idx_last=time_idx_last,
-            channel_independent=channel_independent,
-            **kwargs,
-        )
-        self.num_samples = num_samples
+        super().__init__()
+        assert data.dim() == 3
+        assert add_coeffs in [None, "linear", "cubic_spline"]
+        assert cond_type in [None, "predict", "impute"]
+        self.data = data
+        self.data_shape = data.shape
+        self.sample_chnl = False
+        # if input TS is multivariate and treat channel independent, we need to sample a channel
+        if (self.data.shape[-1] > 1) and channel_independent:
+            self.sample_chnl = True
 
-    def get_data(self):
-        t = torch.linspace(0, 4 * torch.pi, self.total_seq_len).float()
-        curves = []
-        labels = []
-        for _ in range(self.num_samples):
-            a = torch.rand(1).item() * 0.5  # Initial radius
-            b = torch.rand(1).item() * 0.2  # Growth rate
+        if time_idx_last:
+            self.data = self.data[:, :, :-1]
+            self.time_idx = self.data[:, :, -1]
+        else:
+            self.time_idx = torch.arange(data.shape[1]).float()
+            self.time_idx = repeat(self.time_idx, "t -> b t", b=data.shape[0])
 
-            direction = torch.randint(0, 2, (1,)).item()  # 0=clockwise, 1=ccw
-
-            r = a + b * t
-            if direction == 0:
-                x = r * torch.cos(t)
-                y = r * torch.sin(t)
+        self.cond = cond
+        self.cond_shape = None
+        if cond is not None:
+            self.cond_shape = tuple(cond.shape[1:])
+        if add_coeffs is not None:
+            if add_coeffs == "linear":
+                interp_fn = torchcde.linear_interpolation_coeffs
             else:
-                x = -r * torch.cos(t)
-                y = r * torch.sin(t)
+                interp_fn = torchcde.natural_cubic_spline_coeffs
 
-            x += torch.randn_like(x) * 0.01
-            y += torch.randn_like(y) * 0.01
+            # from torchcde import natural_cubic_spline_coeffs, linear_interpolation_coeffs
 
-            curve = torch.stack([x, y], dim=1)
-            curves.append(curve)
-            labels.append(direction)
-        data, class_cond = torch.stack(curves), torch.tensor(labels).unsqueeze(-1)
+            t = torch.arange(data.shape[1]).float()
 
-        # Condition save
-        cond = self.prepare_cond(data, class_cond)
+            if (cond_type == "impute") and (cond is not None):
+                data_nan = cond
+                # data_nan = data.masked_fill(cond.bool(), float("nan"))
+            else:
+                data_nan = data
 
-        return data, cond
+            self.coeffs = interp_fn(data_nan, t)
+        else:
+            self.coeffs = None
 
-    @property
-    def dataset_name(self) -> str:
-        return "2DSpiral"
+    def __getitem__(self, index):
+        if self.sample_chnl:
+            chnl = torch.randint(0, self.data_shape[-1], (1,))
+            batch_dict = dict(
+                seq=self.data[index, :, chnl], t=self.time_idx[index], chnl_id=chnl
+            )
+        else:
+            chnl = ...
+            batch_dict = dict(seq=self.data[index, :, :], t=self.time_idx[index])
 
+        if self.cond_shape is not None:
+            batch_dict["c"] = self.cond[index, ..., chnl]
+        if self.coeffs is not None:
+            batch_dict["coeffs"] = self.coeffs[index, :, chnl]
+        return batch_dict
 
-class SineND(BaseDataModule):
-    def __init__(
-        self,
-        seq_len: int = 200,
-        seq_dim: int = 1,
-        num_samples: int = 1000,
-        batch_size: int = 32,
-        data_dir: Path | str = Path.cwd() / "data",
-        condition: str = None,
-        scale: bool = True,
-        inference_batch_size: int = 1024,
-        add_coeffs: str = None,
-        time_idx_last: bool = False,
-        channel_independent: bool = False,
-        **kwargs,
-    ):
-        super().__init__(
-            seq_len,
-            seq_dim,
-            condition,
-            batch_size,
-            inference_batch_size,
-            data_dir,
-            add_coeffs=add_coeffs,
-            time_idx_last=time_idx_last,
-            channel_independent=channel_independent,
-            **kwargs,
-        )
-        self.num_samples = num_samples
-
-    def get_data(self):
-        # Initialize the output
-        data = list()
-
-        # Generate sine data
-        for i in range(self.num_samples):
-            # Initialize each time-series
-            temp = list()
-            # For each feature
-            for k in range(self.seq_dim):
-                # Randomly drawn frequency and phase
-                freq = np.random.uniform(0.05, 0.4)
-                phase = np.random.uniform(0, 1.5)
-
-                # Generate sine signal based on the drawn frequency and phase
-                temp_data = [np.sin(freq * j + phase) for j in range(self.seq_len)]
-                temp.append(temp_data)
-
-            # Align row/column
-            temp = np.transpose(np.asarray(temp))
-            # Normalize to [0,1]
-            temp = (temp + 1) * 0.5
-            # Stack the generated data
-            data.append(temp)
-        data = np.array(data)
-        data = torch.from_numpy(data).float()
-
-        # Condition save
-        cond = self.prepare_cond(data, None)
-
-        return data, cond
-
-    @property
-    def dataset_name(self) -> str:
-        return "SineND"
+    def __len__(self):
+        return len(self.data)

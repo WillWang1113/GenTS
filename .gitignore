@@ -166,8 +166,8 @@ lightning_logs/
 *.png
 misc/
 notebooks/
-src/data/data_factory.py
-src/data/data_loader.py
+src/dataset/data_factory.py
+src/dataset/data_loader.py
 nohup.out
 scripts/context_fid.py
 scripts/kovae_rebuttal.py
