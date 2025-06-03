@@ -11,7 +11,7 @@ pip install -r requirements.txt
 ```
 
 ## Quick start
-To 
+- Unconditional generation (time series synthesis)
 ```python
 import torch
 from src.model import VanillaDDPM
@@ -34,6 +34,41 @@ gen_data = model.sample(n_sample=len(real_data))  # [N, 64, 2]
 
 # visualization with tsne
 visualization(real_data, gen_data, analysis="tsne")
+```
+
+- Conditional generation (time series forecasting/imputation)
+The only thing to do is to include ```condition='predict' / 'imputate'``` in the datamodule and models. For inference, the condition tensor should also be provided.
+
+```python
+import ...
+from src.evaluation import crps
+
+# Forecasting with look back window (obs_len=64)
+dm = SineND(obs_len=64, seq_len=64, seq_dim=2, batch_size=64, condition='predict')
+model = VanillaDDPM(seq_len=64, seq_dim=2, obs_len=64, condition='predict')
+
+# Imputation
+# dm = SineND(missing_rate=0.2, seq_len=64, seq_dim=2, batch_size=64, condition='impute')
+# model = VanillaDDPM(seq_len=64, seq_dim=2, obs_len=64, condition='impute')
+
+# training (same before)
+trainer = ...
+trainer.fit(model, dm)
+
+# testing
+dm.setup("test")
+real_data, gen_data = [], []
+for batch in dm.test_dataloader():
+    real_data.append(batch['seq'][:,-64:])  # [N, 64, 2]
+
+    # in conditional generation, n_sample means how many inference times
+    gen_data.append(model.sample(n_sample=50, condition=batch['c']))  # [N, 64, 2, 50]
+
+real_data = torch.concat(real_data)
+gen_data = torch.concat(gen_data)
+
+# Continuous Ranked Probability Score (CRPS)
+print(crps(real_data, gen_data))
 ```
 
 ## Model zoo
@@ -87,7 +122,7 @@ visualization(real_data, gen_data, analysis="tsne")
 - **(-!)** = Official codes are functionally different from the paper
 
 
-## Arena (TODO: experiments)
+## Arena (TODO: experiments + webpage?)
 
 Datasets:
 - **Synthesis**: SineND $^*$, Stocks, Energy, ECG
@@ -96,7 +131,7 @@ Datasets:
 
 $^*$: Simulated
 
-Till XX 2025, the top three models for five different tasks are:
+Till XX 2025, the top three models for different tasks are:
 
 | Model Rank | Synthesis | Forecasting | Imputation |
 | :--------: | :-------: | :---------: | :--------: |
@@ -118,7 +153,7 @@ The former three are standard ```lightning``` methods for model training; The la
 ## TODO-list
 - [x] Flow-based model (5.15)
 - [x] ODE-based model (5.15)
-- [x] Evaluation (TSGBench + new metrics J-FTSD, ICML2024) (5.31)
+- [x] Evaluation (5.31)
 - [x] Model testing (6.15)
-- [ ] Benchmark datasets (6.15)
+- [ ] Benchmark datasets (include Monash Datasets? 6.15)
 - [ ] Project webpage for benchmarking? [Example](https://huggingface.co/spaces/Salesforce/GIFT-Eval)
