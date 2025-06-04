@@ -1,3 +1,4 @@
+from .mujoco import MuJoCo
 from .sine import SineND, Spiral2D
 from .stocks import Stocks
 from .energy import Energy
@@ -8,4 +9,5 @@ __all__ = [
     "SineND",
     "Stocks",
     "Energy",
+    "MuJoCo",
 ]

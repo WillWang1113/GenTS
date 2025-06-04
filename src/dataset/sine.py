@@ -114,7 +114,7 @@ class SineND(BaseDataModule):
                 phase = np.random.uniform(0, 1.5)
 
                 # Generate sine signal based on the drawn frequency and phase
-                temp_data = [np.sin(freq * j + phase) for j in range(self.seq_len)]
+                temp_data = [np.sin(freq * j + phase) for j in range(self.total_seq_len)]
                 temp.append(temp_data)
 
             # Align row/column

@@ -15,7 +15,7 @@ class Energy(BaseDataModule):
     def __init__(
         self,
         seq_len: int = 24,
-        select_seq_dim: List[int] | int = None,
+        select_seq_dim: List[int | str] = None,
         batch_size: int = 32,
         data_dir: Path | str = Path.cwd() / "data",
         condition: str = None,
@@ -40,9 +40,12 @@ class Energy(BaseDataModule):
         )
         self.scale = scale
         self.select_seq_dim = select_seq_dim
+        self.D = 28
+        if select_seq_dim is not None:
+            assert max(select_seq_dim) < self.D
 
     def get_data(self):
-        pre_download_dir = self.data_dir / f"{self.dataset_name}.csv"
+        pre_download_dir = self.data_dir / f"{self.dataset_name}_raw.csv"
         if pre_download_dir.exists():
             # Load data from local file if it exists
             df = pd.read_csv(pre_download_dir)
@@ -62,9 +65,9 @@ class Energy(BaseDataModule):
                 df = df.iloc[:, self.select_seq_dim]
                 
         data_raw = df.values.astype(np.float32)
-        n_window = data_raw.shape[0] - self.seq_len + 1
+        n_window = data_raw.shape[0] - self.total_seq_len + 1
         n_trainval_window = int(n_window * 0.7) + int(n_window * 0.2)
-        n_trainval_timesteps = n_trainval_window + self.seq_len - 1
+        n_trainval_timesteps = n_trainval_window + self.total_seq_len - 1
 
         # scale
         if self.scale:
@@ -75,8 +78,8 @@ class Energy(BaseDataModule):
 
         # slide window
         data = []
-        for i in range(len(data_raw) - self.seq_len + 1):
-            data.append(data_raw[i : i + self.seq_len, :])
+        for i in range(len(data_raw) - self.total_seq_len + 1):
+            data.append(data_raw[i : i + self.total_seq_len, :])
         data = torch.stack(data, dim=0).float()
 
         # Condition save
