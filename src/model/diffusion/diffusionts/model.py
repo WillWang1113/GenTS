@@ -661,30 +661,38 @@ class DiffusionTS(BaseModel):
             return sample
         else:
             x_shape = (condition.shape[0], self.total_seq_len, self.feature_size)
-            x = kwargs.get("seq", None)
-            assert x is not None, "x must be provided for sampling"
-            assert x.shape[1] == self.total_seq_len
+            # x = kwargs.get("seq", None)
+            # assert x is not None, "x must be provided for sampling"
+            # assert x.shape[1] == self.total_seq_len
             
+            # t_m is mask
+            # 0: missing
+            # 1: observed
             if self.condition == "predict":
                 t_m = torch.ones(x_shape).to(self.device)
                 t_m[:, -self.predict_length :, :] = 0
                 t_m = t_m.bool()
+                target = torch.zeros(x_shape).to(self.device)
+                target[:, :self.obs_len, :] = condition
             else:
                 t_m = ~torch.isnan(condition)
+                target = torch.nan_to_num(condition)
 
             all_samples = []
             for i in range(n_sample):
                 if sampling_steps == self.num_timesteps:
                     sample = self.sample_infill(
                         shape=x_shape,
-                        target=x * t_m,
+                        target=target,
+                        # target=x * t_m,
                         partial_mask=t_m,
                         model_kwargs=model_kwargs,
                     )
                 else:
                     sample = self.fast_sample_infill(
                         shape=x_shape,
-                        target=x * t_m,
+                        target=target,
+                        # target=x * t_m,
                         partial_mask=t_m,
                         model_kwargs=model_kwargs,
                         sampling_timesteps=sampling_steps,

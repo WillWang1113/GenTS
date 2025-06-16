@@ -4,10 +4,12 @@ from typing import List
 import numpy as np
 import torch
 
-from src.dataset.base import BaseDataModule
+from src.dataset.base_new import BaseDataModule
+# from src.dataset.base import BaseDataModule
 
 
 class MuJoCo(BaseDataModule):
+    D = 14
     def __init__(
         self,
         seq_len: int = 200,
@@ -17,28 +19,30 @@ class MuJoCo(BaseDataModule):
         data_dir: Path | str = Path.cwd() / "data",
         condition: str = None,
         inference_batch_size: int = 1024,
+        max_time: float = 1.0,
         add_coeffs: str = None,
-        time_idx_last: bool = False,
-        channel_independent: bool = False,
+        random_drop_data: float = 0.0,
         **kwargs,
     ):
         super().__init__(
             seq_len,
-            len(select_seq_dim) if select_seq_dim is not None else 14,
+            len(select_seq_dim) if select_seq_dim is not None else self.D,
             condition,
             batch_size,
             inference_batch_size,
+            max_time,
+            add_coeffs,
             data_dir,
-            add_coeffs=add_coeffs,
-            time_idx_last=time_idx_last,
-            channel_independent=channel_independent,
             **kwargs,
         )
         self.num_samples = num_samples
         self.select_seq_dim = select_seq_dim
-        self.D = 14
         if select_seq_dim is not None:
             assert max(select_seq_dim) < self.D
+        self.random_dropout = random_drop_data
+        assert random_drop_data >= 0 and random_drop_data < 1
+
+        
 
     def get_data(self):
         
@@ -87,9 +91,14 @@ class MuJoCo(BaseDataModule):
             data = data[..., self.select_seq_dim]
 
         # Condition save
-        cond = self.prepare_cond(data, None)
-
-        return data, cond
+        data_mask = torch.ones_like(data)
+        if self.random_dropout>0:
+            drop_mask = torch.rand_like(data) < self.random_dropout
+            data_mask = data_mask.masked_fill(drop_mask, 0.0)
+        data_mask = data_mask.bool()
+        data = data.masked_fill(~data_mask, 0.0)
+        class_label = None
+        return data, data_mask.bool(), class_label
 
     @property
     def dataset_name(self) -> str:

@@ -42,7 +42,6 @@ class VanillaDDPM(BaseModel):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         self.backbone = Denoiser(**self.hparams)
-        self.seq_length = seq_len
         self.loss_fn = F.mse_loss
         self.n_diff_steps = n_diff_steps
         self.pred_x0 = pred_x0

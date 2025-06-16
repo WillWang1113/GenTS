@@ -86,12 +86,15 @@ class CSDI(BaseModel):
                 * 1.0,
             )
         else:
-            observed_mask = ~torch.isnan(total_seq)
+            observed_mask = batch['data_mask']
+            
+            # observed_mask = ~torch.isnan(total_seq)
             target_mask = torch.isnan(batch["c"])
             target_mask = ~target_mask
             # print(target_mask[0,:,0])
             train_batch = dict(
-                observed_data=torch.nan_to_num(batch['c']),
+                observed_data=total_seq,
+                # observed_data=torch.nan_to_num(batch['c']),
                 observed_mask=observed_mask,
                 gt_mask=target_mask,
                 timepoints=timepoints,
@@ -147,7 +150,7 @@ class CSDI(BaseModel):
             seq_shape = (condition.shape[0], self.seq_len, self.seq_dim)
 
             observed_mask = kwargs.get(
-                "observed_mask", torch.ones(seq_shape).to(self.device)
+                "data_mask", torch.ones(seq_shape).to(self.device)
             )
             target_mask = torch.isnan(condition)
             target_mask = ~target_mask
@@ -159,7 +162,7 @@ class CSDI(BaseModel):
                 timepoints=timepoints,
             )
 
-        test_batch = self._rebuild_batch(kwargs)
+        # test_batch = self._rebuild_batch(kwargs)
         samples, observed_data, target_mask, observed_mask, observed_tp = (
             self.model.evaluate(test_batch, n_samples=n_sample)
         )

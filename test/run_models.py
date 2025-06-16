@@ -210,6 +210,7 @@ if __name__ == "__main__":
 
 
     ##################################################################
+    print(args)
     data_obj = parse_datasets(args, device)
     for k in data_obj:
         print("{}:\n {}".format(k, data_obj[k]))
@@ -217,10 +218,14 @@ if __name__ == "__main__":
     train_dl = data_obj['train_dataloader']
     for i, batch in enumerate(train_dl):
         print(i)
+        # print(batch['observed_data'].shape)
+        print(batch['observed_data'][0,:,-1])
+        print(batch['observed_mask'][0,:,-1])
+        print(batch['observed_tp'])
         print(batch['data_to_predict'][0,:,-1])
         print(batch['mask_predicted_data'][0,:,-1])
         # for k in batch:
         #     print(k)
         #     print(batch[k])
-        if i > 2:
+        if i > 0:
             break

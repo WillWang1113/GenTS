@@ -41,7 +41,7 @@ class BaseDataModule(LightningDataModule, ABC):
             assert kwargs.get("missing_rate", None) is not None
             assert kwargs.get("missing_type", None) is not None
             assert kwargs.get("missing_type", None) in ["random", "block"]
-            self.missing_rate = kwargs.get("missing_rate")
+            self.missing_rate = kwargs.get("missing_rate", 0.0)
             self.missing_type = kwargs.get("missing_type")
         self.total_seq_len = (
             seq_len + self.obs_len if self.obs_len is not None else seq_len

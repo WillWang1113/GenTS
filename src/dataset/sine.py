@@ -3,7 +3,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from src.dataset.base import BaseDataModule
+from src.dataset.base_new import BaseDataModule
+# from src.dataset.base import BaseDataModule
 
 
 class Spiral2D(BaseDataModule):
@@ -15,9 +16,9 @@ class Spiral2D(BaseDataModule):
         data_dir: Path | str = Path.cwd() / "data",
         condition: str = None,
         inference_batch_size: int = 1024,
+        max_time: float = None,
         add_coeffs: str = None,
-        time_idx_last: bool = False,
-        channel_independent: bool = False,
+        random_drop_data: float = 0.0,
         **kwargs,
     ):
         super().__init__(
@@ -26,13 +27,14 @@ class Spiral2D(BaseDataModule):
             condition,
             batch_size,
             inference_batch_size,
+            max_time,
+            add_coeffs,
             data_dir,
-            add_coeffs=add_coeffs,
-            time_idx_last=time_idx_last,
-            channel_independent=channel_independent,
             **kwargs,
         )
         self.num_samples = num_samples
+        self.random_dropout = random_drop_data
+        assert random_drop_data >= 0 and random_drop_data < 1
 
     def get_data(self):
         t = torch.linspace(0, 4 * torch.pi, self.total_seq_len).float()
@@ -58,12 +60,18 @@ class Spiral2D(BaseDataModule):
             curve = torch.stack([x, y], dim=1)
             curves.append(curve)
             labels.append(direction)
-        data, class_cond = torch.stack(curves), torch.tensor(labels).unsqueeze(-1)
+        data, class_label = torch.stack(curves), torch.tensor(labels).unsqueeze(-1)
 
         # Condition save
-        cond = self.prepare_cond(data, class_cond)
+        # cond = self.prepare_cond(data, class_cond)
+        data_mask = torch.ones_like(data)
+        if self.random_dropout>0:
+            drop_mask = torch.rand_like(data) < self.random_dropout
+            data_mask = data_mask.masked_fill(drop_mask, 0)
+        data_mask = data_mask.bool()
+        data = data.masked_fill(~data_mask, 0.0)
 
-        return data, cond
+        return data, data_mask.bool(), class_label
 
     @property
     def dataset_name(self) -> str:
@@ -80,9 +88,9 @@ class SineND(BaseDataModule):
         data_dir: Path | str = Path.cwd() / "data",
         condition: str = None,
         inference_batch_size: int = 1024,
+        max_time: float = None,
         add_coeffs: str = None,
-        time_idx_last: bool = False,
-        channel_independent: bool = False,
+        random_drop_data: float = 0.0,
         **kwargs,
     ):
         super().__init__(
@@ -91,13 +99,14 @@ class SineND(BaseDataModule):
             condition,
             batch_size,
             inference_batch_size,
+            max_time,
+            add_coeffs,
             data_dir,
-            add_coeffs=add_coeffs,
-            time_idx_last=time_idx_last,
-            channel_independent=channel_independent,
             **kwargs,
         )
         self.num_samples = num_samples
+        self.random_dropout = random_drop_data
+        assert random_drop_data >= 0 and random_drop_data < 1
 
     def get_data(self):
         # Initialize the output
@@ -114,7 +123,9 @@ class SineND(BaseDataModule):
                 phase = np.random.uniform(0, 1.5)
 
                 # Generate sine signal based on the drawn frequency and phase
-                temp_data = [np.sin(freq * j + phase) for j in range(self.total_seq_len)]
+                temp_data = [
+                    np.sin(freq * j + phase) for j in range(self.total_seq_len)
+                ]
                 temp.append(temp_data)
 
             # Align row/column
@@ -127,9 +138,15 @@ class SineND(BaseDataModule):
         data = torch.from_numpy(data).float()
 
         # Condition save
-        cond = self.prepare_cond(data, None)
+        data_mask = torch.ones_like(data)
+        if self.random_dropout>0:
+            drop_mask = torch.rand_like(data) < self.random_dropout
+            data_mask = data_mask.masked_fill(drop_mask, 0)
+        data_mask = data_mask.bool()
+        data = data.masked_fill(~data_mask, 0.0)
+        class_label = None
+        return data, data_mask.bool(), class_label
 
-        return data, cond
 
     @property
     def dataset_name(self) -> str:

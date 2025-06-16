@@ -125,9 +125,7 @@ print(crps(real_data, gen_data))
 ## Arena (TODO: experiments + webpage?)
 
 Datasets:
-- **Synthesis**: SineND $^*$, Stocks, Energy, ECG
-- **Forecasting**: M4, Electricity, Traffic, Exchange
-- **Imputation**: MoJoCo $^*$, Physionet, Air quality, ETTh
+SineND $^s$, Stocks, Energy, ECG, M4 $^u$, Electricity, Traffic, Exchange, MoJoCo $^s$, Physionet $^m$, Air quality $^m$, ETTh
 
 $^*$: Simulated
 
@@ -157,3 +155,43 @@ The former three are standard ```lightning``` methods for model training; The la
 - [x] Model testing (6.15)
 - [ ] Benchmark datasets (include Monash Datasets? 6.15)
 - [ ] Project webpage for benchmarking? [Example](https://huggingface.co/spaces/Salesforce/GIFT-Eval)
+
+
+| Name                   | Model Type | Synthesis          | Forecasting        | Imputation         | Finish?            |
+|------------------------|------------|--------------------|--------------------|--------------------|--------------------|
+| VanillaVAE             | VAE        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| TimeVAE                | VAE        | :white_check_mark: |                    |                    | :white_check_mark: |
+| TimeVQVAE              | VAE        | :white_check_mark: |                    |                    | :white_check_mark: |
+| KoVAE                  | VAE        | :white_check_mark: |                    |                    | :white_check_mark: |
+| VanillaGAN             | GAN        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| TimeGAN                | GAN        | :white_check_mark: |                    |                    | :white_check_mark: |
+| AST **(-!)**           | GAN        |                    | :white_check_mark: |                    | :white_check_mark: |
+| COSCI-GAN              | GAN        | :white_check_mark: |                    |                    | :white_check_mark: |
+| GT-GAN                 | GAN        | :white_check_mark: |                    |                    | :white_check_mark: |
+| PSA-GAN **(-G)**       | GAN        | :white_check_mark: |                    |                    | :white_check_mark: |
+| RCGAN                  | GAN        | :white_check_mark: |                    |                    | :white_check_mark: |
+| VanillaMAF             | Flow       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Fourier Flow $^1$      | Flow       | :white_check_mark: |                    |                    | :white_check_mark: |
+| LSTM-MAF **(-G)**      | Flow       |                    | :white_check_mark: |                    | :white_circle:     |
+| VanillaDDPM            | Diffusion  | :white_check_mark: |                    |                    | :white_check_mark: |
+| CSDI                   | Diffusion  |                    | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Diffusion-TS           | Diffusion  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| TMDM                   | Diffusion  |                    | :white_check_mark: |                    | :white_check_mark: |
+| mr-diff                | Diffusion  |                    | :white_check_mark: |                    | :white_check_mark: |
+| RATD                   | Diffusion  |                    | :white_check_mark: |                    | :white_circle:     |
+| FourierDiffusion       | Diffusion  | :white_check_mark: |                    |                    | :white_check_mark: |
+| ImagenTime             | Diffusion  | :white_check_mark: | :white_check_mark: |                    | :white_check_mark: |
+| D3M **(-M)**           | Diffusion  |                    | :white_check_mark: | :white_check_mark: | :white_circle:     |
+| TimeWeaver **(-M)**    | Diffusion  | :white_check_mark: |                    |                    | :white_circle:     |
+| FTS-Diffusion **(-M)** | Diffusion  | :white_check_mark: |                    |                    | :white_circle:     |
+| FIDE **(-!)**          | Diffusion  | :white_check_mark: |                    |                    | :white_check_mark: |
+| ANT **(-G)**           | Diffusion  | :white_check_mark: | :white_check_mark: |                    | :white_circle:     |
+| TimeGrad **(-G)**      | Diffusion  |                    |                    |                    | :white_circle:     |
+| TSDiff **(-G)**        | Diffusion  | :white_check_mark: | :white_check_mark: |                    | :white_circle:     |
+| MG-TSD **(-G)**        | Diffusion  |                    | :white_check_mark: |                    | :white_circle:     |
+| D3VAE **(-P)**         | Diffusion  |                    | :white_check_mark: |                    | :white_circle:     |
+| Latent ODE w. ODE-RNN  | Diff. Eq.  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Latent ODE w. RNN      | Diff. Eq.  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Latent SDE             | Diff. Eq.  | :white_check_mark: |                    |                    | :white_check_mark: |
+| SDEGAN                 | Diff. Eq.  | :white_check_mark: |                    |                    | :white_check_mark: |
+| LS4                    | Diff. Eq.  | :white_check_mark: |                    |                    | :white_check_mark: |

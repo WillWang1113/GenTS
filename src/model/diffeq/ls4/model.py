@@ -6,12 +6,13 @@ import torch
 
 class LS4(BaseModel):
     ALLOW_CONDITION = [None, "predict", "impute"]
+    # Imputation only for sequence missing?
 
     def __init__(
         self,
         seq_len,
         seq_dim,
-        latent_dim=20,
+        latent_dim=10,
         bidirectional=False,
         condition=None,
         sigma=0.1,
@@ -20,7 +21,7 @@ class LS4(BaseModel):
         enc_n_layers=4,
         enc_backbone="autoreg",
         enc_use_unet=False,
-        enc_pool=[1],
+        enc_pool=[],
         enc_ff_layers=2,
         enc_expand=2,
         enc_s4type="s4",
@@ -34,7 +35,7 @@ class LS4(BaseModel):
         dec_n_layers=4,
         dec_backbone="autoreg",
         dec_use_unet=False,
-        dec_pool=[1],
+        dec_pool=[],
         dec_ff_layers=2,
         dec_expand=2,
         dec_s4type="s4",
@@ -46,7 +47,7 @@ class LS4(BaseModel):
         prior_n_layers=4,
         prior_backbone="autoreg",
         prior_use_unet=False,
-        prior_pool=[1],
+        prior_pool=[],
         prior_ff_layers=2,
         prior_expand=2,
         prior_s4type="s4",
@@ -200,18 +201,15 @@ class LS4(BaseModel):
 
         if self.condition == "predict":
             total_seq_len = self.seq_len + self.obs_len
-            t = torch.linspace(
-                20.0 / total_seq_len,
-                20.0,
-                total_seq_len,
-            ).to(self.device)
+            t = kwargs['t']
 
             tp_to_predict = t[self.obs_len :]
             observed_tp = t[: self.obs_len]
-            observed_data = condition
-            mask_predicted_data = torch.ones(
-                [observed_data.shape[0], self.seq_len, self.seq_dim]
-            ).to(observed_data)
+            observed_data = torch.nan_to_num(condition)
+            mask_predicted_data = kwargs['data_mask'][:,self.obs_len :]
+            # mask_predicted_data = torch.ones(
+            #     [observed_data.shape[0], self.seq_len, self.seq_dim]
+            # ).to(observed_data)
 
             all_samples = []
             for _ in range(n_sample):
@@ -229,22 +227,20 @@ class LS4(BaseModel):
             # data = kwargs.get("seq").clone()
             # condition = torch.isnan(condition)
             # data[condition] = 0.0
-            total_seq_len = self.seq_len
-            t = torch.linspace(
-                20.0 / total_seq_len,
-                20.0,
-                total_seq_len,
-            ).to(self.device)
+            # total_seq_len = self.seq_len
+            t = kwargs['t'][0]
 
             observed_data = torch.nan_to_num(condition)
             mask = ~torch.isnan(condition)
             mask = mask.float()
-
+            
+            non_missing_tp = torch.sum(mask, (0, 2)) != 0.
+            observed_data = observed_data[:, non_missing_tp]
+            observed_tp = t[non_missing_tp]
+            
             tp_to_predict = t
-            observed_tp = t
-            mask_predicted_data = torch.ones(
-                [observed_data.shape[0], self.seq_len, self.seq_dim]
-            ).to(observed_data)
+            # observed_tp = t
+            mask_predicted_data = kwargs['data_mask']
 
             all_samples = []
             for _ in range(n_sample):
@@ -264,28 +260,55 @@ class LS4(BaseModel):
         return all_samples
 
     def _reform_batch(self, batch):
-        if self.condition is None:
-            data = batch["seq"]
-            tp = None
-            mask = torch.ones_like(data, dtype=torch.bool)
-            labels = None
-        elif self.condition == "predict":
-            data = batch["seq"]
-            tp = torch.linspace(20.0 / data.shape[1], 20.0, data.shape[1]).to(data)
-            mask = torch.ones_like(batch["seq"])
-            mask[:, : self.obs_len] = 0.0
+        data = batch["seq"].clone()
+        tp = batch['t'][0].clone()
+        # print(tp[:10])
+        mask = batch["data_mask"].float()
+        labels = None
+        
+        non_missing_tp = torch.sum(mask, (0, 2)) != 0.
+        data = data[:, non_missing_tp]
+        tp = tp[non_missing_tp]
+        # print(tp[:10])
+        
+        # if (self.condition is None) or (self.condition == 'impute'):
+        #     data = batch["seq"].clone()
+        #     tp = batch['t'][0].clone()
+        #     mask = batch["data_mask"].float()
+        #     labels = None
+            
+        #     non_missing_tp = torch.sum(mask, (0, 2)) != 0.
+        #     data = data[:, non_missing_tp]
+        #     tp = tp[non_missing_tp]
+        
+        # elif self.condition == "predict":
+        #     data = batch["seq"]
+        #     tp = batch['t'][0]
+        #     # tp = torch.linspace(20.0 / data.shape[1], 20.0, data.shape[1]).to(data)
+        #     mask = torch.ones_like(batch["seq"])
+        #     mask[:, : self.obs_len] = 0.0
 
-            labels = None
+        #     labels = None
+            
+        #     non_missing_tp = torch.sum(mask, (0, 2)) != 0.
+        #     data = data[:, non_missing_tp]
+        #     tp = tp[non_missing_tp]
 
-        elif self.condition == "impute":
-            data = torch.nan_to_num(batch["c"])
-            mask = torch.isnan(batch["c"])
-            mask = 1 - mask.float()
-            # data = batch["seq"].clone()
-            # mask = batch["c"]
-            # data[mask] = 0.0
-
-            tp = torch.linspace(20.0 / data.shape[1], 20.0, data.shape[1]).to(data)
-            labels = None
+        # elif self.condition == "impute":
+        #     data = batch['seq'].clone()
+        #     mask = batch['data_mask'].float()
+        #     # data = torch.nan_to_num(batch["c"])
+        #     # mask = torch.isnan(batch["c"])
+        #     # mask = 1 - mask.float()
+        #     # data = batch["seq"].clone()
+        #     # mask = batch["c"]
+        #     # data[mask] = 0.0
+        #     tp = batch['t'][0].clone()
+        #     # tp = torch.linspace(20.0 / data.shape[1], 20.0, data.shape[1]).to(data)
+        #     labels = None
+            
+        #     non_missing_tp = torch.sum(mask, (0, 2)) != 0.
+        #     data = data[:, non_missing_tp]
+        #     tp = tp[non_missing_tp]
 
         return data, tp, mask, labels

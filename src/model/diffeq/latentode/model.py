@@ -60,18 +60,20 @@ class LatentODE(BaseModel):
         total_seq_len = self.seq_len
         if self.condition == "predict":
             total_seq_len += self.obs_len
-        t = torch.linspace(
-            20.0 / total_seq_len,
-            20.0,
-            total_seq_len,
-        ).to(self.device)
+        # t = torch.linspace(
+        #     20.0 / total_seq_len,
+        #     20.0,
+        #     total_seq_len,
+        # ).to(self.device)
+        t = kwargs['t'][0]
+        
 
         if self.condition == "predict":
             total_seq_len += self.obs_len
             tp_to_predict = t[self.obs_len :]
             observed_tp = t[: self.obs_len]
             observed_data = condition
-            observed_mask = torch.ones_like(observed_data)
+            observed_mask = kwargs.get('data_mask')[:, :self.obs_len]
 
             trajs, _ = self.model.get_reconstruction(
                 tp_to_predict, observed_data, observed_tp, observed_mask, n_sample
@@ -99,57 +101,97 @@ class LatentODE(BaseModel):
     def _reform_batch(self, batch):
         
         x = batch["seq"]
-        # ! force override !
-        t = torch.linspace(20.0 / x.shape[1], 20.0, x.shape[1]).to(x)
+        # t = torch.linspace(20.0 / x.shape[1], 20.0, x.shape[1]).to(x)
+        t = batch['t'][0]
         if self.condition == "predict":
-            mask = torch.ones_like(batch["c"])
-            batch_dict = {
+            # mask = torch.ones_like(batch["c"])
+            data_dict = {
                 "tp_to_predict": t[self.obs_len :],
                 "observed_tp": t[: self.obs_len],
                 "observed_data": batch["c"],
                 "data_to_predict": batch["seq"][:, self.obs_len :, :],
                 # observed_mask = mask over observed_data, 
                 # 1 is observed, 0 is not
-                "observed_mask": mask,
+                "observed_mask": batch['data_mask'][:, :self.obs_len, :].float(),
                 # mask_predicted_data = mask over data_to_predict (for loss computing), 
                 # 1 is observed, 0 is not
-                "mask_predicted_data": None,
+                "mask_predicted_data": batch['data_mask'][:, self.obs_len:, :].float(),
                 "labels": None,
                 "mode": "extrap",
             }
             # print(batch_dict['observed_data'].shape)
             # print(batch_dict['data_to_predict'].shape)
         elif self.condition == "impute":
-            mask = torch.isnan(batch["c"])
             # mask = batch["c"]
-            # 1: missing
-            # 0: non-missing
-            observed_data = x.clone()
-            observed_data[mask] = 0.0
+            # 1: observed
+            # 0: missing
+            mask = torch.isnan(batch["c"])
+            # observed_data = x.clone()
+            # observed_data[mask] = 0.0
             mask = 1 - mask.float()
 
-            batch_dict = {
+            data_dict = {
                 "tp_to_predict": t,
                 "observed_tp": t,
-                "observed_data": observed_data,
+                "observed_data": torch.nan_to_num(batch['c']),
                 "data_to_predict": x,
                 "observed_mask": mask,
-                "mask_predicted_data": mask,
+                "mask_predicted_data": batch['data_mask'].float(),
                 "labels": None,
                 "mode": "interp",
             }
         else:
-            mask = torch.ones_like(x)
-            batch_dict = {
+            # mask = torch.ones_like(x)
+            data_dict = {
                 "tp_to_predict": t,
                 "observed_tp": t,
                 "observed_data": x,
                 "data_to_predict": x,
-                "observed_mask": mask,
-                "mask_predicted_data": mask,
+                "observed_mask": batch['data_mask'].float(),
+                "mask_predicted_data": batch['data_mask'].float(),
                 "labels": None,
                 "mode": "interp",
             }
+        
+        ## get batch data
+        batch_dict = {"observed_data": None,
+                "observed_tp": None,
+                "data_to_predict": None,
+                "tp_to_predict": None,
+                "observed_mask": None,
+                "mask_predicted_data": None,
+                "labels": None
+                }
+
+        # remove the time points where there are no observations in this batch
+        non_missing_tp = torch.sum(data_dict["observed_mask"], (0, 2)) != 0.
+        batch_dict["observed_data"] = data_dict["observed_data"][:, non_missing_tp]
+        batch_dict["observed_tp"] = data_dict["observed_tp"][non_missing_tp]
+
+        # print("observed data")
+        # print(batch_dict["observed_data"].size())
+
+        if ("observed_mask" in data_dict) and (data_dict["observed_mask"] is not None):
+            batch_dict["observed_mask"] = data_dict["observed_mask"][:, non_missing_tp]
+
+        batch_dict["data_to_predict"] = data_dict["data_to_predict"]
+        batch_dict["tp_to_predict"] = data_dict["tp_to_predict"]
+
+        non_missing_tp = torch.sum(data_dict["mask_predicted_data"], (0, 2)) != 0.
+        batch_dict["data_to_predict"] = data_dict["data_to_predict"][:, non_missing_tp]
+        batch_dict["tp_to_predict"] = data_dict["tp_to_predict"][non_missing_tp]
+
+        # print("data_to_predict")
+        # print(batch_dict["data_to_predict"].size())
+
+        if ("mask_predicted_data" in data_dict) and (data_dict["mask_predicted_data"] is not None):
+            batch_dict["mask_predicted_data"] = data_dict["mask_predicted_data"][:, non_missing_tp]
+
+        if ("labels" in data_dict) and (data_dict["labels"] is not None):
+            batch_dict["labels"] = data_dict["labels"]
+
+        batch_dict["mode"] = data_dict["mode"]
+        
         return batch_dict
 
     def configure_optimizers(self):

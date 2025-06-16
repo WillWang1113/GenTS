@@ -3,20 +3,20 @@ from src.dataset.base_new import WebDownloadDataModule
 # from src.dataset.base import BaseDataModule
 
 
-class Energy(WebDownloadDataModule):
-    D = 28
-    url = "https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data/energy_data.csv"
-    data_source = 'csv'
-    index_col = None
+class Electricity(WebDownloadDataModule):
+    D = 321
+    index_col = "date"
+    url = "https://drive.google.com/file/d/1FHH0S3d6IK_UOpg6taBRavx4MragRLo1/view?usp=share_link"
+    csv_dir = "electricity/electricity.csv"
+    data_source = "zip"
 
     @property
     def dataset_name(self) -> str:
-        return "Energy"
+        return "Electricity"
 
-# class Energy(BaseDataModule):
-#     D = 28
-#     url = "https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data/energy_data.csv"
 
+# class Electricity(BaseDataModule):
+#     D = 321
 #     def __init__(
 #         self,
 #         seq_len: int = 24,
@@ -53,10 +53,15 @@ class Energy(WebDownloadDataModule):
 #             df = pd.read_csv(pre_download_dir)
 #         else:
 #             # Download stock data
+#             url = "https://raw.githubusercontent.com/laiguokun/multivariate-time-series-data/master/electricity/electricity.txt.gz"
 #             headers = {"Authorization": "Test"}
-#             response = requests.get(self.url, headers=headers)
-#             df = pd.read_csv(StringIO(response.text))
-#             df.to_csv(pre_download_dir, index=False)
+
+#             response = requests.get(url, headers=headers)
+#             with gzip.GzipFile(fileobj=BytesIO(response.content)) as gz_file:
+#                 decompressed_content = gz_file.read().decode('utf-8')  # 二进制转字符串
+#                 df = pd.read_csv(StringIO(decompressed_content), header=None)
+#                 df.to_csv(pre_download_dir, index=False)
+#         print(df.shape)
 
 #         # select dimensions
 #         if self.select_seq_dim is not None:
@@ -64,7 +69,7 @@ class Energy(WebDownloadDataModule):
 #                 df = df[self.select_seq_dim]
 #             elif isinstance(self.select_seq_dim[0], int):
 #                 df = df.iloc[:, self.select_seq_dim]
-                
+
 #         data_raw = df.values.astype(np.float32)
 #         n_window = data_raw.shape[0] - self.total_seq_len + 1
 #         n_trainval_window = int(n_window * 0.7) + int(n_window * 0.2)
@@ -84,11 +89,9 @@ class Energy(WebDownloadDataModule):
 #         data = torch.stack(data, dim=0).float()
 #         data_mask = torch.isnan(data)
 #         class_label = None
-#         # Condition save
-#         # cond = self.prepare_cond(data, None)
 
 #         return data, data_mask, class_label
 
 #     @property
 #     def dataset_name(self) -> str:
-#         return "Energy"
+#         return "Electricity"

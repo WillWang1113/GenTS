@@ -46,6 +46,7 @@ class FourierFlow(BaseModel):
     ):
         super().__init__(seq_len, seq_dim, condition)
         self.save_hyperparameters()
+        assert seq_dim == 1, "Only support univariate time series"
         self.seq_len = seq_len
         fft_size = seq_len + 1 if seq_len % 2 == 0 else seq_len
         self.d = fft_size

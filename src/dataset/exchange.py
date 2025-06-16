@@ -1,22 +1,22 @@
 from src.dataset.base_new import WebDownloadDataModule
-
 # from src.dataset.base import BaseDataModule
 
 
-class Energy(WebDownloadDataModule):
-    D = 28
-    url = "https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data/energy_data.csv"
-    data_source = 'csv'
-    index_col = None
-
+class Exchange(WebDownloadDataModule):
+    D = 8
+    index_col = 'date'
+    url = "https://drive.google.com/file/d/1rN79CxW3Vldp-WDuSoG0bKq9tYQR79UK/view?usp=share_link"
+    csv_dir = 'exchange_rate/exchange_rate.csv'
+    data_source = 'zip'
+    
     @property
     def dataset_name(self) -> str:
-        return "Energy"
+        return "Exchange_rate"
 
-# class Energy(BaseDataModule):
-#     D = 28
-#     url = "https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data/energy_data.csv"
-
+# class Exchange(BaseDataModule):
+#     D = 8
+#     url = "https://raw.githubusercontent.com/laiguokun/multivariate-time-series-data/master/exchange_rate/exchange_rate.txt.gz"
+    
 #     def __init__(
 #         self,
 #         seq_len: int = 24,
@@ -54,9 +54,12 @@ class Energy(WebDownloadDataModule):
 #         else:
 #             # Download stock data
 #             headers = {"Authorization": "Test"}
+
 #             response = requests.get(self.url, headers=headers)
-#             df = pd.read_csv(StringIO(response.text))
-#             df.to_csv(pre_download_dir, index=False)
+#             with gzip.GzipFile(fileobj=BytesIO(response.content)) as gz_file:
+#                 decompressed_content = gz_file.read().decode('utf-8')  # 二进制转字符串
+#                 df = pd.read_csv(StringIO(decompressed_content), header=None)
+#                 df.to_csv(pre_download_dir, index=False)
 
 #         # select dimensions
 #         if self.select_seq_dim is not None:
@@ -84,11 +87,9 @@ class Energy(WebDownloadDataModule):
 #         data = torch.stack(data, dim=0).float()
 #         data_mask = torch.isnan(data)
 #         class_label = None
-#         # Condition save
-#         # cond = self.prepare_cond(data, None)
 
 #         return data, data_mask, class_label
 
 #     @property
 #     def dataset_name(self) -> str:
-#         return "Energy"
+#         return "Exchange_rate"
