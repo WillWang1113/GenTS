@@ -1,9 +1,12 @@
 from matplotlib import pyplot as plt
 import torch
+from src.dataset.air_quality import AirQuality
+from src.dataset.ecg import ECG
 from src.dataset.electricity import Electricity
 from src.dataset.ett import ETTh1, ETTh2, ETTm2
 from src.dataset.exchange import Exchange
 from src.dataset.traffic import Traffic
+from src.dataset.weather import Weather
 from src.evaluation.visual import imputation_visual, predict_visual
 from src.model import VanillaDDPM
 from src.dataset import SineND, Stocks, Energy, MuJoCo, Spiral2D
@@ -49,8 +52,8 @@ from src.model.diffeq.ls4.model import LS4
 # model = VanillaDDPM(seq_len=64, seq_dim=2, obs_len=64, condition='predict')
 
 """Imputation"""
-obs_len = 100
-dm = Traffic(select_seq_dim=[1,3,4],seq_len=100, batch_size=64, condition='predict', obs_len=obs_len, max_time=1.0)
+obs_len = 70
+dm = ECG(seq_len=70, batch_size=64, condition='predict', obs_len=obs_len, max_time=1.0)
 # dm = Physionet(select_seq_dim=[4,8, 10], batch_size=64, condition='predict', obs_len=24)
 # dm = SineND(missing_rate=0.2, seq_len=64, seq_dim=2, batch_size=64)
 # model = LS4(seq_len=dm.seq_len, seq_dim=dm.seq_dim, condition='predict', enc_n_layers=2, enc_ff_layers=1, dec_n_layers=2, dec_ff_layers=1, prior_n_layers=2,)

@@ -15,8 +15,8 @@ pip install -r requirements.txt
 ```python
 import torch
 from src.model import VanillaDDPM
-from src.data import SineND
-from src.evaluation import visualization
+from src.dataset import SineND
+from src.evaluation import qualitative_visual
 from lightning import Trainer
 
 # setup dataset and model
@@ -33,7 +33,7 @@ real_data = torch.cat([batch["seq"] for batch in dm.test_dataloader()])  # [N, 6
 gen_data = model.sample(n_sample=len(real_data))  # [N, 64, 2]
 
 # visualization with tsne
-visualization(real_data, gen_data, analysis="tsne")
+qualitative_visual(real_data, gen_data, analysis="tsne", save_root="tsne.png")
 ```
 
 - Conditional generation (time series forecasting/imputation)
@@ -41,75 +41,73 @@ The only thing to do is to include ```condition='predict' / 'imputate'``` in the
 
 ```python
 import ...
-from src.evaluation import crps
+from src.evaluation import predict_visual, imputation_visual
 
-# Forecasting with look back window (obs_len=64)
-dm = SineND(obs_len=64, seq_len=64, seq_dim=2, batch_size=64, condition='predict')
-model = VanillaDDPM(seq_len=64, seq_dim=2, obs_len=64, condition='predict')
 
-# Imputation
-# dm = SineND(missing_rate=0.2, seq_len=64, seq_dim=2, batch_size=64, condition='impute')
-# model = VanillaDDPM(seq_len=64, seq_dim=2, obs_len=64, condition='impute')
+# predict
+dm = SineND(seq_len=64, seq_dim=3, batch_size=64, condition='predict', obs_len=64)
+model = VanillaDDPM(seq_len=64, seq_dim=3, condition='predict', obs_len=64, pred_x0=True)
 
-# training (same before)
-trainer = ...
+# impute
+# dm = SineND(seq_len=64, seq_dim=3, batch_size=64, condition='impute', missing_rate=0.2)
+# model = VanillaDDPM(seq_len=64, seq_dim=3, condition='impute', missing_rate=0.2, pred_x0=False)
+
+# training (on CPU for example)
+trainer = Trainer(max_epochs=200, accelerator="cpu")
 trainer.fit(model, dm)
 
 # testing
 dm.setup("test")
-real_data, gen_data = [], []
-for batch in dm.test_dataloader():
-    real_data.append(batch['seq'][:,-64:])  # [N, 64, 2]
+real_data = torch.cat([batch["seq"] for batch in dm.test_dataloader()])  
+data_mask = torch.cat([batch["data_mask"] for batch in dm.test_dataloader()])  
+cond_data = torch.cat([batch["c"] for batch in dm.test_dataloader()])
+gen_data = model.sample(n_sample=10, condition=cond_data)  # [N, 64, 2, 10]
 
-    # in conditional generation, n_sample means how many inference times
-    gen_data.append(model.sample(n_sample=50, condition=batch['c']))  # [N, 64, 2, 50]
+# visualization
+predict_visual(real_data, gen_data, data_mask, save_root='predict.png')
+# imputation_visual(real_data, gen_data, cond_data, data_mask, save_root='impute.png')
 
-real_data = torch.concat(real_data)
-gen_data = torch.concat(gen_data)
-
-# Continuous Ranked Probability Score (CRPS)
-print(crps(real_data, gen_data))
 ```
 
 ## Model zoo
-|          Name          |    Model Type     |       Condition       |    Application     |      Finish?       |
-| :--------------------: | :---------------: | :-------------------: | :----------------: | :----------------: |
-|       VanillaVAE       |        VAE        |           -           |        Syn         | :white_check_mark: |
-|        TimeVAE         |        VAE        |           -           |        Syn         | :white_check_mark: |
-|       TimeVQVAE        |        VAE        |      class label      |        Syn         | :white_check_mark: |
-|         KoVAE          |        VAE        |           -           |     Syn(irreg)     | :white_check_mark: |
-|       VanillaGAN       |        GAN        |           -           |        Syn         | :white_check_mark: |
-|        TimeGAN         |        GAN        |           -           |        Syn         | :white_check_mark: |
-|      AST **(-!)**      |        GAN        |  :white_check_mark:   |    Fcst(point)     | :white_check_mark: |
-|       COSCI-GAN        |        GAN        |           -           |        Syn         | :white_check_mark: |
-|         GT-GAN         |        GAN        |           -           |     Syn(irreg)     | :white_check_mark: |
-|    PSA-GAN **(-G)** $^1$   |        GAN        |           -           |        Syn         | :white_check_mark: |
-|         RCGAN          |        GAN        |           -           |        Syn         | :white_check_mark: |
-|       VanillaMAF       |       Flow        |           -           | Syn, Fcst, Impute  | :white_check_mark: |
-| Fourier Flow $^1$ |       Flow        |           -           |        Syn         | :white_check_mark: |
-|   LSTM-MAF **(-G)**    |       Flow        |  :white_check_mark:   |        Fcst        |   :white_circle:   |
-|      VanillaDDPM       |     Diffusion     |           -           |        Syn         | :white_check_mark: |
-|          CSDI          |     Diffusion     |  :white_check_mark:   |    Fcst, Impute    | :white_check_mark: |
-|      Diffusion-TS      |     Diffusion     |  :white_check_mark:   | Syn, Fcst, Impute  | :white_check_mark: |
-|          TMDM          |     Diffusion     |  :white_check_mark:   |        Fcst        | :white_check_mark: |
-|        mr-diff         |     Diffusion     |  :white_check_mark:   |        Fcst        | :white_check_mark: |
-|          RATD          |     Diffusion     |  :white_check_mark:   |        Fcst        |   :white_circle:   |
-|    FourierDiffusion    |     Diffusion     |           -           |        Syn         | :white_check_mark: |
-|       ImagenTime       |     Diffusion     |  :white_check_mark:   |     Syn, Fcst      | :white_check_mark: |
-|      D3M **(-M)**      |     Diffusion     |           -           |     Fcst, Imp      |   :white_circle:   |
-|  TimeWeaver **(-M)**   |     Diffusion     |  :white_check_mark:   |        Syn         |   :white_circle:   |
-| FTS-Diffusion **(-M)** |     Diffusion     |           -           |        Syn         |   :white_circle:   |
-|     FIDE **(-!)**      |     Diffusion     |     block maxima      |        Syn         | :white_check_mark: |
-|      ANT **(-G)**      |     Diffusion     |  :white_check_mark:   | Syn, Fcst, Refine  |   :white_circle:   |
-|   TimeGrad **(-G)**    |     Diffusion     |  :white_check_mark:   |        Fcst        |   :white_circle:   |
-|    TSDiff **(-G)**     |     Diffusion     | inference conditional | Syn, Fcst, Refine  |   :white_circle:   |
-|    MG-TSD **(-G)**     |     Diffusion     |  :white_check_mark:   |        Fcst        |   :white_circle:   |
-|     D3VAE **(-P)**     |     Diffusion     |  :white_check_mark:   |        Fcst        |   :white_circle:   |
-| Latent ODE w. ODE-RNN  |     Diff. Eq.     |           -           |   Syn, Fcst, Imp   | :white_check_mark: |
-|   Latent ODE w. RNN    |     Diff. Eq.     |           -           |   Syn, Fcst, Imp   | :white_check_mark: |
-|       Latent SDE       |     Diff. Eq.     |           -           |  Syn, (Fcst, Imp)  | :white_check_mark: |
-|         SDEGAN         |     Diff. Eq.     |           -           |     Syn(irreg)     | :white_check_mark: |
-|          LS4           |     Diff. Eq.     |           -           |        Syn         | :white_check_mark: |
+|          Name          | Model Type |       Condition       |    Application    |      Finish?       |
+| :--------------------: | :--------: | :-------------------: | :---------------: | :----------------: |
+|       VanillaVAE       |    VAE     |           -           |        Syn        | :white_check_mark: |
+|        TimeVAE         |    VAE     |           -           |        Syn        | :white_check_mark: |
+|       TimeVQVAE        |    VAE     |      class label      |        Syn        | :white_check_mark: |
+|         KoVAE          |    VAE     |           -           |    Syn(irreg)     | :white_check_mark: |
+|       VanillaGAN       |    GAN     |           -           |        Syn        | :white_check_mark: |
+|        TimeGAN         |    GAN     |           -           |        Syn        | :white_check_mark: |
+|      AST **(-!)**      |    GAN     |  :white_check_mark:   |    Fcst(point)    | :white_check_mark: |
+|       COSCI-GAN        |    GAN     |           -           |        Syn        | :white_check_mark: |
+|         GT-GAN         |    GAN     |           -           |    Syn(irreg)     | :white_check_mark: |
+| PSA-GAN **(-G)** $^1$  |    GAN     |           -           |        Syn        | :white_check_mark: |
+|         RCGAN          |    GAN     |           -           |        Syn        | :white_check_mark: |
+|       VanillaMAF       |    Flow    |           -           | Syn, Fcst, Impute | :white_check_mark: |
+|   Fourier Flow $^1$    |    Flow    |           -           |        Syn        | :white_check_mark: |
+|   LSTM-MAF **(-G)**    |    Flow    |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|      VanillaDDPM       | Diffusion  |           -           |        Syn        | :white_check_mark: |
+|          CSDI          | Diffusion  |  :white_check_mark:   |   Fcst, Impute    | :white_check_mark: |
+|      Diffusion-TS      | Diffusion  |  :white_check_mark:   | Syn, Fcst, Impute | :white_check_mark: |
+|          TMDM          | Diffusion  |  :white_check_mark:   |       Fcst        | :white_check_mark: |
+|        mr-diff         | Diffusion  |  :white_check_mark:   |       Fcst        | :white_check_mark: |
+|          RATD          | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|    FourierDiffusion    | Diffusion  |           -           |        Syn        | :white_check_mark: |
+|       ImagenTime       | Diffusion  |  :white_check_mark:   |     Syn, Fcst     | :white_check_mark: |
+|      D3M **(-M)**      | Diffusion  |           -           |     Fcst, Imp     |   :white_circle:   |
+|  TimeWeaver **(-M)**   | Diffusion  |  :white_check_mark:   |        Syn        |   :white_circle:   |
+| FTS-Diffusion **(-M)** | Diffusion  |           -           |        Syn        |   :white_circle:   |
+|     FIDE **(-!)**      | Diffusion  |     block maxima      |        Syn        | :white_check_mark: |
+|      ANT **(-G)**      | Diffusion  |  :white_check_mark:   | Syn, Fcst, Refine |   :white_circle:   |
+|   TimeGrad **(-G)**    | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|    TSDiff **(-G)**     | Diffusion  | inference conditional | Syn, Fcst, Refine |   :white_circle:   |
+|    MG-TSD **(-G)**     | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+|     D3VAE **(-P)**     | Diffusion  |  :white_check_mark:   |       Fcst        |   :white_circle:   |
+| Latent ODE w. ODE-RNN  | Diff. Eq.  |           -           |  Syn, Fcst, Imp   | :white_check_mark: |
+|   Latent ODE w. RNN    | Diff. Eq.  |           -           |  Syn, Fcst, Imp   | :white_check_mark: |
+|       Latent SDE       | Diff. Eq.  |           -           | Syn, (Fcst, Imp)  | :white_check_mark: |
+|         SDEGAN         | Diff. Eq.  |           -           |    Syn(irreg)     | :white_check_mark: |
+|          LS4           | Diff. Eq.  |           -           |        Syn        | :white_check_mark: |
 
 <!-- |          <!--          | SDformer **(-M)** |        VAE+GPT        | :white_check_mark: |        Syn         | :white_circle: | -->            
  <!--          |        TFM        |       Diff. Eq.       |         -          |        Fcst        | :white_circle: | -->           
@@ -121,6 +119,21 @@ print(crps(real_data, gen_data))
 - **(-M)** = Missing official codes
 - **(-!)** = Official codes are functionally different from the paper
 
+## Datasets
+|    Name     |   Resolution   | Dimension |   Missing value    |   Domain    |
+| :---------: | :------------: | :-------: | :----------------: | :---------: |
+|   SineND    |   continuous   |     N     |         -          |   Physics   |
+|   Stocks    |     1 day      |     6     |         -          |  Financial  |
+|   Energy    |     10 min     |    28     |         -          |   Energy    |
+|     ETT     | 1 hour/15 min  |     7     |         -          |   Energy    |
+| Electricity |     1 hour     |    321    |         -          |   Energy    |
+|   Traffic   |     1 hour     |    862    |         -          |   Traffic   |
+|  Exchange   |     1 day      |     8     |         -          |  Financial  |
+|   MoJoCo    |   continuous   |    14     |         -          |   Physics   |
+|  Physionet  | 1 min - 1 hour |    35     | :white_check_mark: | Healthcare  |
+|     ECG     |    ~700 Hz     |     1     |         -          | Healthcare  |
+| Air quality |     1 hour     |     6     | :white_check_mark: | Environment |
+|   Weather   |     10 min     |     6     |         -          | Environment |
 
 ## Arena (TODO: experiments + webpage?)
 
@@ -158,7 +171,7 @@ The former three are standard ```lightning``` methods for model training; The la
 
 
 | Name                   | Model Type | Synthesis          | Forecasting        | Imputation         | Finish?            |
-|------------------------|------------|--------------------|--------------------|--------------------|--------------------|
+| ---------------------- | ---------- | ------------------ | ------------------ | ------------------ | ------------------ |
 | VanillaVAE             | VAE        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | TimeVAE                | VAE        | :white_check_mark: |                    |                    | :white_check_mark: |
 | TimeVQVAE              | VAE        | :white_check_mark: |                    |                    | :white_check_mark: |

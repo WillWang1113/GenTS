@@ -1,4 +1,3 @@
-from io import StringIO
 import logging
 import os
 from abc import ABC, abstractmethod
@@ -7,8 +6,8 @@ from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
-import requests
-from sklearn.discriminant_analysis import StandardScaler
+from sklearn.preprocessing import StandardScaler
+
 import torch
 import torchcde
 from einops import repeat

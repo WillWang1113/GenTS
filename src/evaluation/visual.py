@@ -139,14 +139,14 @@ def qualitative_visual(
 def imputation_visual(
     real_data: torch.Tensor,
     gen_data: torch.Tensor,
-    cond_mask: torch.BoolTensor,
+    cond_data: torch.Tensor,
     data_mask: torch.BoolTensor,
     max_viz_n_channel=3,
     save_root=None,
 ):
     real_data = real_data.detach().cpu()
     gen_data = gen_data.detach().cpu()
-    cond_mask = cond_mask.detach().cpu()
+    cond_mask = ~torch.isnan(cond_data)
     data_mask = data_mask.detach().cpu()
     target_mask = data_mask.float() - cond_mask.float()
     target_mask = target_mask.bool()

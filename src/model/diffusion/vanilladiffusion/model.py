@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 
 from src.model.base import BaseModel
-from ._backbones import Denoiser
+from ._backbones import Denoiser, DenoiserTransformer
 from ._utils import linear_schedule, cosine_schedule
 
 
@@ -18,7 +18,7 @@ class VanillaDDPM(BaseModel):
         seq_dim: int,
         condition: str = None,
         latent_dim: int = 128,
-        hidden_size_list: list = [64, 128, 256],
+        hidden_size_list: list = [128, 256, 512],
         noise_schedule: str = "cosine",
         n_diff_steps: int = 1000,
         pred_x0: bool = True,
@@ -42,6 +42,7 @@ class VanillaDDPM(BaseModel):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         self.backbone = Denoiser(**self.hparams)
+        # self.backbone = DenoiserTransformer(seq_len, seq_dim, latent_dim, condition=condition)
         self.loss_fn = F.mse_loss
         self.n_diff_steps = n_diff_steps
         self.pred_x0 = pred_x0
@@ -155,21 +156,20 @@ class VanillaDDPM(BaseModel):
             eps_theta = self.backbone(x, t_tensor, condition)
 
             if self.pred_x0:
-                if t > 0:
-                    mu_pred = (
-                        torch.sqrt(self.alphas[t]) * (1 - self.alpha_bars[t - 1]) * x
-                        + torch.sqrt(self.alpha_bars[t - 1]) * self.betas[t] * eps_theta
-                    )
-                    mu_pred = mu_pred / (1 - self.alpha_bars[t])
-                else:
-                    mu_pred = eps_theta
+                x0_hat = eps_theta
             else:
+                x0_hat = x - torch.sqrt(1 - self.alpha_bars[t]) * eps_theta
+                x0_hat = x0_hat / torch.sqrt(self.alpha_bars[t])
+
+            if t > 0:
                 mu_pred = (
-                    x
-                    - (1 - self.alphas[t])
-                    / torch.sqrt(1 - self.alpha_bars[t])
-                    * eps_theta
-                ) / torch.sqrt(self.alphas[t])
+                    torch.sqrt(self.alphas[t]) * (1 - self.alpha_bars[t - 1]) * x
+                    + torch.sqrt(self.alpha_bars[t - 1]) * self.betas[t] * x0_hat
+                )
+                mu_pred = mu_pred / (1 - self.alpha_bars[t])
+            else:
+                mu_pred = eps_theta
+
             if t == 0:
                 sigma = 0
             else:
