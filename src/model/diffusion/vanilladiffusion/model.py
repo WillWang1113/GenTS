@@ -5,6 +5,8 @@ import torch.nn.functional as F
 from src.model.base import BaseModel
 from ._backbones import Denoiser, DenoiserTransformer
 from ._utils import linear_schedule, cosine_schedule
+from ._unet import Unet1D
+from ._dit import DiT
 
 
 class VanillaDDPM(BaseModel):
@@ -41,7 +43,25 @@ class VanillaDDPM(BaseModel):
         """
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
-        self.backbone = Denoiser(**self.hparams)
+        if self.condition == "predict":
+            cond_seq_len = self.obs_len
+            cond_seq_chnl = seq_dim
+        elif self.condition == "impute":
+            cond_seq_len = seq_len
+            cond_seq_chnl = seq_dim
+        else:
+            cond_seq_len = None
+            cond_seq_chnl = None
+
+        self.backbone = DiT(
+            seq_channels=seq_dim,
+            seq_length=seq_len,
+            cond_seq_len=cond_seq_len,
+            cond_seq_chnl=cond_seq_chnl,
+            d_model=latent_dim,
+            
+        )
+        # self.backbone = Denoiser(**self.hparams)
         # self.backbone = DenoiserTransformer(seq_len, seq_dim, latent_dim, condition=condition)
         self.loss_fn = F.mse_loss
         self.n_diff_steps = n_diff_steps
@@ -54,10 +74,55 @@ class VanillaDDPM(BaseModel):
             raise ValueError(
                 "VanillaDDPM only support for cosine or linear noise schedule."
             )
+        alphas = noise_schedule["alphas"]
+        betas = noise_schedule["betas"]
+        alphas_cumprod = noise_schedule["alpha_bars"]
+        alphas_cumprod_prev = F.pad(
+            noise_schedule["alpha_bars"][:-1], (1, 0), value=1.0
+        )
+        # self.register_buffer("alphas", noise_schedule["alphas"])
+        self.register_buffer("betas", betas)
+        self.register_buffer("alphas_cumprod", alphas_cumprod)
+        self.register_buffer("alphas_cumprod_prev", alphas_cumprod_prev)
 
-        self.register_buffer("alphas", noise_schedule["alphas"])
-        self.register_buffer("betas", noise_schedule["betas"])
-        self.register_buffer("alpha_bars", noise_schedule["alpha_bars"])
+        self.register_buffer("sqrt_alphas_cumprod", torch.sqrt(alphas_cumprod))
+        self.register_buffer(
+            "sqrt_one_minus_alphas_cumprod", torch.sqrt(1.0 - alphas_cumprod)
+        )
+        self.register_buffer(
+            "log_one_minus_alphas_cumprod", torch.log(1.0 - alphas_cumprod)
+        )
+        self.register_buffer(
+            "sqrt_recip_alphas_cumprod", torch.sqrt(1.0 / alphas_cumprod)
+        )
+        self.register_buffer(
+            "sqrt_recipm1_alphas_cumprod", torch.sqrt(1.0 / alphas_cumprod - 1)
+        )
+
+        # calculations for posterior q(x_{t-1} | x_t, x_0)
+
+        posterior_variance = (
+            betas * (1.0 - alphas_cumprod_prev) / (1.0 - alphas_cumprod)
+        )
+
+        # above: equal to 1. / (1. / (1. - alpha_cumprod_tm1) + alpha_t / beta_t)
+
+        self.register_buffer("posterior_variance", posterior_variance)
+
+        # below: log calculation clipped because the posterior variance is 0 at the beginning of the diffusion chain
+
+        self.register_buffer(
+            "posterior_log_variance_clipped",
+            torch.log(posterior_variance.clamp(min=1e-20)),
+        )
+        self.register_buffer(
+            "posterior_mean_coef1",
+            betas * torch.sqrt(alphas_cumprod_prev) / (1.0 - alphas_cumprod),
+        )
+        self.register_buffer(
+            "posterior_mean_coef2",
+            (1.0 - alphas_cumprod_prev) * torch.sqrt(alphas) / (1.0 - alphas_cumprod),
+        )
 
     def configure_optimizers(self):
         return torch.optim.Adam(
@@ -69,8 +134,10 @@ class VanillaDDPM(BaseModel):
     @torch.no_grad
     def degrade(self, x: torch.Tensor, t: torch.Tensor):
         noise = torch.randn_like(x)
-        mu_coeff = torch.sqrt(self.alpha_bars[t]).reshape(-1, 1, 1)
-        var_coeff = torch.sqrt(1 - self.alpha_bars[t]).reshape(-1, 1, 1)
+        mu_coeff = self.sqrt_alphas_cumprod[t].reshape(-1, 1, 1)
+        var_coeff = self.sqrt_one_minus_alphas_cumprod[t].reshape(-1, 1, 1)
+        # mu_coeff = torch.sqrt(self.alpha_bars[t]).reshape(-1, 1, 1)
+        # var_coeff = torch.sqrt(1 - self.alpha_bars[t]).reshape(-1, 1, 1)
         x_noisy = mu_coeff * x + var_coeff * noise
         return x_noisy, noise
 
@@ -150,7 +217,7 @@ class VanillaDDPM(BaseModel):
         return loss
 
     def sample_loop(self, x, condition=None):
-        for t in range(self.n_diff_steps - 1, -1, -1):
+        for t in reversed(range(0, self.n_diff_steps)):
             z = torch.randn_like(x)
             t_tensor = torch.tensor(t).repeat(x.shape[0]).type_as(x)
             eps_theta = self.backbone(x, t_tensor, condition)
@@ -158,25 +225,50 @@ class VanillaDDPM(BaseModel):
             if self.pred_x0:
                 x0_hat = eps_theta
             else:
-                x0_hat = x - torch.sqrt(1 - self.alpha_bars[t]) * eps_theta
-                x0_hat = x0_hat / torch.sqrt(self.alpha_bars[t])
-
-            if t > 0:
-                mu_pred = (
-                    torch.sqrt(self.alphas[t]) * (1 - self.alpha_bars[t - 1]) * x
-                    + torch.sqrt(self.alpha_bars[t - 1]) * self.betas[t] * x0_hat
+                x0_hat = (
+                    self.sqrt_recip_alphas_cumprod[t] * x
+                    - self.sqrt_recipm1_alphas_cumprod[t] * eps_theta
                 )
-                mu_pred = mu_pred / (1 - self.alpha_bars[t])
-            else:
-                mu_pred = eps_theta
 
-            if t == 0:
-                sigma = 0
-            else:
-                sigma = torch.sqrt(
-                    (1 - self.alpha_bars[t - 1])
-                    / (1 - self.alpha_bars[t])
-                    * self.betas[t]
-                )
-            x = mu_pred + sigma * z
+            # x0_hat.clamp_(-1., 1.)
+
+            posterior_mean = (
+                self.posterior_mean_coef1[t] * x0_hat + self.posterior_mean_coef2[t] * x
+            )
+            # posterior_variance = self.posterior_variance[t]
+            posterior_log_variance_clipped = self.posterior_log_variance_clipped[t]
+            x = posterior_mean + (0.5 * posterior_log_variance_clipped).exp() * z
+
         return x
+
+    # def sample_loop(self, x, condition=None):
+    #     for t in range(self.n_diff_steps - 1, -1, -1):
+    #         z = torch.randn_like(x)
+    #         t_tensor = torch.tensor(t).repeat(x.shape[0]).type_as(x)
+    #         eps_theta = self.backbone(x, t_tensor, condition)
+
+    #         if self.pred_x0:
+    #             x0_hat = eps_theta
+    #         else:
+    #             x0_hat = x - torch.sqrt(1 - self.alpha_bars[t]) * eps_theta
+    #             x0_hat = x0_hat / torch.sqrt(self.alpha_bars[t])
+
+    #         if t > 0:
+    #             mu_pred = (
+    #                 torch.sqrt(self.alphas[t]) * (1 - self.alpha_bars[t - 1]) * x
+    #                 + torch.sqrt(self.alpha_bars[t - 1]) * self.betas[t] * x0_hat
+    #             )
+    #             mu_pred = mu_pred / (1 - self.alpha_bars[t])
+    #         else:
+    #             mu_pred = eps_theta
+
+    #         if t == 0:
+    #             sigma = 0
+    #         else:
+    #             sigma = torch.sqrt(
+    #                 (1 - self.alpha_bars[t - 1])
+    #                 / (1 - self.alpha_bars[t])
+    #                 * self.betas[t]
+    #             )
+    #         x = mu_pred + sigma * z
+    #     return x

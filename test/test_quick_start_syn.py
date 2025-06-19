@@ -8,11 +8,11 @@ from lightning import Trainer
 # setup dataset and model
 dm = SineND(seq_len=64, seq_dim=2, batch_size=32)
 model = VanillaDDPM(
-    seq_len=64, seq_dim=2, pred_x0=False, noise_schedule="cosine", n_diff_steps=1000
+    latent_dim=128, seq_len=64, seq_dim=2, pred_x0=False, noise_schedule="cosine", n_diff_steps=1000
 )
 
 # training (on CPU for example)
-trainer = Trainer(max_epochs=300, devices=[0])
+trainer = Trainer(max_epochs=100, devices=[0])
 trainer.fit(model, dm)
 
 # testing

@@ -41,21 +41,25 @@ from lightning import Trainer
 # model = VanillaDDPM(seq_len=64, seq_dim=3, condition='impute', missing_rate=0.2, pred_x0=False)
 
 # predict
-dm = SineND(seq_len=64, seq_dim=3, batch_size=64, condition='predict', obs_len=64)
-model = VanillaDDPM(seq_len=64, seq_dim=3, condition='predict', obs_len=64, pred_x0=True)
+dm = SineND(seq_len=64, seq_dim=3, batch_size=64, condition="predict", obs_len=64)
+model = VanillaDDPM(
+    seq_len=64, seq_dim=3, condition="predict", obs_len=64, pred_x0=False
+)
 
 # training (on CPU for example)
-trainer = Trainer(max_epochs=200, accelerator="cpu")
+trainer = Trainer(max_epochs=1000, devices=[0])
 trainer.fit(model, dm)
 
 # testing
 dm.setup("test")
 real_data = torch.cat([batch["seq"] for batch in dm.test_dataloader()])  # [N, 64, 2]
-data_mask = torch.cat([batch["data_mask"] for batch in dm.test_dataloader()])  # [N, 64, 2]
+data_mask = torch.cat(
+    [batch["data_mask"] for batch in dm.test_dataloader()]
+)  # [N, 64, 2]
 cond_data = torch.cat([batch["c"] for batch in dm.test_dataloader()])
 gen_data = model.sample(n_sample=10, condition=cond_data)  # [N, 64, 2]
 print(gen_data.shape)
 
 # visualization
-predict_visual(real_data, gen_data, data_mask, save_root='predict.png')
+predict_visual(real_data, gen_data, data_mask, save_root="predict.png")
 # imputation_visual(real_data, gen_data, cond_data, data_mask, save_root='impute.png')
