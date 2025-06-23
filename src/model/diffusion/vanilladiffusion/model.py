@@ -12,7 +12,7 @@ from ._dit import DiT
 class VanillaDDPM(BaseModel):
     """Vanilla DDPM with MLP backbone."""
 
-    ALLOW_CONDITION = [None, "predict", "impute"]
+    ALLOW_CONDITION = [None, "predict", "impute", 'class']
 
     def __init__(
         self,
@@ -46,19 +46,24 @@ class VanillaDDPM(BaseModel):
         if self.condition == "predict":
             cond_seq_len = self.obs_len
             cond_seq_chnl = seq_dim
+            cond_n_class= None
         elif self.condition == "impute":
             cond_seq_len = seq_len
             cond_seq_chnl = seq_dim
+            cond_n_class= None
         else:
             cond_seq_len = None
             cond_seq_chnl = None
-
+            cond_n_class= self.class_num
+            
         self.backbone = DiT(
             seq_channels=seq_dim,
             seq_length=seq_len,
             cond_seq_len=cond_seq_len,
             cond_seq_chnl=cond_seq_chnl,
+            cond_n_class=cond_n_class,
             d_model=latent_dim,
+            patch_size=kwargs.get("patch_size", 16),
             
         )
         # self.backbone = Denoiser(**self.hparams)
@@ -163,7 +168,7 @@ class VanillaDDPM(BaseModel):
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
         # device = next(iter(self.parameters())).device
-        if self.condition is None:
+        if self.condition is None or self.condition == "class":
             x = torch.randn(
                 (n_sample, self.hparams_initial.seq_len, self.hparams_initial.seq_dim)
             ).to(self.device)

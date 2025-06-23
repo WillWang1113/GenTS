@@ -12,6 +12,7 @@ from src.dataset.base_new import BaseDataModule
 class ECG(BaseDataModule):
     L = 140
     D = 1
+    n_classes = 5
 
     url = "https://www.timeseriesclassification.com/aeon-toolkit/ECG5000.zip"
 
@@ -53,11 +54,12 @@ class ECG(BaseDataModule):
         orig_test = np.loadtxt(os.path.join(self.data_dir, 'ECG5000_TEST.txt'))
         all_data = np.concatenate([orig_test, orig_train])
         all_data = torch.from_numpy(all_data).float()
+        shuffle_idx = torch.randperm(len(all_data))
+        all_data = all_data[shuffle_idx]
+        
         data = all_data[:, 1:].unsqueeze(-1)
         data_mask = ~torch.isnan(data)
-        class_label = all_data[:, 0]
-        
-        
+        class_label = all_data[:, 0] - 1.0
         return data, data_mask, class_label
 
     @property

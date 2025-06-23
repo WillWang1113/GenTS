@@ -11,7 +11,6 @@ class RCGAN(BaseModel):
         self,
         seq_len: int,
         seq_dim: int,
-        n_classes: int = 0,
         latent_dim: int = 128,
         class_emb_dim: int = 8,
         hidden_size: int = 128,
@@ -23,12 +22,12 @@ class RCGAN(BaseModel):
         condition: str = None,
         **kwargs,
     ):
-        super().__init__(seq_len, seq_dim, condition)
+        super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         self.automatic_optimization = False
         # assert condition in [None, "class"]
         if self.condition == 'class':
-            assert n_classes > 0
+            n_classes = self.class_num
         self.seq_len = seq_len
         self.seq_dim = seq_dim
 
@@ -53,6 +52,8 @@ class RCGAN(BaseModel):
     def training_step(self, batch):
         x = batch["seq"]
         c = batch.get("c", None)
+        if c is not None:
+            c = c.squeeze(-1)
         optimizer_g, optimizer_d = self.optimizers()
 
         # sample noise
@@ -109,19 +110,25 @@ class RCGAN(BaseModel):
         return [g_optim, d_optim], []
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
-        if self.condition is None:
-            z = torch.randn((n_sample, self.seq_len, self.hparams.latent_dim)).to(
-                self.device
-            )
-            samples = self.generator(z, condition)
-        else:
-            # class conditional
-            all_samples = []
-            for i in range(n_sample):
-                z = torch.randn(
-                    (condition.shape[0], self.seq_len, self.hparams.latent_dim)
-                ).to(self.device)
-                sample = self.generator(z, condition)
-                all_samples.append(sample)
-            samples = torch.stack(all_samples, dim=-1)
+
+        z = torch.randn((n_sample, self.seq_len, self.hparams.latent_dim)).to(
+            self.device
+        )
+        samples = self.generator(z, condition)
+
+        # if self.condition is None:
+        #     z = torch.randn((n_sample, self.seq_len, self.hparams.latent_dim)).to(
+        #         self.device
+        #     )
+        #     samples = self.generator(z, condition)
+        # else:
+        #     # class conditional
+        #     all_samples = []
+        #     for i in range(n_sample):
+        #         z = torch.randn(
+        #             (condition.shape[0], self.seq_len, self.hparams.latent_dim)
+        #         ).to(self.device)
+        #         sample = self.generator(z, condition)
+        #         all_samples.append(sample)
+        #     samples = torch.stack(all_samples, dim=-1)
         return samples

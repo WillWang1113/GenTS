@@ -1,6 +1,6 @@
 from torch import nn
 
-from src.common._modules import MLPDecoder, MLPEncoder
+from src.common._modules import MLPDecoder, MLPEncoder, LabelEmbedder
 
 
 class Generator(nn.Module):
@@ -22,6 +22,10 @@ class Generator(nn.Module):
                 # obs_len = kwargs.get('obs_len')
                 self.cond_net = MLPEncoder(
                     seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                )
+            elif condition == "class":
+                self.cond_net = LabelEmbedder(
+                    kwargs.get("class_num"), latent_dim, dropout_prob=0.0
                 )
 
     def forward(self, z, c=None):
@@ -63,6 +67,11 @@ class Discriminator(nn.Module):
                 # obs_len = kwargs.get('obs_len')
                 self.cond_net = MLPEncoder(
                     seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                )
+                
+            elif condition == "class":
+                self.cond_net = LabelEmbedder(
+                    kwargs.get("class_num"), latent_dim, dropout_prob=0.0
                 )
 
     def forward(self, x, c=None):

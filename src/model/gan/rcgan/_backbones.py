@@ -25,8 +25,9 @@ class Generator(nn.Module):
     def forward(self, z, c=None):
         if c is None:
             c = torch.ones((z.shape[0], 1)) * self.n_classes
-            c = c.to(z).int()
-        cond = self.emb(c).expand(-1, z.shape[1], -1)
+            c = c.to(z).long()
+
+        cond = self.emb(c).unsqueeze(1).expand(-1, z.shape[1], -1)
         z = torch.concat([z, cond], dim=-1)
         return self.dec(z)
 
@@ -52,7 +53,8 @@ class Discriminator(nn.Module):
     def forward(self, x, c=None):
         if c is None:
             c = torch.ones((x.shape[0], 1)) * self.n_classes
-            c = c.to(x).int()
-        cond = self.emb(c).expand(-1, x.shape[1], -1)
+            c = c.to(x).long()
+        
+        cond = self.emb(c).unsqueeze(1).expand(-1, x.shape[1], -1)
         z = torch.concat([x, cond], dim=-1)
         return self.enc(z)

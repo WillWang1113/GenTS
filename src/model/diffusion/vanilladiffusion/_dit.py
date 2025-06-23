@@ -21,6 +21,7 @@ from functools import partial
 from itertools import repeat
 import collections.abc
 from torch.jit import Final
+from src.common._modules import LabelEmbedder
 
 
 # from ..layers.Embed import PatchEmbed
@@ -29,25 +30,25 @@ from torch.jit import Final
 # from ..layers.SelfAttention_Family import Attention
 
 
-
 class Attention(nn.Module):
     fused_attn: Final[bool]
 
     def __init__(
-            self,
-            dim: int,
-            num_heads: int = 8,
-            qkv_bias: bool = False,
-            qk_norm: bool = False,
-            attn_drop: float = 0.,
-            proj_drop: float = 0.,
-            norm_layer: nn.Module = nn.LayerNorm, **kwargs
+        self,
+        dim: int,
+        num_heads: int = 8,
+        qkv_bias: bool = False,
+        qk_norm: bool = False,
+        attn_drop: float = 0.0,
+        proj_drop: float = 0.0,
+        norm_layer: nn.Module = nn.LayerNorm,
+        **kwargs,
     ) -> None:
         super().__init__()
-        assert dim % num_heads == 0, 'dim should be divisible by num_heads'
+        assert dim % num_heads == 0, "dim should be divisible by num_heads"
         self.num_heads = num_heads
         self.head_dim = dim // num_heads
-        self.scale = self.head_dim ** -0.5
+        self.scale = self.head_dim**-0.5
         self.fused_attn = True
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
@@ -59,14 +60,20 @@ class Attention(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
+        qkv = (
+            self.qkv(x)
+            .reshape(B, N, 3, self.num_heads, self.head_dim)
+            .permute(2, 0, 3, 1, 4)
+        )
         q, k, v = qkv.unbind(0)
         q, k = self.q_norm(q), self.k_norm(k)
 
         if self.fused_attn:
             x = torch.nn.functional.scaled_dot_product_attention(
-                q, k, v,
-                dropout_p=self.attn_drop.p if self.training else 0.,
+                q,
+                k,
+                v,
+                dropout_p=self.attn_drop.p if self.training else 0.0,
             )
         else:
             q = q * self.scale
@@ -106,7 +113,8 @@ class Mlp(nn.Module):
         norm_layer=None,
         bias=True,
         drop=0.0,
-        use_conv=False, **kwargs
+        use_conv=False,
+        **kwargs,
     ):
         super().__init__()
         out_features = out_features or in_features
@@ -136,13 +144,28 @@ class Mlp(nn.Module):
 
 class PatchEmbed(nn.Module):
     # DiT
-    def __init__(self, input_size, patch_size, in_channels, hidden_size, bias=True, stride=None, norm_layer: Optional[Callable] = None,):
+    def __init__(
+        self,
+        input_size,
+        patch_size,
+        in_channels,
+        hidden_size,
+        bias=True,
+        stride=None,
+        norm_layer: Optional[Callable] = None,
+    ):
         super(PatchEmbed, self).__init__()
         # Patching
         self.patch_size = patch_size
         self.stride = patch_size if stride is None else stride
-        self.num_patches = input_size//patch_size
-        self.proj = nn.Conv1d(in_channels, hidden_size, kernel_size=self.patch_size, stride=self.stride, bias=bias)
+        self.num_patches = input_size // patch_size
+        self.proj = nn.Conv1d(
+            in_channels,
+            hidden_size,
+            kernel_size=self.patch_size,
+            stride=self.stride,
+            bias=bias,
+        )
         self.norm = norm_layer(hidden_size) if norm_layer else nn.Identity()
         # self.padding_patch_layer = nn.ReplicationPad1d((0, padding))
 
@@ -156,13 +179,10 @@ class PatchEmbed(nn.Module):
         # self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        
         # do patching
-        x = self.proj(x.permute(0,2,1))
+        x = self.proj(x.permute(0, 2, 1))
         x = self.norm(x)
-        return x.permute(0,2,1)
-
-
+        return x.permute(0, 2, 1)
 
 
 def modulate(x, shift, scale):
@@ -280,40 +300,6 @@ class ConditionEmbed(nn.Module):
         # return {"latents": latents, "mean_pred": mean_pred, "std_pred": std_pred}
 
 
-class LabelEmbedder(nn.Module):
-    """
-    Embeds class labels into vector representations. Also handles label dropout for classifier-free guidance.
-    """
-
-    def __init__(self, cond_dim, hidden_size, dropout_prob):
-        super().__init__()
-        # use_cfg_embedding = dropout_prob > 0
-        self.embedding_table = Mlp(
-            cond_dim, hidden_features=hidden_size, out_features=hidden_size
-        )
-        self.dropout_prob = dropout_prob
-
-    def token_drop(self, labels, force_drop_ids=None):
-        """
-        Drops labels to enable classifier-free guidance.
-        """
-        if force_drop_ids is None:
-            drop_ids = (
-                torch.rand(labels.shape[0], device=labels.device) < self.dropout_prob
-            )
-        else:
-            drop_ids = force_drop_ids == 1
-        labels = torch.where(drop_ids.unsqueeze(1), torch.zeros_like(labels), labels)
-        return labels
-
-    def forward(self, labels, train, force_drop_ids=None):
-        use_dropout = self.dropout_prob > 0
-        if (train and use_dropout) or (force_drop_ids is not None):
-            labels = self.token_drop(labels, force_drop_ids)
-        embeddings = self.embedding_table(labels)
-        return embeddings
-
-
 #################################################################################
 #                                 Core DiT Model                                #
 #################################################################################
@@ -393,6 +379,7 @@ class DiT(nn.Module):
         cond_dropout_prob=0.0,
         cond_seq_len=None,
         cond_seq_chnl=None,
+        cond_n_class=None,
         learn_sigma=False,
         **kwargs,
     ):
@@ -425,7 +412,8 @@ class DiT(nn.Module):
             # self.mean_dec = torch.nn.Linear(self.seq_length, 1)
             # self.std_dec = torch.nn.Linear(self.seq_length, 1)
             self.pred_dec = torch.nn.Linear(d_model, self.seq_length * in_channels)
-
+        elif cond_n_class is not None:
+            self.cond_embed = LabelEmbedder(cond_n_class, d_model, cond_dropout_prob)
         # self.y_embedder = nn.Identity()
         # self.y_embedder = LabelEmbedder(cond_dim, d_model, cond_dropout_prob)
         num_patches = self.x_embedder.num_patches
@@ -514,7 +502,6 @@ class DiT(nn.Module):
         t: (N,) tensor of diffusion timesteps
         y: (N,) tensor of class labels
         """
-        
 
         x = (
             self.x_embedder(x) + self.pos_embed
@@ -523,23 +510,20 @@ class DiT(nn.Module):
 
         if condition is not None:
             condition = self.cond_embed(condition, train, force_drop_ids)  # (N, D)
-            y_pred = self.pred_dec(condition).reshape(
-                -1, self.seq_length, self.in_channels
-            )
-
+            # y_pred = self.pred_dec(condition).reshape(
+            #     -1, self.seq_length, self.in_channels
+            # )
 
             c = t + condition  # (N, D)
         else:
-            
-            y_pred = 0
+            # y_pred = 0
             c = t
 
         for block in self.blocks:
             x = block(x, c)  # (N, T, D)
         x = self.final_layer(x, c)  # (N, T, patch_size * out_channels)
         x = self.unpatchify(x)  # (N, seq_len, out_channels)
-
-        x = x + y_pred
+        # x = x + y_pred
 
         return x
 

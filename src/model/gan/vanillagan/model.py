@@ -7,7 +7,7 @@ from ._backbones import Generator, Discriminator
 class VanillaGAN(BaseModel):
     """Vanilla GAN model with MLP Generator and Discriminator ."""
 
-    ALLOW_CONDITION = [None, "predict", "impute"]
+    ALLOW_CONDITION = [None, "predict", "impute", "class"]
 
     def __init__(
         self,
@@ -47,9 +47,6 @@ class VanillaGAN(BaseModel):
         x = batch["seq"][:, -self.hparams_initial.seq_len :]
         c = batch.get("c")
         c = torch.nan_to_num(c) if self.condition == "impute" else c
-
-        # if self.condition == "impute":
-        #     c = x * (~c).int()
 
         optimizer_g, optimizer_d = self.optimizers()
 
@@ -121,7 +118,7 @@ class VanillaGAN(BaseModel):
 
     # @torch.no_grad()
     def _sample_impl(self, n_sample, condition=None, **kwargs):
-        if self.condition is None:
+        if self.condition is None or self.condition == "class":
             z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
             all_samples = self.generator(z, condition)
         else:

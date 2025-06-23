@@ -253,6 +253,9 @@ class TSDataset(Dataset):
             # will have a target mask for loss computation
             cond_data = data.clone()
             cond_data[~condition_mask] = torch.nan
+        elif condition == "class":
+            # condition data is class label
+            cond_data = class_label.long()
         else:
             cond_data = None
         self.cond_data = cond_data

@@ -6,13 +6,13 @@ from src.model.base import BaseModel
 from src.common._losses import kl_loss
 # from src.utils.losses import kl_loss
 
-from src.common._modules import MLPDecoder, MLPEncoder
+from src.common._modules import MLPDecoder, MLPEncoder, LabelEmbedder
 
 
 class VanillaVAE(BaseModel):
     """Vanilla Variational Autoencoder (VAE) model with MLP encoder and decoder."""
 
-    ALLOW_CONDITION = [None, "predict", "impute"]
+    ALLOW_CONDITION = [None, "predict", "impute", 'class']
 
     def __init__(
         self,
@@ -56,6 +56,11 @@ class VanillaVAE(BaseModel):
                 self.cond_net = MLPEncoder(
                     seq_len, seq_dim, latent_dim, self.hiddens, **kwargs
                 )
+            elif condition == "class":
+                
+                self.cond_net = LabelEmbedder(
+                    self.class_num, latent_dim, dropout_prob=0.0
+                )
 
         self.fc_mu = MLP(latent_dim, [latent_dim])
         self.fc_logvar = MLP(latent_dim, [latent_dim])
@@ -66,7 +71,7 @@ class VanillaVAE(BaseModel):
         if (c is not None) and (self.cond_net is not None):
             # if self.condition == "impute":
             #     c = x * (~c).int()
-            c = c.to(x)
+            # c = c
             cond_lats = self.cond_net(c)
             latents = latents + cond_lats
         mu = self.fc_mu(latents)
@@ -77,7 +82,7 @@ class VanillaVAE(BaseModel):
         if (c is not None) and (self.cond_net is not None):
             # if self.condition == "impute":
             #     c = kwargs['seq'] * (~c).int()
-            c = c.to(z)
+            # c = c.to(z)
             cond_lats = self.cond_net(c)
             z = z + cond_lats
         return self.decoder(z)
@@ -126,7 +131,7 @@ class VanillaVAE(BaseModel):
         return loss_dict, z_prior, mu_prior, logvar_prior, z, mu, logvar
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
-        if self.condition is None:
+        if self.condition is None or self.condition == "class":
             z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
             all_samples = self.decode(z, condition)
         else:
@@ -147,6 +152,7 @@ class VanillaVAE(BaseModel):
                 x_hat = self.decode(z, condition)
                 all_samples.append(x_hat)
             all_samples = torch.stack(all_samples, dim=-1)
+
 
         return all_samples
 

@@ -5,19 +5,27 @@ import torch
 from torch.nn import functional as F
 
 
-def _condition_shape_check(n_sample: int, condition: torch.Tensor, cond_type: str):
+def _condition_shape_check(n_sample: int, condition: torch.Tensor | int, cond_type: str):
     if n_sample < 1:
         raise ValueError("n_sample should be greater than 0.")
 
     if cond_type == "class":
-        cond_batch_size = condition.shape[0]
-
-        if cond_batch_size == 1 and n_sample > 1:
-            condition = condition.repeat(
-                n_sample, *[1 for _ in range(len(condition.shape) - 1)]
-            )
-        elif cond_batch_size == n_sample:
-            pass
+        if isinstance(condition, int):
+            condition = torch.ones(n_sample) * condition
+            condition = condition.long()
+        
+        elif isinstance(condition, torch.Tensor):
+            if condition.ndim == 1:
+                if condition.shape[0] == n_sample:
+                    pass
+                else:
+                    raise ValueError(
+                        "The batch size of the given condition should be the same as n_sample or just 1."
+                    )
+            else:
+                raise ValueError(
+                    "Condition for classification should be a 1D tensor or an integer."
+                )
         else:
             raise ValueError(
                 "The batch size of the given condition should be the same as n_sample or just 1."
@@ -27,25 +35,13 @@ def _condition_shape_check(n_sample: int, condition: torch.Tensor, cond_type: st
             raise ValueError("Condition should not be None for prediction.")
 
     elif cond_type is None:
-        ...
+        if n_sample < 1:
+            raise ValueError("n_sample should be greater than 0 for unconditional generation.")
         # if condition is not None:
         #     raise ValueError(
         #         "Condition should be None for unconditional generation."
         #     )
 
-    assert n_sample >= 1
-    if cond_type is not None:
-        if condition.shape[0] == 1:
-            condition = condition.repeat(
-                n_sample, *[1 for _ in range(len(condition.shape) - 1)]
-            )
-        elif condition.shape[0] == n_sample:
-            pass
-        else:
-            # raise ValueError(
-            #     "The batch size of the given condition should be the same as n_sample or just 1."
-            # )
-            pass
 
     return condition
 
@@ -87,6 +83,14 @@ class BaseModel(ABC, LightningModule):
             elif obs_len < 0:
                 raise ValueError("obs_len should be greater than 0.")
             self.obs_len = obs_len
+        
+        if condition == 'class':
+            class_num = kwargs.get("class_num")
+            if class_num is None:
+                raise ValueError("class_num should be provided for classification.")
+            elif class_num < 2:
+                raise ValueError("class_num should be greater than 2.")
+            self.class_num = class_num
 
         self.condition = condition
 

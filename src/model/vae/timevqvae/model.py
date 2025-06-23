@@ -84,9 +84,9 @@ class TimeVQVAE(BaseModel):
 
         self.save_hyperparameters()
         self.automatic_optimization = False
-        n_classes = kwargs.get("n_classes", 0)
+        n_classes = 0
         if self.condition == "class":
-            assert n_classes > 0
+            n_classes = self.class_num
         self.seq_len = seq_len
         self.T = dec_iter_step
         self.choice_temperatures = choice_temperatures
@@ -275,6 +275,8 @@ class TimeVQVAE(BaseModel):
         """
         x = batch["seq"].permute(0, 2, 1)
         y = batch.get("c", None)
+        if y.ndim == 1:
+            y = torch.unsqueeze(y, dim=-1)  # (b 1)
         # y = batch.get("label", None)
         self.encoder_l.eval()
         self.vq_model_l.eval()
@@ -526,11 +528,12 @@ class TimeVQVAE(BaseModel):
             s_h == self.mask_token_ids["hf"], dim=-1
         )  # (b,)
         gamma = self.gamma_func(mode)
-        class_condition = (
-            repeat(torch.Tensor([class_index]).int().to(device), "i -> b i", b=num)
-            if class_index is not None
-            else None
-        )  # (b 1)
+        # class_condition = (
+        #     repeat(torch.Tensor([class_index]).int().to(device), "i -> b i", b=num)
+        #     if class_index is not None
+        #     else None
+        # )  # (b 1)
+        class_condition = class_index
         s_l = self.first_pass(
             s_l, unknown_number_in_the_beginning_l, class_condition, gamma, device
         )
@@ -738,10 +741,10 @@ class TimeVQVAE(BaseModel):
             return xhat
 
     def _sample_impl(self, n_sample: int, condition: torch.Tensor = None, **kwargs):
-        batch_size = kwargs.get("batch_size")
+        batch_size = kwargs.get("batch_size", n_sample)
         return_representations = kwargs.get("return_representations", False)
-        if batch_size is None:
-            batch_size = n_sample
+        if condition.ndim == 1:
+            condition = torch.unsqueeze(condition, dim=-1)
 
         n_iters = n_sample // batch_size
         is_residual_batch = False

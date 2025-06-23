@@ -12,7 +12,7 @@ from src.model.base import BaseModel
 class VanillaMAF(BaseModel):
     """Vanilla Masked Autoregressive Flow with MADE."""
 
-    ALLOW_CONDITION = [None, "predict", "impute"]
+    ALLOW_CONDITION = [None, "predict", "impute", "class"]
 
     def __init__(
         self,
@@ -37,20 +37,28 @@ class VanillaMAF(BaseModel):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         modules = []
-        if condition:
-            # if condition == "predict":
-            #     assert kwargs.get("obs_len") is not None
-            #     obs_len = kwargs.get("obs_len")
-            #     cond_input = obs_len * seq_dim
-            # elif condition == "impute":
-            #     cond_input = seq_dim * seq_len
-            cond_seq_len = self.obs_len if condition == "predict" else seq_len
+        if condition == 'predict':
+            cond_seq_len = self.obs_len
             cond_input = cond_seq_len * seq_dim
-        else:
-            cond_input = None
+        elif condition == 'impute':
+            cond_seq_len = seq_len
+            cond_input = cond_seq_len * seq_dim
+        elif condition == 'class':
+            cond_input = self.class_num
+        # if condition:
+        #     # if condition == "predict":
+        #     #     assert kwargs.get("obs_len") is not None
+        #     #     obs_len = kwargs.get("obs_len")
+        #     #     cond_input = obs_len * seq_dim
+        #     # elif condition == "impute":
+        #     #     cond_input = seq_dim * seq_len
+        #     cond_seq_len = self.obs_len if condition == "predict" else seq_len
+        #     cond_input = cond_seq_len * seq_dim
+        # else:
+        #     cond_input = None
         for i in range(len(hidden_size_list)):
             modules += [
-                MADE(seq_dim * seq_len, hidden_size_list[i], cond_input),
+                MADE(seq_dim * seq_len, hidden_size_list[i], cond_input, condition),
                 BatchNormFlow(seq_dim * seq_len),
                 Reverse(seq_dim * seq_len),
             ]
@@ -66,10 +74,10 @@ class VanillaMAF(BaseModel):
         c = batch.get("c")
         if c is not None:
             if self.condition == "impute":
-                c = torch.nan_to_num(c)
+                c = torch.nan_to_num(c).flatten(1).to(x)
             elif self.condition == "predict":
-                x = x[:, -self.hparams_initial.seq_len :]
-            c = c.flatten(1).to(x)
+                x = x[:, -self.hparams_initial.seq_len :].flatten(1)
+            
 
         x = x.flatten(1)
 
@@ -85,10 +93,11 @@ class VanillaMAF(BaseModel):
         c = batch.get("c", None)
         if c is not None:
             if self.condition == "impute":
-                c = torch.nan_to_num(c)
+                c = torch.nan_to_num(c).flatten(1).to(x)
             elif self.condition == "predict":
-                x = x[:, -self.hparams_initial.seq_len :]
-            c = c.flatten(1).to(x)
+                x = x[:, -self.hparams_initial.seq_len :].flatten(1)
+            
+            # c = c.flatten(1).to(x)
         x = x.flatten(1)
 
         loss = -self.flow.log_probs(x, c).mean()
@@ -99,7 +108,7 @@ class VanillaMAF(BaseModel):
         return loss
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
-        if self.condition is None:
+        if self.condition is None or self.condition == 'class':
             all_samples = self.flow.sample(n_sample, None).reshape(
                 n_sample, self.hparams.seq_len, self.hparams.seq_dim
             )
