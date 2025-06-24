@@ -3,7 +3,6 @@ from src.model.base import BaseModel
 from ._backbones import VAE
 import torch
 
-
 class LS4(BaseModel):
     ALLOW_CONDITION = [None, "predict", "impute"]
     # Interpolation only, i.e. missing time steps
@@ -196,6 +195,7 @@ class LS4(BaseModel):
 
         return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
+    # ! TODO : device inaligment somewhere
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
         self.model.setup_rnn()
 
