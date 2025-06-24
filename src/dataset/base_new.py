@@ -1,3 +1,5 @@
+from calendar import c
+import copy
 import logging
 import os
 from abc import ABC, abstractmethod
@@ -26,6 +28,7 @@ class BaseDataModule(LightningDataModule, ABC):
         inference_batch_size: int,
         max_time: float = None,
         add_coeffs: str = None,
+        irregular_dropout: float = 0.0,
         data_dir: Path | str = Path.cwd() / "data",
         **kwargs,
     ):
@@ -43,6 +46,7 @@ class BaseDataModule(LightningDataModule, ABC):
         self.infer_bs = inference_batch_size
         self.root_dir = data_dir
         self.data_dir = data_dir / self.dataset_name
+        self.irregular_dropout = irregular_dropout
 
         assert condition in [None, "predict", "impute", "class"]
         if condition == "predict":
@@ -129,6 +133,11 @@ class BaseDataModule(LightningDataModule, ABC):
             # 'class_label': (optional) multi-class time series int (N, 1), e.g. electricity theft, patients, etc.
             (data, data_mask, class_label) = self.get_data()
             assert not data.isnan().any()
+            # if data.isnan().any():
+            #     logging.warning(
+            #         "Data contains NaN values. They will be replaced with zeros."
+            #     )
+            #     # data = data.nan_to_num(0.0)
             torch.save((data, data_mask, class_label), data_file_pth)
 
     def train_dataloader(self):
@@ -179,7 +188,6 @@ class TSDataset(Dataset):
         # data_mask indicates original missing values
         # if data_mask=None, assume no missing values (1=observed, 0=missing)
         # if data_mask is not None, NaNs in the original data are set as 0
-        # therefore, self.data has NO NaN values
         self.data_mask = (
             torch.ones_like(data).bool() if data_mask is None else data_mask
         )
@@ -290,7 +298,7 @@ class TSDataset(Dataset):
         if self.cond_data is not None:
             batch_dict["c"] = self.cond_data[index]
         if self.coeffs is not None:
-            batch_dict["coeffs"] = self.cond_data[index]
+            batch_dict["coeffs"] = self.coeffs[index]
 
         return batch_dict
 
@@ -316,6 +324,7 @@ class WebDownloadDataModule(BaseDataModule):
         inference_batch_size: int = 1024,
         max_time: float = None,
         add_coeffs: str = None,
+        irregular_dropout: float = 0.0,
         **kwargs,
     ):
         super().__init__(
@@ -326,6 +335,7 @@ class WebDownloadDataModule(BaseDataModule):
             inference_batch_size,
             max_time,
             add_coeffs,
+            irregular_dropout,
             data_dir,
             **kwargs,
         )
@@ -335,24 +345,14 @@ class WebDownloadDataModule(BaseDataModule):
             assert max(select_seq_dim) < self.D
 
     def get_data(self):
-        # pre_download_dir = self.data_dir / f"{self.dataset_name}_raw.csv"
-        # if pre_download_dir.exists():
-        #     # Load data from local file if it exists
-        #     df = pd.read_csv(pre_download_dir)
-        # else:
-        #     # Download stock data
-        #     headers = {"Authorization": "Test"}
-        #     response = requests.get(self.url, headers=headers)
-        #     df = pd.read_csv(StringIO(response.text))
-        #     df.to_csv(pre_download_dir, index=False)
-        if self.data_source == 'zip':
+        if self.data_source == "zip":
             download_and_extract_archive(
                 self.url, self.data_dir, self.data_dir, "archive.zip"
             )
             csv_pth = os.path.join(self.data_dir, self.csv_dir)
         else:
-            download_url(self.url, self.data_dir, filename='archive.csv')
-            csv_pth = os.path.join(self.data_dir, 'archive.csv')
+            download_url(self.url, self.data_dir, filename="archive.csv")
+            csv_pth = os.path.join(self.data_dir, "archive.csv")
         df = pd.read_csv(csv_pth, index_col=self.index_col)
 
         # select dimensions
@@ -372,14 +372,33 @@ class WebDownloadDataModule(BaseDataModule):
             self.scaler = StandardScaler()
             self.scaler.fit(data_raw[:n_trainval_timesteps])
             data_raw = self.scaler.transform(data_raw)
-        data_raw = torch.from_numpy(data_raw)
+        data_samples = torch.from_numpy(copy.deepcopy(data_raw))
+        data_original = torch.from_numpy(copy.deepcopy(data_raw))
+
+        if self.irregular_dropout > 0:
+            generator = torch.Generator().manual_seed(42)
+            removed_points = (
+                torch.randperm(data_samples.shape[0], generator=generator)[
+                    : int(data_samples.shape[0] * self.irregular_dropout)
+                ]
+                .sort()
+                .values
+            )
+            data_samples[removed_points] = float("nan")
 
         # slide window
-        data = []
-        for i in range(len(data_raw) - self.total_seq_len + 1):
-            data.append(data_raw[i : i + self.total_seq_len, :])
-        data = torch.stack(data, dim=0).float()
-        data_mask = torch.isnan(data)
+        data_orignial_window, data_samples_window = [], []
+        for i in range(len(data_original) - self.total_seq_len + 1):
+            data_orignial_window.append(data_original[i : i + self.total_seq_len, :])
+            data_samples_window.append(data_samples[i : i + self.total_seq_len, :])
+        data_samples_window = torch.stack(data_samples_window, dim=0).float()
+
+        # data: (N, Total SL, C), raw data WITHOUT NaNs
+        # data_mask: (N, Total SL, C), boolean mask of raw data, 0=missing, 1=observed
+        # class_label: (N,), class label if available, None otherwise
+        data = torch.stack(data_orignial_window, dim=0).float()
+        
+        data_mask = ~torch.isnan(data_samples_window)
         class_label = None
 
         return data, data_mask, class_label

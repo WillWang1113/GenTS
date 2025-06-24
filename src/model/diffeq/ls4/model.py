@@ -6,7 +6,7 @@ import torch
 
 class LS4(BaseModel):
     ALLOW_CONDITION = [None, "predict", "impute"]
-    # Imputation only for sequence missing?
+    # Interpolation only, i.e. missing time steps
 
     def __init__(
         self,
@@ -240,7 +240,7 @@ class LS4(BaseModel):
             
             tp_to_predict = t
             # observed_tp = t
-            mask_predicted_data = kwargs['data_mask']
+            mask_predicted_data = kwargs.get('data_mask')
 
             all_samples = []
             for _ in range(n_sample):

@@ -14,8 +14,8 @@ from ._backbones import VKDecoder, VKEncoder, VKEncoderIrregular
 class KoVAE(BaseModel):
     """KoVAE: Koopman Variational Autoencoder for both Regular and Irregular Time Series"""
 
-    # 'impute' condition for input missing data
-    ALLOW_CONDITION = [None, "impute"]
+    # allow for irregular datasets
+    ALLOW_CONDITION = [None]
 
     def __init__(
         self,
@@ -33,13 +33,14 @@ class KoVAE(BaseModel):
         koopman_nstep: int = 1,
         lr: float = 7e-4,
         weight_decay: float = 0.0,
+        irregular_ts: bool = False,
         **kwargs,
     ):
         """
         Args:
             seq_len (int): Target sequence length
             seq_dim (int): Target sequence dimension, for univariate time series, set as 1
-            condition (str, optional): Given conditions, allowing [None, 'impute']. 'impute' condition for input missing data, not for real imputation. Defaults to None.
+            condition (str, optional): Given conditions, allowing [None]. Defaults to None.
             latent_dim (int, optional): Latent dimension for z. Defaults to 16.
             hidden_size (int, optional): Hidden size. Defaults to 20.
             num_layers (int, optional): RNN layers. Defaults to 3.
@@ -63,7 +64,7 @@ class KoVAE(BaseModel):
         self.seq_len = seq_len
         # self.gamma = gamma
         self.pinv_solver = pinv_solver
-        self.missing_value = True if condition == "impute" else False
+        self.missing_value = irregular_ts
 
         self.args = Namespace(
             z_dim=latent_dim,
@@ -72,7 +73,7 @@ class KoVAE(BaseModel):
             batch_norm=batch_norm,
             num_layers=num_layers,
         )
-        if self.missing_value:
+        if irregular_ts:
             self.encoder = VKEncoderIrregular(self.args)
         else:
             self.encoder = VKEncoder(self.args)
@@ -230,25 +231,25 @@ class KoVAE(BaseModel):
 
     def training_step(self, batch, batch_idx):
         if self.missing_value:
-            # imputation task
-
-            # x = batch["seq"]
-            # cond = batch["c"]
-            # x = x.masked_fill(cond.bool(), float("nan"))
-
-            X = batch["seq"]
+            x = batch["seq"].masked_fill(
+                ~batch["data_mask"].bool(), float("nan")
+            )  # imputation task, mask missing
             train_coeffs = batch["coeffs"]  # .to(device)
-            time = torch.arange(X.shape[1]).to(X)
-            final_index = (torch.ones(X.shape[0]) * (self.seq_len - 1)).to(X)
+            time = torch.arange(x.shape[1]).to(x)
+            final_index = (torch.ones(x.shape[0]) * (self.seq_len - 1)).to(x)
             x_rec, Z_enc, Z_enc_prior = self(train_coeffs, time, final_index)
+
+            x_no_nan = x[~torch.isnan(x)]
+            x_rec_no_nan = x_rec[~torch.isnan(x)]
+            losses = self.loss(x_no_nan, x_rec_no_nan, Z_enc, Z_enc_prior)
 
         else:
             X = batch["seq"]
             x_rec, Z_enc, Z_enc_prior = self(X)
 
-        losses = self.loss(
-            X, x_rec, Z_enc, Z_enc_prior
-        )  # x_rec, x_pred_rec, z, z_pred_, Ct
+            losses = self.loss(
+                X, x_rec, Z_enc, Z_enc_prior
+            )  # x_rec, x_pred_rec, z, z_pred_, Ct
         self.log_dict(
             {
                 "train_loss": losses[0],

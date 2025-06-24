@@ -507,6 +507,7 @@ class VAE(nn.Module):
             )  # (B, L, z_dim)
 
             if get_full_nll:
+                assert masks is not None
                 t_full = torch.cat([t_vec, t_vec_pred], dim=0)
                 _, z_mean_full, z_std_full = self.encoder.encode(
                     x_full, t_full, use_forward=True

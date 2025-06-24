@@ -15,8 +15,8 @@ from ._backbones import (
 
 
 class GTGAN(BaseModel):
-    # 'impute' condition for input missing data
-    ALLOW_CONDITION = [None, "impute"]
+    # allow for irregular datasets
+    ALLOW_CONDITION = [None]
 
     def __init__(
         self,
@@ -162,7 +162,8 @@ class GTGAN(BaseModel):
 
     def training_step(self, batch, batch_idx):
         max_steps = self.trainer.max_epochs
-        x = batch["seq"] if self.condition is None else batch["c"]
+        x = batch["seq"]
+        x = x.masked_fill(~batch["data_mask"], float("nan"))
         
         # cond = batch.get("c", None)
         # if (cond is not None) and (self.condition == "impute"):
@@ -178,7 +179,7 @@ class GTGAN(BaseModel):
         optimizer_er, optimizer_gs, optimizer_d = self.optimizers()
 
         if (self.current_epoch >= 0) and (self.current_epoch < int(1 / 2 * max_steps)):
-            self.toggle_optimizer(optimizer_er)
+            # self.toggle_optimizer(optimizer_er)
             # x = batch['data'].to(device)
             train_coeffs = batch["coeffs"]
             # original_x = batch['original_data'].to(device)
@@ -196,10 +197,10 @@ class GTGAN(BaseModel):
             self.manual_backward(loss_e_0)
             # loss_e_0.backward()
             optimizer_er.step()
-            self.untoggle_optimizer(optimizer_er)
+            # self.untoggle_optimizer(optimizer_er)
             self.log("loss_e_0", loss_e_0)
         else:
-            self.toggle_optimizer(optimizer_d)
+            # self.toggle_optimizer(optimizer_d)
             for _ in range(2):
                 # self.generator.train()
                 # self.supervisor.train()
@@ -235,11 +236,11 @@ class GTGAN(BaseModel):
                     # loss_d.backward()
                     optimizer_d.step()
                     # torch.cuda.empty_cache()
-                self.untoggle_optimizer(optimizer_d)
+                # self.untoggle_optimizer(optimizer_d)
                 self.log("loss_d", loss_d)
                 # self.untoggle_optimizer(optimizer_d)
 
-                self.toggle_optimizer(optimizer_er)
+                # self.toggle_optimizer(optimizer_er)
                 #############Recovery######################
                 h = self.embedder(time, train_coeffs, final_index)
                 x_tilde = self.recovery(h, obs)
@@ -257,9 +258,9 @@ class GTGAN(BaseModel):
                 self.log("loss_e", loss_e)
 
                 torch.cuda.empty_cache()
-                self.untoggle_optimizer(optimizer_er)
+                # self.untoggle_optimizer(optimizer_er)
 
-            self.toggle_optimizer(optimizer_gs)
+            # self.toggle_optimizer(optimizer_gs)
             if self.global_step % self.args.log_time == 0:
                 # batch = dataset[batch_size]
                 # x = batch['data'].to(device)
@@ -325,7 +326,7 @@ class GTGAN(BaseModel):
             # loss_g.backward()
             self.manual_backward(loss_g)
             optimizer_gs.step()
-            self.untoggle_optimizer(optimizer_gs)
+            # self.untoggle_optimizer(optimizer_gs)
             self.log("loss_g", loss_g)
 
         # return super().training_step(*args, **kwargs)

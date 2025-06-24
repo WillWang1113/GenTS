@@ -11,7 +11,7 @@ pip install -r requirements.txt
 ```
 
 ## Quick start
-- Unconditional generation (time series synthesis)
+A minimal example of (unconditional) time series generation:
 ```python
 import torch
 from src.model import VanillaDDPM
@@ -21,7 +21,7 @@ from lightning import Trainer
 
 # setup dataset and model
 dm = SineND(seq_len=64, seq_dim=2, batch_size=64)
-model = VanillaDDPM(seq_len=64, seq_dim=2)
+model = VanillaDDPM(seq_len=dm.seq_len, seq_dim=dm.seq_dim)
 
 # training (on CPU for example)
 trainer = Trainer(max_epochs=100, accelerator="cpu")
@@ -36,6 +36,9 @@ gen_data = model.sample(n_sample=len(real_data))  # [N, 64, 2]
 qualitative_visual(real_data, gen_data, analysis="tsne", save_root="tsne.png")
 ```
 
+We also support for conditional time series generation, including forecasting, imputation, and class generation. Please refer to `tutorials/` for detailed examples.
+
+<!-- 
 - Conditional generation (time series forecasting/imputation)
 The only thing to do is to include ```condition='predict' / 'imputate'``` in the datamodule and models. For inference, the condition tensor should also be provided.
 
@@ -67,9 +70,11 @@ gen_data = model.sample(n_sample=10, condition=cond_data)  # [N, 64, 2, 10]
 predict_visual(real_data, gen_data, data_mask, save_root='predict.png')
 # imputation_visual(real_data, gen_data, cond_data, data_mask, save_root='impute.png')
 
-```
+``` -->
 
 ## Model zoo
+GenTS included 25+ state-of-the-art time series generation models, with different capabilities. Our model zoo is updated in a regular basis. Please refer to XXX for developing your own model under our framework!
+
 | Name                  | Model Type | Synthesis          | Forecasting        | Imputation         | Class label        |
 | --------------------- | ---------- | ------------------ | ------------------ | ------------------ | ------------------ |
 | VanillaVAE            | VAE        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
@@ -93,13 +98,13 @@ predict_visual(real_data, gen_data, data_mask, save_root='predict.png')
 | FourierDiffusion      | Diffusion  | :white_check_mark: |                    |                    |                    |
 | ImagenTime            | Diffusion  | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    |
 | FIDE **(-!)**         | Diffusion  | :white_check_mark: |                    |                    |                    |
-| Latent ODE w. ODE-RNN | Diff. Eq.  | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    |
-| Latent ODE w. RNN     | Diff. Eq.  | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    |
+| Latent ODE w. ODE-RNN | Diff. Eq.  | :white_check_mark: | :white_check_mark: | interpolation      |                    |
+| Latent ODE w. RNN     | Diff. Eq.  | :white_check_mark: | :white_check_mark: | interpolation      |                    |
 | Latent SDE            | Diff. Eq.  | :white_check_mark: |                    |                    |                    |
 | SDEGAN                | Diff. Eq.  | :white_check_mark: |                    |                    |                    |
 | LS4                   | Diff. Eq.  | :white_check_mark: | :white_check_mark: | interpolation      |                    |
 
-|          <!--          |   Name    |      Model Type       |     Condition     |    Application     | Finish? |
+<!--          |   Name    |      Model Type       |     Condition     |    Application     | Finish? |
 | :--------------------: | :-------: | :-------------------: | :---------------: | :----------------: |
 |       VanillaVAE       |    VAE    |           -           |        Syn        | :white_check_mark: |
 |        TimeVAE         |    VAE    |           -           |        Syn        | :white_check_mark: |
@@ -136,19 +141,21 @@ predict_visual(real_data, gen_data, data_mask, save_root='predict.png')
 |   Latent ODE w. RNN    | Diff. Eq. |           -           |  Syn, Fcst, Imp   | :white_check_mark: |
 |       Latent SDE       | Diff. Eq. |           -           | Syn, (Fcst, Imp)  | :white_check_mark: |
 |         SDEGAN         | Diff. Eq. |           -           |    Syn(irreg)     | :white_check_mark: |
-|          LS4           | Diff. Eq. |           -           |        Syn        | :white_check_mark: | -->     |
+|          LS4           | Diff. Eq. |           -           |        Syn        | :white_check_mark: | -->   
 
 <!-- |          <!--          | SDformer **(-M)** |        VAE+GPT        | :white_check_mark: |        Syn         | :white_circle: | -->            
  <!--          |        TFM        |       Diff. Eq.       |         -          |        Fcst        | :white_circle: | -->           
  <!--          |       <!--        |         GANF          |        Flow        |         -          | AD             | :white_circle: | --> 
 
+
 *Notes*: 
 - **(-G)** = GluonTS style code
-- **(-P)** = PaddlePaddle instead of torch
-- **(-M)** = Missing official codes
 - **(-!)** = Official codes are functionally different from the paper
 
+
 ## Datasets
+GenTS preset 13 widely used time series generation datasets, from multiple domains and resoulutions. Some of them come naturally with missing values and class labels, supporting to benchmark different kinds of models.
+
 | Name        | Resolution     | Dimension | Missing value      | Class label | Domain      |
 | ----------- | -------------- | --------- | ------------------ | ----------- | ----------- |
 | SineND      | continuous     | N         | -                  | -           | Physics     |
@@ -191,7 +198,10 @@ The former three are standard ```lightning``` methods for model training; The la
 - [x] ODE-based model (5.15)
 - [x] Evaluation (5.31)
 - [x] Model testing (6.15)
-- [x] Benchmark datasets (include Monash Datasets? 6.15)
+- [x] Benchmark datasets (6.15)
+- [ ] tutorials (whole pipline for predicting, synthesis with missing values, imputation)
+- [ ] doc files (dataset logic and model hyperparameter explain)
+- [ ] pypi? optional
 - [ ] Project webpage for benchmarking? [Example](https://huggingface.co/spaces/Salesforce/GIFT-Eval)
 
 

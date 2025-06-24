@@ -93,7 +93,7 @@ class CSDI(BaseModel):
             target_mask = ~target_mask
             # print(target_mask[0,:,0])
             train_batch = dict(
-                observed_data=total_seq,
+                observed_data=total_seq.masked_fill(~observed_mask, 0.0),
                 # observed_data=torch.nan_to_num(batch['c']),
                 observed_mask=observed_mask,
                 gt_mask=target_mask,
