@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import torch
 from src.dataset.energy import Energy
+from src.dataset.sine import Spiral2D
 from src.dataset.stocks import Stocks
 from src.model import VanillaDDPM
 from src.dataset import SineND
@@ -13,19 +14,24 @@ from src.model.vae.kovae.model import KoVAE
 from src.model import GTGAN
 
 # setup dataset and model
-dm = Stocks(
+dm = Spiral2D(
+    # obs_len=24,
     seq_len=24,
-    select_seq_dim=[1, 2, 3],
+    # num_samples=100,
     batch_size=64,
     irregular_dropout=0.2,
-    condition="impute", missing_rate=0.1
+    # condition="predict",
 )
 model = LS4(
-    latent_dim=128, seq_len=dm.seq_len, seq_dim=dm.seq_dim, condition="impute"
+    latent_dim=128,
+    # obs_len=dm.obs_len,
+    seq_len=dm.seq_len,
+    seq_dim=dm.seq_dim,
+    condition="impute",
 )
 
 # training (on CPU for example)
-trainer = Trainer(max_steps=4, devices=[0])
+trainer = Trainer(max_epochs=5, devices=[0])
 trainer.fit(model, dm)
 
 # testing
@@ -36,18 +42,20 @@ real_data_mask = torch.cat(
 )  # [N, 64, 2]
 t = torch.cat([batch["t"] for batch in dm.test_dataloader()])  # [N, 64, 2]
 
-model.cuda()
+# model.cuda()
 gen_data = model.sample(
     n_sample=10,
-    condition=real_data.masked_fill(~real_data_mask, float("nan")).cuda(),
-    t=t.cuda(),
-    data_mask=real_data_mask.cuda()
+    condition=real_data.masked_fill(~real_data_mask, float("nan"))[[3]],
+    t=t,
+    data_mask=real_data_mask[[3]],
 )  # [N, 64, 2]
 
 # visualization with tsne
 # qualitative_visual(real_data, gen_data, analysis="tsne", save_root="tsne.png")
 
 fig, axs = plt.subplots(2)
-axs[0].plot(real_data.masked_fill(~real_data_mask, float("nan"))[0, :, :].cpu())
+axs[0].plot(real_data.masked_fill(~real_data_mask, float("nan"))[3, :, :].cpu())
 axs[1].plot(gen_data[0, ..., 0].cpu())
+axs[1].plot(gen_data[0, ..., 1].cpu())
+axs[1].plot(gen_data[0, ..., 2].cpu())
 fig.savefig("test_pred_x0_false.png")

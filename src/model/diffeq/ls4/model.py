@@ -230,9 +230,9 @@ class LS4(BaseModel):
             # total_seq_len = self.seq_len
             t = kwargs['t'][0]
 
-            observed_data = torch.nan_to_num(condition)
             mask = ~torch.isnan(condition)
             mask = mask.float()
+            observed_data = torch.nan_to_num(condition)
             
             non_missing_tp = torch.sum(mask, (0, 2)) != 0.
             observed_data = observed_data[:, non_missing_tp]
@@ -269,6 +269,7 @@ class LS4(BaseModel):
         non_missing_tp = torch.sum(mask, (0, 2)) != 0.
         data = data[:, non_missing_tp]
         tp = tp[non_missing_tp]
+        mask = mask[:, non_missing_tp]
         # print(tp[:10])
         
         # if (self.condition is None) or (self.condition == 'impute'):

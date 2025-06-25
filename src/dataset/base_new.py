@@ -33,7 +33,7 @@ class BaseDataModule(LightningDataModule, ABC):
         **kwargs,
     ):
         super().__init__()
-        self.save_hyperparameters()
+        # self.save_hyperparameters()
         self.seq_len = seq_len
         self.seq_dim = seq_dim
         self.max_time = max_time
@@ -45,8 +45,9 @@ class BaseDataModule(LightningDataModule, ABC):
         self.batch_size = batch_size
         self.infer_bs = inference_batch_size
         self.root_dir = data_dir
-        self.data_dir = data_dir / self.dataset_name
+        self.data_dir = os.path.join(data_dir, self.dataset_name)
         self.irregular_dropout = irregular_dropout
+        self.kwargs = kwargs
 
         assert condition in [None, "predict", "impute", "class"]
         if condition == "predict":
@@ -95,10 +96,19 @@ class BaseDataModule(LightningDataModule, ABC):
                 train_data,
                 train_data_mask,
                 train_class_label,
-                **self.hparams,
+                condition=self.condition,
+                max_time=self.max_time,
+                add_coeffs=self.add_coeffs,
+                **self.kwargs,
             )
             self.val_ds = TSDataset(
-                val_data, val_data_mask, val_class_label, **self.hparams
+                val_data,
+                val_data_mask,
+                val_class_label,
+                condition=self.condition,
+                max_time=self.max_time,
+                add_coeffs=self.add_coeffs,
+                **self.kwargs,
             )
 
         if stage == "test":
@@ -112,15 +122,22 @@ class BaseDataModule(LightningDataModule, ABC):
                 test_data,
                 test_data_mask,
                 test_class_label,
-                **self.hparams,
+                condition=self.condition,
+                max_time=self.max_time,
+                add_coeffs=self.add_coeffs,
+                **self.kwargs,
             )
 
     def prepare_data(self) -> None:
-        data_file_pth = (
-            self.data_dir / f"data_tsl{self.total_seq_len}_tsd{self.seq_dim}.pt"
+        data_file_pth = os.path.join(
+            self.data_dir, f"data_tsl{self.total_seq_len}_tsd{self.seq_dim}.pt"
         )
 
-        exist_data = data_file_pth.exists()
+        # data_file_pth = (
+        #     self.data_dir / f"data_tsl{self.total_seq_len}_tsd{self.seq_dim}.pt"
+        # )
+
+        exist_data = os.path.exists(data_file_pth)
 
         if not exist_data:
             logging.info(f"Downloading {self.dataset_name} dataset in {self.data_dir}.")
@@ -397,7 +414,7 @@ class WebDownloadDataModule(BaseDataModule):
         # data_mask: (N, Total SL, C), boolean mask of raw data, 0=missing, 1=observed
         # class_label: (N,), class label if available, None otherwise
         data = torch.stack(data_orignial_window, dim=0).float()
-        
+
         data_mask = ~torch.isnan(data_samples_window)
         class_label = None
 

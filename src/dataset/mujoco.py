@@ -21,7 +21,7 @@ class MuJoCo(BaseDataModule):
         inference_batch_size: int = 1024,
         max_time: float = 1.0,
         add_coeffs: str = None,
-        random_drop_data: float = 0.0,
+        irregular_dropout: float = 0.0,
         **kwargs,
     ):
         super().__init__(
@@ -32,6 +32,7 @@ class MuJoCo(BaseDataModule):
             inference_batch_size,
             max_time,
             add_coeffs,
+            irregular_dropout,
             data_dir,
             **kwargs,
         )
@@ -39,8 +40,8 @@ class MuJoCo(BaseDataModule):
         self.select_seq_dim = select_seq_dim
         if select_seq_dim is not None:
             assert max(select_seq_dim) < self.D
-        self.random_dropout = random_drop_data
-        assert random_drop_data >= 0 and random_drop_data < 1
+        self.random_dropout = irregular_dropout
+        assert irregular_dropout >= 0 and irregular_dropout < 1
 
         
 
@@ -92,11 +93,18 @@ class MuJoCo(BaseDataModule):
 
         # Condition save
         data_mask = torch.ones_like(data)
-        if self.random_dropout>0:
-            drop_mask = torch.rand_like(data) < self.random_dropout
-            data_mask = data_mask.masked_fill(drop_mask, 0.0)
+        if self.random_dropout > 0:
+            mask = torch.bernoulli(
+                torch.full(
+                    (data.shape[0], data.shape[1]),
+                    1 - self.random_dropout,
+                    device=data.device,
+                )
+            ).unsqueeze(-1)
+
+            data_mask = data_mask * mask
         data_mask = data_mask.bool()
-        data = data.masked_fill(~data_mask, 0.0)
+        # data = data.masked_fill(~data_mask, 0.0)
         class_label = None
         return data, data_mask.bool(), class_label
 

@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 
 import numpy as np
@@ -18,7 +19,7 @@ class Spiral2D(BaseDataModule):
         inference_batch_size: int = 1024,
         max_time: float = None,
         add_coeffs: str = None,
-        random_drop_data: float = 0.0,
+        irregular_dropout: float = 0.0,
         **kwargs,
     ):
         super().__init__(
@@ -29,12 +30,13 @@ class Spiral2D(BaseDataModule):
             inference_batch_size,
             max_time,
             add_coeffs,
+            irregular_dropout,
             data_dir,
             **kwargs,
         )
         self.num_samples = num_samples
-        self.random_dropout = random_drop_data
-        assert random_drop_data >= 0 and random_drop_data < 1
+        self.random_dropout = irregular_dropout
+        assert irregular_dropout >= 0 and irregular_dropout < 1
 
     def get_data(self):
         t = torch.linspace(0, 4 * torch.pi, self.total_seq_len).float()
@@ -65,11 +67,19 @@ class Spiral2D(BaseDataModule):
         # Condition save
         # cond = self.prepare_cond(data, class_cond)
         data_mask = torch.ones_like(data)
-        if self.random_dropout>0:
-            drop_mask = torch.rand_like(data) < self.random_dropout
-            data_mask = data_mask.masked_fill(drop_mask, 0)
+        if self.random_dropout > 0:
+            mask = torch.bernoulli(
+                torch.full(
+                    (data.shape[0], data.shape[1]),
+                    1 - self.random_dropout,
+                    device=x.device,
+                )
+            ).unsqueeze(-1)
+
+            data_mask = data_mask * mask
         data_mask = data_mask.bool()
-        data = data.masked_fill(~data_mask, 0.0)
+
+        # data = data.masked_fill(~data_mask, 0.0)
 
         return data, data_mask.bool(), class_label
 
@@ -90,7 +100,7 @@ class SineND(BaseDataModule):
         inference_batch_size: int = 1024,
         max_time: float = None,
         add_coeffs: str = None,
-        random_drop_data: float = 0.0,
+        irregular_dropout: float = 0.0,
         **kwargs,
     ):
         super().__init__(
@@ -101,12 +111,13 @@ class SineND(BaseDataModule):
             inference_batch_size,
             max_time,
             add_coeffs,
+            irregular_dropout,
             data_dir,
             **kwargs,
         )
         self.num_samples = num_samples
-        self.random_dropout = random_drop_data
-        assert random_drop_data >= 0 and random_drop_data < 1
+        self.random_dropout = irregular_dropout
+        assert irregular_dropout >= 0 and irregular_dropout < 1
 
     def get_data(self):
         # Initialize the output
@@ -139,14 +150,20 @@ class SineND(BaseDataModule):
 
         # Condition save
         data_mask = torch.ones_like(data)
-        if self.random_dropout>0:
-            drop_mask = torch.rand_like(data) < self.random_dropout
-            data_mask = data_mask.masked_fill(drop_mask, 0)
+        if self.random_dropout > 0:
+            mask = torch.bernoulli(
+                torch.full(
+                    (data.shape[0], data.shape[1]),
+                    1 - self.random_dropout,
+                    device=data.device,
+                )
+            ).unsqueeze(-1)
+
+            data_mask = data_mask * mask
         data_mask = data_mask.bool()
-        data = data.masked_fill(~data_mask, 0.0)
+        # data = data.masked_fill(~data_mask, 0.0)
         class_label = None
         return data, data_mask.bool(), class_label
-
 
     @property
     def dataset_name(self) -> str:

@@ -237,10 +237,12 @@ def predict_visual(
         # axs[i].legend()
         plt_ax.set_xlabel("time")
         plt_ax.set_ylabel("value")
+        plt_ax.set_title(f"Channel {i + 1}")
     fig.legend(
         handles=[obs_line, pred_interval, pred_line],
         loc="upper center",
         ncol=4,
     )
-    fig.savefig(save_root, bbox_inches="tight")
+    if save_root is not None:
+        fig.savefig(save_root, bbox_inches="tight")
 
