@@ -687,8 +687,10 @@ class SSKernelNPLR(OptimModule):
 
         # Cache if necessary
         if cache:
-            self.omega = omega
-            self.z = z
+            self.register_buffer("omega", omega)
+            self.register_buffer("z", z)
+            # self.omega = omega
+            # self.z = z
         return omega, z
 
     def __init__(

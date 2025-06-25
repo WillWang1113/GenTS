@@ -29,11 +29,15 @@ model = LS4(
     seq_dim=dm.seq_dim,
     condition="impute",
 )
+for b in model.named_buffers():
+    print(b[0], b[1].device)
 
 # training (on CPU for example)
-trainer = Trainer(max_epochs=5, devices=[0])
+trainer = Trainer(max_epochs=1, devices=[0])
 trainer.fit(model, dm)
-
+   
+for b in model.named_buffers():
+    print(b[0], b[1].device)
 # testing
 dm.setup("test")
 real_data = torch.cat([batch["seq"] for batch in dm.test_dataloader()])  # [N, 64, 2]
