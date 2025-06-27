@@ -24,115 +24,108 @@ import numpy as np
 import torch
 
 
-def qualitative_visual(
-    ori_data, generated_data, analysis="tsne", save_root=None, min_viz_samples=1000
+def tsne_visual(
+    real_data,
+    generated_data,
+    class_label_data=None,
+    save_root=None,
+    min_viz_samples=1000,
 ):
     """Using PCA or tSNE for generated and original data visualization.
 
     Args:
-      - ori_data: original data
+      - real_data: original data
       - generated_data: generated synthetic data
-      - analysis: "tsne" or "pca"
       - save_root: figure save root
       - min_viz_samples: minimal data samples taken from orig_data/generated_data to visualize
     """
-    if save_root is None:
-        save_root = f"./{analysis}.png"
+    # if save_root is None:
+    #     save_root = "./tsne.png"
     # Analysis sample size (for faster computation)
-    anal_sample_no = min([min_viz_samples, len(ori_data)])
-    idx = np.random.permutation(len(ori_data))[:anal_sample_no]
+    anal_sample_no = min([min_viz_samples, len(real_data)])
+    idx = np.random.permutation(len(real_data))[:anal_sample_no]
 
     # Data preprocessing
-    ori_data = np.asarray(ori_data)
+    real_data = np.asarray(real_data)
     generated_data = np.asarray(generated_data)
 
-    ori_data = ori_data[idx]
+    real_data = real_data[idx]
     generated_data = generated_data[idx]
+    if class_label_data is not None:
+        class_label_data = class_label_data[idx]
+        unique_class = torch.unique(class_label_data)
+        cls_idx = [class_label_data == i for i in unique_class]
 
-    no, seq_len, dim = ori_data.shape
+    no, seq_len, dim = real_data.shape
 
-    for i in range(anal_sample_no):
-        if i == 0:
-            prep_data = np.reshape(np.mean(ori_data[0, :, :], 1), [1, seq_len])
-            prep_data_hat = np.reshape(
-                np.mean(generated_data[0, :, :], 1), [1, seq_len]
-            )
-        else:
-            prep_data = np.concatenate(
-                (prep_data, np.reshape(np.mean(ori_data[i, :, :], 1), [1, seq_len]))
-            )
-            prep_data_hat = np.concatenate(
-                (
-                    prep_data_hat,
-                    np.reshape(np.mean(generated_data[i, :, :], 1), [1, seq_len]),
-                )
-            )
+    # for i in range(anal_sample_no):
+    #     if i == 0:
+    #         prep_data = np.reshape(np.mean(real_data[0, :, :], 1), [1, seq_len])
+    #         prep_data_hat = np.reshape(
+    #             np.mean(generated_data[0, :, :], 1), [1, seq_len]
+    #         )
+    #     else:
+    #         prep_data = np.concatenate(
+    #             (prep_data, np.reshape(np.mean(real_data[i, :, :], 1), [1, seq_len]))
+    #         )
+    #         prep_data_hat = np.concatenate(
+    #             (
+    #                 prep_data_hat,
+    #                 np.reshape(np.mean(generated_data[i, :, :], 1), [1, seq_len]),
+    #             )
+    #         )
+    prep_data = real_data.reshape(len(real_data), -1)
+    prep_data_hat = generated_data.reshape(len(generated_data), -1)
 
-    # Visualization parameter
-    colors = ["red" for i in range(anal_sample_no)] + [
-        "blue" for i in range(anal_sample_no)
-    ]
+    # Do t-SNE Analysis together
+    prep_data_final = np.concatenate((prep_data, prep_data_hat), axis=0)
 
-    if analysis == "pca":
-        # PCA Analysis
-        pca = PCA(n_components=2)
-        pca.fit(prep_data)
-        pca_results = pca.transform(prep_data)
-        pca_hat_results = pca.transform(prep_data_hat)
+    # TSNE anlaysis
+    tsne = TSNE(n_components=2,  max_iter=300, random_state=0, init='random')
+    tsne_results = tsne.fit_transform(prep_data_final)
+    real_tsne = tsne_results[:anal_sample_no]
+    gen_tsne = tsne_results[anal_sample_no:]
 
-        # Plotting
-        f, ax = plt.subplots(1)
+    # Plotting
+    f, ax = plt.subplots(1)
+
+    if class_label_data is None:
         ax.scatter(
-            pca_results[:, 0],
-            pca_results[:, 1],
-            c=colors[:anal_sample_no],
-            alpha=0.2,
-            label="Original",
+            real_tsne[:, 0],
+            real_tsne[:, 1],
+            c="C0",
+            alpha=0.5,
+            label="Real",
         )
         ax.scatter(
-            pca_hat_results[:, 0],
-            pca_hat_results[:, 1],
-            c=colors[anal_sample_no:],
-            alpha=0.2,
-            label="Synthetic",
+            gen_tsne[:, 0],
+            gen_tsne[:, 1],
+            c="C1",
+            alpha=0.5,
+            label="Syn",
         )
+    else:
+        for i in range(len(cls_idx)):
+            ax.scatter(
+                real_tsne[cls_idx[i], 0],
+                real_tsne[cls_idx[i], 1],
+                alpha=0.5,
+                label=f"Real: class {i}",
+            )
+        for i in range(len(cls_idx)):
+            ax.scatter(
+                gen_tsne[cls_idx[i], 0],
+                gen_tsne[cls_idx[i], 1],
+                # c=colors[anal_sample_no:],
+                alpha=0.5,
+                label=f"Syn: class {i}",
+            )
 
-        ax.legend()
-        ax.set_title("PCA plot")
-        ax.set_xlabel("x_pca")
-        ax.set_ylabel("y_pca")
-        f.savefig(save_root)
-
-    elif analysis == "tsne":
-        # Do t-SNE Analysis together
-        prep_data_final = np.concatenate((prep_data, prep_data_hat), axis=0)
-
-        # TSNE anlaysis
-        tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
-        tsne_results = tsne.fit_transform(prep_data_final)
-
-        # Plotting
-        f, ax = plt.subplots(1)
-
-        plt.scatter(
-            tsne_results[:anal_sample_no, 0],
-            tsne_results[:anal_sample_no, 1],
-            c=colors[:anal_sample_no],
-            alpha=0.2,
-            label="Original",
-        )
-        plt.scatter(
-            tsne_results[anal_sample_no:, 0],
-            tsne_results[anal_sample_no:, 1],
-            c=colors[anal_sample_no:],
-            alpha=0.2,
-            label="Synthetic",
-        )
-
-        ax.legend()
-        ax.set_title("t-SNE plot")
-        ax.set_xlabel("x_tsne")
-        ax.set_ylabel("y_tsne")
+    ax.legend(ncols=2)
+    ax.set_title("t-SNE plot")
+    ax.set_xlabel("x_tsne")
+    ax.set_ylabel("y_tsne")
+    if save_root is not None:
         f.savefig(save_root)
 
 
@@ -214,7 +207,7 @@ def predict_visual(
     if n_channel > 1:
         axs = axs.flatten()
     t = range(real_data.shape[1])
-    pred_t = t[gen_data_quantiles.shape[2]:]
+    pred_t = t[gen_data_quantiles.shape[2] :]
     for i in range(n_channel):
         plt_ax = axs[i] if n_channel > 1 else axs
         sample_id = torch.randint(0, len(real_data), ())
@@ -228,11 +221,14 @@ def predict_visual(
             gen_data_quantiles[0, sample_id, :, i],
             gen_data_quantiles[-1, sample_id, :, i],
             label="95%PI",
-            color='C1',
+            color="C1",
             alpha=0.25,
         )
         [pred_line] = plt_ax.plot(
-            pred_t, torch.mean(gen_data, dim=-1)[sample_id, :, i], label="avg_pred", c='C1'
+            pred_t,
+            torch.mean(gen_data, dim=-1)[sample_id, :, i],
+            label="avg_pred",
+            c="C1",
         )
         # axs[i].legend()
         plt_ax.set_xlabel("time")
@@ -245,4 +241,3 @@ def predict_visual(
     )
     if save_root is not None:
         fig.savefig(save_root, bbox_inches="tight")
-

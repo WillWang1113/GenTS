@@ -62,7 +62,7 @@ class Spiral2D(BaseDataModule):
             curve = torch.stack([x, y], dim=1)
             curves.append(curve)
             labels.append(direction)
-        data, class_label = torch.stack(curves), torch.tensor(labels).unsqueeze(-1)
+        data, class_label = torch.stack(curves), torch.tensor(labels)
 
         # Condition save
         # cond = self.prepare_cond(data, class_cond)

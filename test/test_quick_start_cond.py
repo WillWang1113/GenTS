@@ -5,7 +5,7 @@ from src.dataset.sine import Spiral2D
 from src.dataset.stocks import Stocks
 from src.model import VanillaDDPM
 from src.dataset import SineND
-from src.evaluation import qualitative_visual
+from src.evaluation import tsne_visual
 from lightning import Trainer
 
 from src.model.diffeq.latentode.model import LatentODE

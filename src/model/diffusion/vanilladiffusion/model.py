@@ -21,7 +21,8 @@ class VanillaDDPM(BaseModel):
         seq_dim: int,
         condition: str = None,
         latent_dim: int = 128,
-        hidden_size_list: list = [128, 256, 512],
+        n_layers: int = 4,
+        patch_size: int = 16,
         noise_schedule: str = "cosine",
         n_diff_steps: int = 1000,
         pred_x0: bool = True,
@@ -64,7 +65,8 @@ class VanillaDDPM(BaseModel):
             cond_seq_chnl=cond_seq_chnl,
             cond_n_class=cond_n_class,
             d_model=latent_dim,
-            patch_size=kwargs.get("patch_size", 16),
+            patch_size=patch_size,
+            n_layers=n_layers,
             
         )
         # self.backbone = Denoiser(**self.hparams)

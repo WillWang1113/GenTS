@@ -6,10 +6,10 @@ from .model_based.cfid import context_fid
 from .model_based.ds import discriminative_score
 from .model_based.ps import predictive_score
 from .model_free.errors import crps, mse
-from .visual import qualitative_visual, predict_visual, imputation_visual
+from .visual import tsne_visual, predict_visual, imputation_visual
 
 __all__ = [
-    "qualitative_visual",
+    "tsne_visual",
     "predict_visual",
     "imputation_visual",
     "crps",
