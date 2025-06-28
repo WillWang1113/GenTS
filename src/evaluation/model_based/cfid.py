@@ -19,7 +19,12 @@ def calculate_fid(act1, act2):
     return fid
 
 
-def context_fid(train_data, ori_data, gen_data, device):
+def context_fid(
+    train_data: np.ndarray,
+    ori_data: np.ndarray,
+    gen_data: np.ndarray,
+    device: str = "cpu",
+):
     fid_model = initialize_ts2vec(np.transpose(train_data, (0, 2, 1)), device)
     ori_repr = fid_model.encode(
         np.transpose(ori_data, (0, 2, 1)), encoding_window="full_series"
@@ -29,5 +34,3 @@ def context_fid(train_data, ori_data, gen_data, device):
     )
     cfid = calculate_fid(ori_repr, gen_repr)
     return cfid
-
-
