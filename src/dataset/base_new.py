@@ -66,7 +66,8 @@ class BaseDataModule(LightningDataModule, ABC):
         # tsd = total seq dim
         (data, data_mask, class_label) = torch.load(
             os.path.join(
-                self.data_dir, f"data_tsl{self.total_seq_len}_tsd{self.seq_dim}.pt"
+                self.data_dir,
+                f"data_tsl{self.total_seq_len}_tsd{self.seq_dim}_ir{self.irregular_dropout}.pt",
             )
         )
 
@@ -130,12 +131,9 @@ class BaseDataModule(LightningDataModule, ABC):
 
     def prepare_data(self) -> None:
         data_file_pth = os.path.join(
-            self.data_dir, f"data_tsl{self.total_seq_len}_tsd{self.seq_dim}.pt"
+            self.data_dir,
+            f"data_tsl{self.total_seq_len}_tsd{self.seq_dim}_ir{self.irregular_dropout}.pt",
         )
-
-        # data_file_pth = (
-        #     self.data_dir / f"data_tsl{self.total_seq_len}_tsd{self.seq_dim}.pt"
-        # )
 
         exist_data = os.path.exists(data_file_pth)
 

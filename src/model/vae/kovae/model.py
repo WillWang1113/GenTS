@@ -1,4 +1,5 @@
 from argparse import Namespace
+import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -74,6 +75,7 @@ class KoVAE(BaseModel):
             num_layers=num_layers,
         )
         if irregular_ts:
+            logging.info("Fitting KoVAE with irregular time series data.")
             self.encoder = VKEncoderIrregular(self.args)
         else:
             self.encoder = VKEncoder(self.args)
@@ -250,49 +252,56 @@ class KoVAE(BaseModel):
             losses = self.loss(
                 X, x_rec, Z_enc, Z_enc_prior
             )  # x_rec, x_pred_rec, z, z_pred_, Ct
-        self.log_dict(
-            {
-                "train_loss": losses[0],
-                "train_recon_loss": losses[1],
-                "train_kl_loss": losses[2],
-                "train_pred_loss": losses[3],
-            },
-            prog_bar=True,
-            on_epoch=True,
-        )
+        loss_dict = {
+            "loss": losses[0],
+            "recon_loss": losses[1],
+            "kl_loss": losses[2],
+            "pred_loss": losses[3],
+        }
+        for key, value in loss_dict.items():
+            self.log(f"train/{key}", value)
+        # self.log(
+        #     {
+        #         "train_loss": losses[0],
+        #         "train_recon_loss": losses[1],
+        #         "train_kl_loss": losses[2],
+        #         "train_pred_loss": losses[3],
+        #     },
+        #     prog_bar=True,
+        #     on_epoch=True,
+        # )
         return losses[0]
 
     def validation_step(self, batch, batch_idx):
         if self.missing_value:
-            # imputation task
-
-            x = batch["seq"]
-            cond = batch["c"]
-            x = x.masked_fill(cond.bool(), float("nan"))
-
-            X = batch["seq"]
+            x = batch["seq"].masked_fill(
+                ~batch["data_mask"].bool(), float("nan")
+            )  # imputation task, mask missing
             train_coeffs = batch["coeffs"]  # .to(device)
             time = torch.arange(x.shape[1]).to(x)
             final_index = (torch.ones(x.shape[0]) * (self.seq_len - 1)).to(x)
             x_rec, Z_enc, Z_enc_prior = self(train_coeffs, time, final_index)
 
+            x_no_nan = x[~torch.isnan(x)]
+            x_rec_no_nan = x_rec[~torch.isnan(x)]
+            losses = self.loss(x_no_nan, x_rec_no_nan, Z_enc, Z_enc_prior)
+
         else:
             X = batch["seq"]
             x_rec, Z_enc, Z_enc_prior = self(X)
 
-        losses = self.loss(
-            X, x_rec, Z_enc, Z_enc_prior
-        )  # x_rec, x_pred_rec, z, z_pred_, Ct
-        self.log_dict(
-            {
-                "val_loss": losses[0],
-                "val_recon_loss": losses[1],
-                "val_kl_loss": losses[2],
-                "val_pred_loss": losses[3],
-            },
-            prog_bar=True,
-            on_epoch=True,
-        )
+            losses = self.loss(
+                X, x_rec, Z_enc, Z_enc_prior
+            )  # x_rec, x_pred_rec, z, z_pred_, Ct
+
+        loss_dict = {
+            "loss": losses[0],
+            "recon_loss": losses[1],
+            "kl_loss": losses[2],
+            "pred_loss": losses[3],
+        }
+        for key, value in loss_dict.items():
+            self.log(f"val/{key}", value)
         # return losses[0]
 
     def configure_optimizers(self):
