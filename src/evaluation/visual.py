@@ -150,7 +150,7 @@ def imputation_visual(
     gen_data_quantiles = torch.quantile(gen_data, q, dim=-1)
     n_channel = real_data.shape[-1]
     n_channel = min(max_viz_n_channel, n_channel)
-    fig, axs = plt.subplots(1, n_channel, figsize=[12, 4], layout="constrained")
+    fig, axs = plt.subplots(1, n_channel, figsize=[12, 4])
     if n_channel > 1:
         axs = axs.flatten()
     t = range(real_data.shape[1])
@@ -179,13 +179,17 @@ def imputation_visual(
         # axs[i].legend()
         plt_ax.set_xlabel("time")
         plt_ax.set_ylabel("value")
+        plt_ax.set_title(f"Channel {i + 1}")
     fig.legend(
         handles=[obs_line, target_line, impute_interval, impute_line],
         loc="upper center",
         ncol=4,
+        bbox_to_anchor=(0.5, 1.1)
     )
-    # fig.tight_layout()
-    fig.savefig(save_root, bbox_inches="tight")
+    fig.tight_layout()
+    if save_root is not None:
+        fig.savefig(save_root, bbox_inches="tight")
+    # fig.savefig(save_root, bbox_inches="tight")
 
 
 def predict_visual(
@@ -238,6 +242,7 @@ def predict_visual(
         handles=[obs_line, pred_interval, pred_line],
         loc="upper center",
         ncol=4,
+        bbox_to_anchor=(0.5, 1.1)
     )
     if save_root is not None:
         fig.savefig(save_root, bbox_inches="tight")
