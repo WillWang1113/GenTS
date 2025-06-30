@@ -1,17 +1,17 @@
 from matplotlib import pyplot as plt
 import torch
-from src.dataset.energy import Energy
-from src.dataset.sine import Spiral2D
-from src.dataset.stocks import Stocks
-from src.model import VanillaDDPM
-from src.dataset import SineND
-from src.evaluation import tsne_visual
+from gents.dataset.energy import Energy
+from gents.dataset.sine import Spiral2D
+from gents.dataset.stocks import Stocks
+from gents.model import VanillaDDPM
+from gents.dataset import SineND
+from gents.evaluation import tsne_visual
 from lightning import Trainer
 
-from src.model.diffeq.latentode.model import LatentODE
-from src.model.diffeq.ls4.model import LS4
-from src.model.vae.kovae.model import KoVAE
-from src.model import GTGAN
+from gents.model.diffeq.latentode.model import LatentODE
+from gents.model.diffeq.ls4.model import LS4
+from gents.model.vae.kovae.model import KoVAE
+from gents.model import GTGAN
 
 # setup dataset and model
 dm = Spiral2D(

@@ -17,7 +17,7 @@ from random import SystemRandom
 import torch
 
 
-from src.utils.latentode_parsedataset import parse_datasets
+from gents.utils.latentode_parsedataset import parse_datasets
 
 # Generative model for noisy data based on ODE
 parser = argparse.ArgumentParser("Latent ODE")

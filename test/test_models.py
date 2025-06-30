@@ -1,7 +1,7 @@
 from math import sqrt
 from lightning import Trainer, seed_everything
-import src.model
-from src.dataset import Spiral2D, SineND
+import gents.model
+from gents.dataset import Spiral2D, SineND
 import matplotlib.pyplot as plt
 import torch
 
@@ -9,7 +9,7 @@ import torch
 seed_everything(3407, workers=True)
 gpu = 0
 
-model_names = src.model.__all__
+model_names = gents.model.__all__
 
 # VAE + vanilla models
 # 1. diffusion + 2. gan + 3. flow
@@ -170,7 +170,7 @@ for i in range(len(model_names)):
             # )
             cond_hparams = hparams
 
-        test_model_cls = getattr(src.model, model_names[i])
+        test_model_cls = getattr(gents.model, model_names[i])
         test_model = test_model_cls(**cond_hparams)
         trainer = Trainer(
             devices=[gpu],

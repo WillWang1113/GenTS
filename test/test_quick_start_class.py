@@ -1,17 +1,17 @@
 from matplotlib import pyplot as plt
 import torch
-from src.dataset.ecg import ECG
-from src.dataset.sine import Spiral2D
-from src.model import VanillaDDPM
-from src.dataset import SineND
-from src.evaluation import tsne_visual
+from gents.dataset.ecg import ECG
+from gents.dataset.sine import Spiral2D
+from gents.model import VanillaDDPM
+from gents.dataset import SineND
+from gents.evaluation import tsne_visual
 from lightning import Trainer
 
-from src.model.flow.vanillamaf.model import VanillaMAF
-from src.model.gan.rcgan.model import RCGAN
-from src.model.gan.vanillagan.model import VanillaGAN
-from src.model.vae.timevqvae.model import TimeVQVAE
-from src.model.vae.vanillavae.model import VanillaVAE
+from gents.model.flow.vanillamaf.model import VanillaMAF
+from gents.model.gan.rcgan.model import RCGAN
+from gents.model.gan.vanillagan.model import VanillaGAN
+from gents.model.vae.timevqvae.model import TimeVQVAE
+from gents.model.vae.vanillavae.model import VanillaVAE
 
 # setup dataset and model
 dm = Spiral2D(
