@@ -6,28 +6,47 @@ from ._backbones import Generator, Discriminator
 
 
 class RCGAN(BaseModel):
+    """`Recurrent conditional GAN <https://arxiv.org/pdf/1706.02633>`_ 
+    
+    Adapted from the `official codes <https://github.com/ratschlab/RGAN/tree/master>`_
+    
+    .. note::
+        The orignial codes are based on Tensorflow, we adapt the source codes into pytorch.
+
+    
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        latent_dim (int, optional): Latent variable dimension. Defaults to 128.
+        num_layers (int, optional): RNN layers. Defaults to 1.
+        class_emb_dim (int, optional): Embedding dimension for class labels. Defaults to 8.
+        hidden_size (int, optional): Hidden size for RNN. Defaults to 128.
+        n_critic (int, optional): G/D update times. Defaults to 1.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
     ALLOW_CONDITION = [None, "class"]
     def __init__(
         self,
         seq_len: int,
         seq_dim: int,
+        condition: str = None,
         latent_dim: int = 128,
+        num_layers: int = 1,
         class_emb_dim: int = 8,
         hidden_size: int = 128,
+        n_critic: int = 1,
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
-        num_layers: int = 1,
-        # clip_value: float = 0.01,
-        n_critic: int = 1,
-        condition: str = None,
         **kwargs,
     ):
+
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         self.automatic_optimization = False
-        # assert condition in [None, "class"]
-        if self.condition == 'class':
-            n_classes = self.class_num
+        n_classes = self.class_num if self.condition == 'class' else 0
         self.seq_len = seq_len
         self.seq_dim = seq_dim
 

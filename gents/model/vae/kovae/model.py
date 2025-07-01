@@ -13,7 +13,28 @@ from ._backbones import VKDecoder, VKEncoder, VKEncoderIrregular
 
 
 class KoVAE(BaseModel):
-    """KoVAE: Koopman Variational Autoencoder for both Regular and Irregular Time Series"""
+    """`KoVAE <https://openreview.net/pdf?id=eY7sLb0dVF>`_: Koopman Variational Autoencoder for both Regular and Irregular Time Series
+    
+    Adapted from the `official codes <https://github.com/azencot-group/KoVAE>`_
+    
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given conditions, allowing [None]. Defaults to None.
+        latent_dim (int, optional): Latent dimension for z. Defaults to 16.
+        hidden_size (int, optional): Hidden size. Defaults to 20.
+        num_layers (int, optional): RNN layers. Defaults to 3.
+        batch_norm (bool, optional): Batch norm or not. Defaults to True.
+        w_rec (float, optional): Loss weight of reconstruction. Defaults to 1.0.
+        w_kl (float, optional): Loss weight of KL divergance. Defaults to 0.007.
+        w_pred_prior (float, optional): Loss weight of prior distribution learning. Defaults to 0.005.
+        pinv_solver (bool, optional): Directly calculate pseudoinverse or not. Defaults to False.
+        koopman_nstep (int, optional): N step ahead dynamic learning. Defaults to 1.
+        irregular_ts (bool, optional): Whether the input data is irregular. Defaults to False.
+        lr (float, optional): Learning rate. Defaults to 7e-4.
+        weight_decay (float, optional): Weight decay. Defaults to 0.0.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
 
     # allow for irregular datasets
     ALLOW_CONDITION = [None]
@@ -32,28 +53,12 @@ class KoVAE(BaseModel):
         w_pred_prior: float = 0.005,
         pinv_solver: bool = False,
         koopman_nstep: int = 1,
+        irregular_ts: bool = False,
         lr: float = 7e-4,
         weight_decay: float = 0.0,
-        irregular_ts: bool = False,
         **kwargs,
     ):
-        """
-        Args:
-            seq_len (int): Target sequence length
-            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
-            condition (str, optional): Given conditions, allowing [None]. Defaults to None.
-            latent_dim (int, optional): Latent dimension for z. Defaults to 16.
-            hidden_size (int, optional): Hidden size. Defaults to 20.
-            num_layers (int, optional): RNN layers. Defaults to 3.
-            batch_norm (bool, optional): Batch norm or not. Defaults to True.
-            w_rec (float, optional): Loss weight of reconstruction. Defaults to 1.0.
-            w_kl (float, optional): Loss weight of KL divergance. Defaults to 0.007.
-            w_pred_prior (float, optional): Loss weight of prior distribution learning. Defaults to 0.005.
-            pinv_solver (bool, optional): Directly calculate pseudoinverse or not. Defaults to False.
-            koopman_nstep (int, optional): N step ahead dynamic learning. Defaults to 1.
-            lr (float, optional): Learning rate. Defaults to 7e-4.
-            weight_decay (float, optional): Weight decay. Defaults to 0.0.
-        """
+
         super().__init__(seq_len, seq_dim, condition, **kwargs)
 
         self.save_hyperparameters()
@@ -91,7 +96,7 @@ class KoVAE(BaseModel):
         self.z_mean = nn.Linear(self.hidden_size * 2, self.latent_dim)
         self.z_logvar = nn.Linear(self.hidden_size * 2, self.latent_dim)
 
-    def compute_operator_and_pred(self, z):
+    def _compute_operator_and_pred(self, z):
         z_past, z_future = z[:, :-1], z[:, 1:]  # split latent
 
         # solve linear system (broadcast)
@@ -121,13 +126,13 @@ class KoVAE(BaseModel):
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
         # sample from prior
-        z_mean_prior, z_logvar_prior, z_out = self.sample_prior(
+        z_mean_prior, z_logvar_prior, z_out = self._sample_prior(
             n_sample, self.seq_len, random_sampling=True
         )
         x_rec = self.decoder(z_out)
         return x_rec
 
-    def loss(self, x, x_rec, Z_enc, Z_enc_prior):
+    def _get_loss(self, x, x_rec, Z_enc, Z_enc_prior):
         """
         :param x: The original sequence input
         :param x_rec: The reconstructed sequence
@@ -154,7 +159,7 @@ class KoVAE(BaseModel):
             Z_enc_prior["sample"],
         )
         ## Ap after sampling ##
-        Ct_prior, z_pred_prior, pred_err_prior = self.compute_operator_and_pred(z_prior)
+        Ct_prior, z_pred_prior, pred_err_prior = self._compute_operator_and_pred(z_prior)
 
         loss = 0.0
         if self.hparams.w_rec:
@@ -177,11 +182,11 @@ class KoVAE(BaseModel):
         return tuple(agg_losses)
 
     # ------ sample z purely from learned LSTM prior with arbitrary seq ------
-    def sample_prior(self, n_sample, seq_len, random_sampling=True):
+    def _sample_prior(self, n_sample, seq_len, random_sampling=True):
         batch_size = n_sample
 
         # z_out = None  # This will ultimately store all z_s in the format [batch_size, seq_len, z_dim]
-        z_logvars, z_means, z_out = self.zeros_init(batch_size, seq_len)
+        z_logvars, z_means, z_out = self._zeros_init(batch_size, seq_len)
 
         # initialize arbitrary input (zeros) and hidden states.
         z_t = torch.zeros(batch_size, self.latent_dim).to(self.device)
@@ -200,7 +205,7 @@ class KoVAE(BaseModel):
 
         return z_means, z_logvars, z_out
 
-    def zeros_init(self, batch_size, seq_len):
+    def _zeros_init(self, batch_size, seq_len):
         z_out = torch.zeros(batch_size, seq_len, self.latent_dim).to(self.device)
         z_means = torch.zeros(batch_size, seq_len, self.latent_dim).to(self.device)
         z_logvars = torch.zeros(batch_size, seq_len, self.latent_dim).to(self.device)
@@ -221,7 +226,7 @@ class KoVAE(BaseModel):
         Z_enc = {"mean": z_mean, "logvar": z_logvar, "sample": z_post}
 
         # # ------------- PRIOR PART -------------
-        z_mean_prior, z_logvar_prior, z_out = self.sample_prior(
+        z_mean_prior, z_logvar_prior, z_out = self._sample_prior(
             z.size(0), self.seq_len, random_sampling=True
         )
         Z_enc_prior = {"mean": z_mean_prior, "logvar": z_logvar_prior, "sample": z_out}
@@ -243,13 +248,13 @@ class KoVAE(BaseModel):
 
             x_no_nan = x[~torch.isnan(x)]
             x_rec_no_nan = x_rec[~torch.isnan(x)]
-            losses = self.loss(x_no_nan, x_rec_no_nan, Z_enc, Z_enc_prior)
+            losses = self._get_loss(x_no_nan, x_rec_no_nan, Z_enc, Z_enc_prior)
 
         else:
             X = batch["seq"]
             x_rec, Z_enc, Z_enc_prior = self(X)
 
-            losses = self.loss(
+            losses = self._get_loss(
                 X, x_rec, Z_enc, Z_enc_prior
             )  # x_rec, x_pred_rec, z, z_pred_, Ct
         loss_dict = {
@@ -260,16 +265,7 @@ class KoVAE(BaseModel):
         }
         for key, value in loss_dict.items():
             self.log(f"train/{key}", value)
-        # self.log(
-        #     {
-        #         "train_loss": losses[0],
-        #         "train_recon_loss": losses[1],
-        #         "train_kl_loss": losses[2],
-        #         "train_pred_loss": losses[3],
-        #     },
-        #     prog_bar=True,
-        #     on_epoch=True,
-        # )
+
         return losses[0]
 
     def validation_step(self, batch, batch_idx):
@@ -284,13 +280,13 @@ class KoVAE(BaseModel):
 
             x_no_nan = x[~torch.isnan(x)]
             x_rec_no_nan = x_rec[~torch.isnan(x)]
-            losses = self.loss(x_no_nan, x_rec_no_nan, Z_enc, Z_enc_prior)
+            losses = self._get_loss(x_no_nan, x_rec_no_nan, Z_enc, Z_enc_prior)
 
         else:
             X = batch["seq"]
             x_rec, Z_enc, Z_enc_prior = self(X)
 
-            losses = self.loss(
+            losses = self._get_loss(
                 X, x_rec, Z_enc, Z_enc_prior
             )  # x_rec, x_pred_rec, z, z_pred_, Ct
 

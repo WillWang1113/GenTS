@@ -12,9 +12,18 @@ from gents.common._modules import MLPDecoder, MLPEncoder, LabelEmbedder
 class VanillaVAE(BaseModel):
     """Vanilla Variational Autoencoder (VAE) model with MLP encoder and decoder.
     
-    Attributes:
-        attr1 (str): Description of `attr1`.
-        attr2 (:obj:`int`, optional): Description of `attr2`.
+    For conditional generation, an extra MLP is used for embedding conditions.
+    
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        latent_dim (int, optional): Latent variable dimension. Defaults to 128.
+        hidden_size_list (list, optional): Hidden size for encoder and decoder. Defaults to [64, 128, 256].
+        w_kl (float, optional): Loss weight of KL div. Defaults to 1e-4.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
     """
 
     ALLOW_CONDITION = [None, "predict", "impute", 'class']
@@ -31,17 +40,6 @@ class VanillaVAE(BaseModel):
         weight_decay: float = 1e-5,
         **kwargs,
     ):
-        """
-        Args:
-            seq_len (int): Target sequence length
-            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
-            condition (str, optional): Given conditions, allowing [None, 'predict', 'impute']. Defaults to None.
-            latent_dim (int, optional): Latent dimension for z. Defaults to 128.
-            hidden_size_list (list, optional): Hidden size for encoder and decoder. Defaults to [64, 128, 256].
-            w_kl (float, optional): Loss weight of KL div. Defaults to 1e-4.
-            lr (float, optional): Learning rate. Defaults to 1e-3.
-            weight_decay (float, optional): Weight decay. Defaults to 1e-5.
-        """
 
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
@@ -70,29 +68,22 @@ class VanillaVAE(BaseModel):
         self.fc_mu = MLP(latent_dim, [latent_dim])
         self.fc_logvar = MLP(latent_dim, [latent_dim])
 
-    def encode(self, x: torch.Tensor, c: torch.Tensor = None):
-        # x = x
+    def _encode(self, x: torch.Tensor, c: torch.Tensor = None):
         latents = self.encoder(x)
         if (c is not None) and (self.cond_net is not None):
-            # if self.condition == "impute":
-            #     c = x * (~c).int()
-            # c = c
             cond_lats = self.cond_net(c)
             latents = latents + cond_lats
         mu = self.fc_mu(latents)
         logvar = self.fc_logvar(latents)
         return latents, mu, logvar
 
-    def decode(self, z: torch.Tensor, c: torch.Tensor = None):
+    def _decode(self, z: torch.Tensor, c: torch.Tensor = None):
         if (c is not None) and (self.cond_net is not None):
-            # if self.condition == "impute":
-            #     c = kwargs['seq'] * (~c).int()
-            # c = c.to(z)
             cond_lats = self.cond_net(c)
             z = z + cond_lats
         return self.decoder(z)
 
-    def reparam(self, mu, logvar, random_sampling=True):
+    def _reparam(self, mu, logvar, random_sampling=True):
         if random_sampling is True:
             eps = torch.randn_like(logvar)
             std = torch.exp(0.5 * logvar)
@@ -108,16 +99,16 @@ class VanillaVAE(BaseModel):
         batch_size = x.shape[0]
 
         # encode
-        _, mu, logvar = self.encode(x, c)
+        _, mu, logvar = self._encode(x, c)
 
         # reparameterize
-        z = self.reparam(mu, logvar)
+        z = self._reparam(mu, logvar)
 
         # prior z distribution
-        z_prior, mu_prior, logvar_prior = self.sample_prior(n_sample=z.shape[0])
+        z_prior, mu_prior, logvar_prior = self._sample_prior(n_sample=z.shape[0])
 
         # decode
-        x_hat = self.decode(z, c)
+        x_hat = self._decode(z, c)
 
         assert x.shape == x_hat.shape
 
@@ -138,7 +129,7 @@ class VanillaVAE(BaseModel):
     def _sample_impl(self, n_sample, condition=None, **kwargs):
         if self.condition is None or self.condition == "class":
             z = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(self.device)
-            all_samples = self.decode(z, condition)
+            all_samples = self._decode(z, condition)
         else:
             all_samples = []
             condition = (
@@ -154,7 +145,7 @@ class VanillaVAE(BaseModel):
                 z = torch.randn(
                     (condition.shape[0], self.hparams_initial.latent_dim)
                 ).to(self.device)
-                x_hat = self.decode(z, condition)
+                x_hat = self._decode(z, condition)
                 all_samples.append(x_hat)
             all_samples = torch.stack(all_samples, dim=-1)
 
@@ -182,7 +173,7 @@ class VanillaVAE(BaseModel):
             weight_decay=self.hparams_initial.weight_decay,
         )
 
-    def sample_prior(self, n_sample):
+    def _sample_prior(self, n_sample):
         z_prior = torch.randn((n_sample, self.hparams_initial.latent_dim)).to(
             self.device
         )

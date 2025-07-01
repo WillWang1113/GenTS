@@ -1,3 +1,4 @@
+from typing import Dict
 import torch
 from torch import nn
 
@@ -7,19 +8,45 @@ from ._backbones import Discriminator, Generator, LSTMDiscriminator, LSTMGenerat
 
 
 class COSCIGAN(BaseModel):
+    """`COmmon Source CoordInated GAN (COSCI-GAN) <https://openreview.net/pdf?id=RP1CtZhEmR>`_
+
+    Adapted from the `official codes <https://github.com/aliseyfi75/COSCI-GAN>`_
+
+
+    Args:
+        BaseModel (_type_): _description_
+
+    """
+
     ALLOW_CONDITION = [None]
+
     def __init__(
         self,
-        seq_len,
-        seq_dim,
-        condition=None,
-        latent_dim=64,
-        DG_type="LSTM",
-        central_disc_type="MLP",
-        gamma=5.0,
-        lr={"G": 1e-3, "D": 1e-3, "CD": 1e-4},
+        seq_len: int,
+        seq_dim: int,
+        condition: str = None,
+        latent_dim: int = 64,
+        DG_type: str = "LSTM",
+        central_disc_type: str = "MLP",
+        gamma: float = 5.0,
+        lr: Dict[str, float] = {"G": 1e-3, "D": 1e-3, "CD": 1e-4},
+        weight_decay: float = 1e-5,
         **kwargs,
     ):
+        """_summary_
+
+        Args:
+            seq_len (int): Target sequence length.
+            seq_dim (int): Target sequence dimension.
+            condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+            latent_dim (int, optional): Latent variable dimension. Defaults to 64.
+            DG_type (str, optional): Network type of discriminator and generator. Choose from `['LSTM', 'MLP']`. Defaults to "LSTM".
+            central_disc_type (str, optional): Network type of central discriminator. Choose from `['LSTM', 'MLP']`. Defaults to "MLP".
+            gamma (float, optional): Loss coefficient of central discriminator. Defaults to 5.0.
+            lr (Dict[str, float], optional): Learning rate of different networks. G: generator, D: discriminator, CD: central discriminator. Defaults to {"G": 1e-3, "D": 1e-3, "CD": 1e-4}.
+            weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+            **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+        """
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         assert DG_type in ["MLP", "LSTM"]
         assert central_disc_type in ["MLP", "LSTM"]
@@ -40,7 +67,7 @@ class COSCIGAN(BaseModel):
             self.discriminators.append(dis_cls(seq_len, **kwargs))
         self.generators = nn.ModuleList(self.generators)
         self.discriminators = nn.ModuleList(self.discriminators)
-        
+
         if central_disc_type == "LSTM":
             cd_cls = LSTMDiscriminator
         else:
@@ -53,13 +80,19 @@ class COSCIGAN(BaseModel):
     def configure_optimizers(self):
         optims = [
             torch.optim.Adam(
-                self.central_disc.parameters(), lr=self.lr["CD"], betas=[0.5, 0.9]
+                self.central_disc.parameters(),
+                lr=self.lr["CD"],
+                betas=[0.5, 0.9],
+                weight_decay=self.hparams.weight_decay,
             )
         ]
         for i in range(self.seq_dim):
             optims.append(
                 torch.optim.Adam(
-                    self.generators[i].parameters(), lr=self.lr["G"], betas=[0.5, 0.9]
+                    self.generators[i].parameters(),
+                    lr=self.lr["G"],
+                    betas=[0.5, 0.9],
+                    weight_decay=self.hparams.weight_decay,
                 )
             )
             optims.append(
@@ -67,6 +100,7 @@ class COSCIGAN(BaseModel):
                     self.discriminators[i].parameters(),
                     lr=self.lr["D"],
                     betas=[0.5, 0.9],
+                    weight_decay=self.hparams.weight_decay,
                 )
             )
         return optims, []

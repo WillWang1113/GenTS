@@ -5,7 +5,27 @@ from ._backbones import ConvDecoder, ConvEncoder, TrendSeasonalDecoder
 
 
 class TimeVAE(VanillaVAE):
-    """TimeVAE"""
+    """`TimeVAE <https://arxiv.org/abs/2111.08095>`_ for time series generation.
+    
+    Adapted from the `official codes <https://github.com/abudesai/timeVAE>`_
+    
+    .. note::
+        The orignial codes are based on Tensorflow, we adapt the source codes into pytorch.
+    
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        latent_dim (int, optional): Latent variable dimension. Defaults to 128.
+        hidden_size_list (list, optional): Hidden size for encoder and decoder. Defaults to [64, 128, 256].
+        w_kl (float, optional): Loss weight of KL div. Defaults to 1e-4.
+        trend_poly (int, optional): integer for number of orders for trend component. e.g. setting trend_poly = 2 will include linear and quadratic term.
+        custom_seas (List[Tuple[int, int]], optional): list of tuples of (num_seasons, len_per_season). num_seasons: number of seasons per cycle. len_per_season: number of epochs (time-steps) per season.
+        use_residual_conn (bool, optional): boolean value indicating whether to use a residual connection for reconstruction in addition to trend, generic and custom seasonalities.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
     
     ALLOW_CONDITION = [None]
 
@@ -61,11 +81,11 @@ class TimeVAE(VanillaVAE):
         )
         self.trend_season_dec = TrendSeasonalDecoder(**self.hparams_initial)
 
-    def encode(self, x, c=None, **kwargs):
+    def _encode(self, x, c=None, **kwargs):
         latents = self.encoder(x)
         mu = self.fc_mu(latents)
         logvar = self.fc_logvar(latents)
         return latents, mu, logvar
 
-    def decode(self, z, c=None, **kwargs):
+    def _decode(self, z, c=None, **kwargs):
         return self.decoder(z) + self.trend_season_dec(z)

@@ -16,7 +16,7 @@ A minimal example of (unconditional) time series generation:
 import torch
 from src.model import VanillaDDPM
 from src.dataset import SineND
-from src.evaluation import qualitative_visual
+from src.evaluation import tsne_visual
 from lightning import Trainer
 
 # setup dataset and model
@@ -33,7 +33,7 @@ real_data = torch.cat([batch["seq"] for batch in dm.test_dataloader()])  # [N, 6
 gen_data = model.sample(n_sample=len(real_data))  # [N, 64, 2]
 
 # visualization with tsne
-qualitative_visual(real_data, gen_data, analysis="tsne", save_root="tsne.png")
+tsne_visual(real_data, gen_data, save_root="tsne.png")
 ```
 
 We also support for conditional time series generation, including forecasting, imputation, and class generation. Please refer to `tutorials/` for detailed examples.

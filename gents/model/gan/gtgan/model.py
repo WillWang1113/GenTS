@@ -1,4 +1,5 @@
 from argparse import Namespace
+from typing import Dict, Tuple
 from einops import repeat
 import torch
 import torch.nn as nn
@@ -15,54 +16,103 @@ from ._backbones import (
 
 
 class GTGAN(BaseModel):
-    # allow for irregular datasets
+    """`GT-GAN <https://proceedings.neurips.cc/paper_files/paper/2022/file/f03ce573aa8bce26f77b76f1cb9ee979-Paper-Conference.pdf>`_: General Purpose Time Series Synthesis with Generative Adversarial Networks
+
+    Adapted from the `official codes <https://github.com/Jinsung-Jeon/GT-GAN>`_
+
+    Args:
+        seq_len (int): Target sequence length.
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given conditions, should be one of `ALLOW_CONDITION`. Defaults to None.
+        hidden_size (int, optional): Hidden size of models. Defaults to 64.
+        num_layers_r (int, optional): Recovery network layers. Defaults to 2.
+        num_layers_d (int, optional): Discriminator network layers. Defaults to 2.
+        num_layers_mlp (int, optional): Embedder ODE MLP layers. Defaults to 3.
+        x_hidden (int, optional): Hidden size of data embedding layer in recovery and discriminator networks. Defaults to 48.
+        last_activation_r (str, optional): Last activation function in recovery network. Choose from `["identity", "softplus", "tanh","sigmoid"]`. Defaults to "identity".
+        last_activation_d (str, optional): Last activation function in discriminator network. Choose from `["identity", "softplus", "tanh","sigmoid"]`. Defaults to "sigmoid".
+        solver (str, optional): Solver in generator network. Choose from `['euler','Euler', 'RK2', 'RK4', 'RK23', 'Sym12Async', 'RK12','Dopri5','dopri5','rk4','sym12async','adalf', 'fixedstep_sym12async','fixedstep_adalf']` Defaults to "sym12async".
+        atol (float, optional): Absolute tolerance . Defaults to 1e-3.
+        rtol (float, optional): Relative tolerance . Defaults to 1e-3.
+        time_length (float, optional): Maximum ODE time (T) in generator. Defaults to 1.0.
+        train_T (bool, optional): Whether ODE time is trainable in generator (CNF). Defaults to True.
+        nonlinearity (str, optional): Nonlinearity in generator (CNF). Choose from `['tanh', 'relu', 'softplus', 'elu', 'swish', 'sigmoid', 'square', 'identity']`. Defaults to "softplus".
+        step_size (float, optional): ODE solver step size in generator (CNF). Defaults to 0.1.
+        first_step (float, optional): First step size for adaptive solvers in generator (CNF). Defaults to 0.16667.
+        divergence_fn (str, optional): Divergence function in generator (CNF). Choose from `['approximate', 'brute_force']` Defaults to "approximate".
+        residual (bool, optional): Residual connection in ODE function in generator (CNF). Defaults to False.
+        rademacher (bool, optional): Sample from Rademacher distribution or Gaussian. Defaults to True.
+        layer_type (str, optional): ODE layer type in generator (CNF). Choose from `['ignore', 'hyper', 'squash', 'concat', 'concat_v2', 'concatsquash', 'blend', 'concatcoord']` Defaults to "concat".
+        reconstruction (float, optional): Loss coefficient for reconstruction. || x - decode(encode(x)) ||. Defaults to 0.01.
+        kinetic_energy (float, optional): Loss coefficient for kinetic energy. int_t ||f||_2^2. Defaults to 0.5.
+        jacobian_norm2 (float, optional): Loss coefficient for jacobian normalization. int_t ||df/dx||_F^2. Defaults to 0.1.
+        directional_penalty (float, optional): Loss coefficient for directional penalty. int_t ||(df/dx)^T f||^2. Defaults to 0.01.
+        total_deriv (float, optional): Loss coefficient for total derivation. int_t ||df/dt||^2. Defaults to None.
+        activation (str, optional): Activation in CNF. Choose from `['exp', 'softplus', 'identity']`  Defaults to "exp".
+        num_iwae_samples (int, optional): Number of samples to train IWAE encoder. Defaults to 1.
+        num_blocks (int, optional): Number of stacked CNFs. Defaults to 1.
+        batch_norm (bool, optional): Batch normalization. Defaults to False.
+        bn_lag (float, optional): Batch normalization lag. Defaults to 0.0.
+        cnf_hidden_dims (Tuple[int], optional): CNF hidden size list. Defaults to (32, 64, 64, 32).
+        test_solver (str, optional): Generator ODE solver for inference. Defaults to None.
+        test_atol (float, optional): Generator atol of ODE solver for inference. Defaults to 0.1.
+        test_rtol (float, optional): Generator rtol of ODE solver for inference. Defaults to 0.1.
+        test_step_size (float, optional): Generator step size of ODE solver for inference. Defaults to None.
+        test_first_step (float, optional): Generator first step size of ODE solver for inference. Defaults to None.
+        gamma (float, optional): Loss weight coefficient for loss_g_ue. Defaults to 1.0.
+        log_time (int, optional): G update frequency. Defaults to 2.
+        lr (Dict[str, float], optional): Learning rate for different networks. ER: embedder and recovery, G: generator, D: discriminator. Defaults to {"ER": 1e-3, "G": 1e-3, "D": 1e-3}.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
+
     ALLOW_CONDITION = [None]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim,
-        hidden_size=64,
-        num_layers_r=2,
-        num_layers_d=2,
-        num_layers_mlp=3,
-        x_hidden=48,
-        last_activation_r="identity",
-        last_activation_d="sigmoid",
-        solver="sym12async",
-        atol=1e-3,
-        rtol=1e-3,
-        time_length=1.0,
-        train_T=True,
-        nonlinearity="softplus",
-        step_size=0.1,
-        first_step=0.16667,
-        divergence_fn="approximate",
-        residual=False,
-        rademacher=True,
-        layer_type="concat",
-        reconstruction=0.01,
-        kinetic_energy=0.5,
-        jacobian_norm2=0.1,
-        directional_penalty=0.01,
-        total_deriv=None,
-        activation="exp",
-        num_iwae_samples=1,
-        num_blocks=1,
-        batch_norm=False,
-        bn_lag=0.0,
-        cnf_hidden_dims=(32, 64, 64, 32),
-        test_solver=None,
-        test_atol=0.1,
-        test_rtol=0.1,
-        test_step_size=None,
-        test_first_step=None,
-        gamma=1.0,
-        log_time=2,
-        lr={"ER": 1e-3, "G": 1e-3, "D": 1e-3},
-        condition=None,
+        seq_len: int,
+        seq_dim: int,
+        condition: str = None,
+        hidden_size: int = 64,
+        num_layers_r: int = 2,
+        num_layers_d: int = 2,
+        num_layers_mlp: int = 3,
+        x_hidden: int = 48,
+        last_activation_r: str = "identity",
+        last_activation_d: str = "sigmoid",
+        solver: str = "sym12async",
+        atol: float = 1e-3,
+        rtol: float = 1e-3,
+        time_length: float = 1.0,
+        train_T: bool = True,
+        nonlinearity: str = "softplus",
+        step_size: float = 0.1,
+        first_step: float = 0.16667,
+        divergence_fn: str = "approximate",
+        residual: bool = False,
+        rademacher: bool = True,
+        layer_type: str = "concat",
+        reconstruction: float = 0.01,
+        kinetic_energy: float = 0.5,
+        jacobian_norm2: float = 0.1,
+        directional_penalty: float = 0.01,
+        total_deriv: float = None,
+        activation: str = "exp",
+        num_iwae_samples: int = 1,
+        num_blocks: int = 1,
+        batch_norm: bool = False,
+        bn_lag: float = 0.0,
+        cnf_hidden_dims: Tuple[int] = (32, 64, 64, 32),
+        test_solver: str = None,
+        test_atol: float = 0.1,
+        test_rtol: float = 0.1,
+        test_step_size: float = None,
+        test_first_step: float = None,
+        gamma: float = 1.0,
+        log_time: int = 2,
+        lr: Dict[str, float] = {"ER": 1e-3, "G": 1e-3, "D": 1e-3},
         **kwargs,
     ):
+
         super().__init__(seq_len, seq_dim, condition, **kwargs)
 
         self.save_hyperparameters()
@@ -164,7 +214,7 @@ class GTGAN(BaseModel):
         max_steps = self.trainer.max_epochs
         x = batch["seq"]
         x = x.masked_fill(~batch["data_mask"], float("nan"))
-        
+
         # cond = batch.get("c", None)
         # if (cond is not None) and (self.condition == "impute"):
         #     x = x.masked_fill(cond.bool(), float("nan"))

@@ -1,4 +1,5 @@
 from math import log2
+from typing import Dict
 
 import torch
 import torch.nn as nn
@@ -9,30 +10,53 @@ from ._backbones import ProDiscriminator, ProGenerator
 
 
 class PSAGAN(BaseModel):
+    """`PSA-GAN <https://openreview.net/pdf?id=Ix_mh42xq5w>`_: PROGRESSIVE SELF ATTENTION GANS FOR SYNTHETIC TIME SERIES
+
+    Adapted from the `official codes <https://github.com/mbohlkeschneider/psa-gan>`_
+
+    .. note::
+        The orignial codes are based on Gluonts, we adapt the source codes into our framework.
+
+    Args:
+        seq_len (int): Target sequence length. In PSAGAN, `seq_len` should be power of 2 and greater than 8, e.g. 16, 32,
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given conditions, should be one of `ALLOW_CONDITION`. Defaults to None.
+        time_feat_dim (int, optional): Time-related feature dimension, e.g. calendar features. 0 for no extra time features. Defaults to 0.
+        ks_conv (int, optional): Kernel size for conv layer. Defaults to 3.
+        ks_query (int, optional): Kernel size for attention query conv layer. Defaults to 1.
+        ks_key (int, optional): Kernel size for attention key conv layer. Defaults to 1.
+        ks_value (int, optional): Kernel size for attention query value layer. Defaults to 1.
+        hidden_size (int, optional): Hidden size for G and D. Defaults to 32.
+        depth_schedule (list, optional): At which epochs the model gets deeper. Starting with `seq_len=8`, `8*2^len(depth_schedule)` should be equal to `seq_len` Defaults to [5, 10, 15].
+        epoch_fade_in (int, optional): Each time the model gets deeper, how many epochs it takes to finish deepening, should be less the the gap between two depth schedule. Defaults to 2.
+        n_critic (int, optional): G/D update times. Defaults to 2.
+        lr (Dict[str, float], optional): Dict of learning rates for G and D. Defaults to {"G": 1e-4, "D": 1e-4}.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
+
     ALLOW_CONDITION = [None, "predict"]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim,
-        time_feat_dim=0,
+        seq_len: int,
+        seq_dim: int,
+        condition: str = None,
+        time_feat_dim: int = 0,
         hidden_size: int = 32,
-        condition=None,
+        ks_conv: int = 3,
+        ks_query: int = 1,
+        ks_key: int = 1,
+        ks_value: int = 1,
         depth_schedule: list = [5, 10, 15],
         epoch_fade_in: int = 2,
-        lr: dict = {"G": 1e-4, "D": 1e-4},
-        weight_decay: float = 1e-5,
         n_critic: int = 2,
-        # gamma: float = 1.0,
+        lr: Dict[str, float] = {"G": 1e-4, "D": 1e-4},
+        weight_decay: float = 1e-5,
         **kwargs,
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
-        if condition == "predict":
-            # context_len = kwargs.get("obs_len", None)
-            # assert context_len is not None
-            self.context_len = self.obs_len
-        else:
-            self.context_len = 0
+        self.context_len = self.obs_len if condition == "predict" else 0
 
         self.save_hyperparameters()
         self.automatic_optimization = False
@@ -42,10 +66,22 @@ class PSAGAN(BaseModel):
             time_feat_dim,
             hidden_size=hidden_size,
             context_length=self.context_len,
+            ks_conv=ks_conv,
+            ks_key=ks_key,
+            ks_query=ks_query,
+            ks_value=ks_value,
             **kwargs,
         )
         self.discriminator = ProDiscriminator(
-            seq_len, seq_dim, time_feat_dim, hidden_size=hidden_size, **kwargs
+            seq_len,
+            seq_dim,
+            time_feat_dim,
+            hidden_size=hidden_size,
+            ks_conv=ks_conv,
+            ks_key=ks_key,
+            ks_query=ks_query,
+            ks_value=ks_value,
+            **kwargs,
         )
         self.seq_len = seq_len
         self.seq_dim = seq_dim
@@ -107,6 +143,8 @@ class PSAGAN(BaseModel):
         return momment_loss
 
     def on_train_epoch_start(self):
+        """On each epoch start, check whether to increase model depth. If needed, then increase.
+        """
         self._increase_depth()
         self.residual = self._residual()
 

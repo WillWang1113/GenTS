@@ -44,3 +44,15 @@ source_suffix = {
     '.txt': 'markdown',
     '.md': 'markdown',
 }
+
+
+def skip_members(app, what, name, obj, skip, options):
+    # 只处理类中的成员
+    if what == "class":
+        # 排除特定的属性，比如以_开头的属性
+        if name in ['allow_zero_length_dataloader_with_multiple_devices', 'training', 'prepare_data_per_node']:
+            return True
+    return skip
+
+def setup(app):
+    app.connect('autodoc-skip-member', skip_members)

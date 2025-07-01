@@ -51,10 +51,11 @@ def _condition_shape_check(
 class BaseModel(ABC, LightningModule):
     """Base class for time series generative models in PyTorch Lightning.
 
-    Attributes:
-        condition (str): Time series generation condition, None for unconditional.
-        obs_len (int, optional): Only accessible if `condition='predict'`, obs_len is the look-back window length.
-        class_num (int, optional): Only accessible if `condition='class'`, class_num is the number of class labels.
+    Args:
+            seq_len (int): Target sequence length
+            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+            condition (str): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
+            **kwargs: Additional arguments for the model
     """
 
     ALLOW_CONDITION = ...
@@ -66,17 +67,6 @@ class BaseModel(ABC, LightningModule):
         condition: str,
         **kwargs,
     ):
-        """Base class for generative models in PyTorch Lightning
-
-        Args:
-            seq_len (int): Target sequence length
-            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
-            condition (str): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
-            **kwargs: Additional arguments for the model
-
-        Raises:
-            ValueError: Condition type not allowed for this model
-        """
         super().__init__()
 
         # check

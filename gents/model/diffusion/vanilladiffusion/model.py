@@ -11,7 +11,7 @@ from ._dit import DiT
 
 
 class VanillaDDPM(BaseModel):
-    """Vanilla DDPM with MLP backbone."""
+    """Vanilla DDPM with DiT backbone."""
 
     ALLOW_CONDITION = [None, "predict", "impute", 'class']
 

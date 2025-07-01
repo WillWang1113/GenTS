@@ -19,6 +19,31 @@ from ._vq import VectorQuantize, quantize
 
 
 class TimeVQVAE(BaseModel):
+    """`TimeVQVAE <https://arxiv.org/abs/2111.08095>`_ for time series generation.
+    
+    Adapted from the `official codes <https://github.com/ML4ITS/TimeVQVAE>`_
+    
+
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given conditions, should be one of `ALLOW_CONDITION`. Defaults to None.
+        resnet_init_dim (int, optional): Initial d_model of resnet. Defaults to 4.
+        hidden_size (int, optional): Hidden size. Defaults to 128.
+        n_fft (int, optional): Size of Fourier transform. Defaults to 4.
+        n_resnet_blocks (int, optional): Blocks of Resnet. Defaults to 2.
+        downsampled_width_l (int, optional): Low-frequency downsampled width. Defaults to 8.
+        downsampled_width_h (int, optional): High-frequency downsampled width. Defaults to 32.
+        codebook_size (int, optional): VQ codebook. Defaults to 1024.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        stage_split (float, optional): Training stage splite ratio, [0, 1]. Defaults to 0.5.
+        cfg_scale (float, optional): Classifier free guidance rate for conditional generation, [0, 1]. Defaults to 0.5.
+        prior_model_l_config (Dict[str, Any], optional): Prior model config for low-frequency. Defaults to dict( hidden_dim=128, n_layers=4, heads=2, ff_mult=1, use_rmsnorm=True, p_unconditional=0.2, model_dropout=0.3, emb_dropout=0.3, ).
+        prior_model_h_config (Dict[str, Any], optional): Prior model config for high-frequency. Defaults to dict( hidden_dim=32, n_layers=1, heads=1, ff_mult=1, use_rmsnorm=True, p_unconditional=0.2, model_dropout=0.3, emb_dropout=0.3, ).
+        choice_temperatures (Dict[str, Any], optional): Temperatures for randomness for low-freq and high-freq. Defaults to {"lf": 10, "hf": 0}.
+        dec_iter_step (Dict[str, int], optional): Decoding iteration steps for low-freq and high-freq. Defaults to {"lf": 10, "hf": 10}.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
     ALLOW_CONDITION = [None, "class"]
 
     def __init__(
@@ -60,26 +85,6 @@ class TimeVQVAE(BaseModel):
         dec_iter_step: Dict[str, int] = {"lf": 10, "hf": 10},
         **kwargs,
     ):
-        """
-        Args:
-            seq_len (int): Target sequence length
-            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
-            condition (str, optional): Given conditions, allowing [None, 'predict', 'impute']. Defaults to None.
-            resnet_init_dim (int, optional): Initial d_model of resnet. Defaults to 4.
-            hidden_size (int, optional): Hidden size. Defaults to 128.
-            n_fft (int, optional): Size of Fourier transform. Defaults to 4.
-            n_resnet_blocks (int, optional): Blocks of Resnet. Defaults to 2.
-            downsampled_width_l (int, optional): Low-frequency downsampled width. Defaults to 8.
-            downsampled_width_h (int, optional): High-frequency downsampled width. Defaults to 32.
-            codebook_size (int, optional): VQ codebook. Defaults to 1024.
-            lr (float, optional): Learning rate. Defaults to 1e-3.
-            stage_split (float, optional): Training stage splite ratio, [0, 1]. Defaults to 0.5.
-            cfg_scale (float, optional): Classifier free guidance rate for conditional generation, [0, 1]. Defaults to 0.5.
-            prior_model_l_config (Dict[str, Any], optional): Prior model config for low-frequency. Defaults to dict( hidden_dim=128, n_layers=4, heads=2, ff_mult=1, use_rmsnorm=True, p_unconditional=0.2, model_dropout=0.3, emb_dropout=0.3, ).
-            prior_model_h_config (Dict[str, Any], optional): Prior model config for high-frequency. Defaults to dict( hidden_dim=32, n_layers=1, heads=1, ff_mult=1, use_rmsnorm=True, p_unconditional=0.2, model_dropout=0.3, emb_dropout=0.3, ).
-            choice_temperatures (Dict[str, Any], optional): Temperatures for randomness. Defaults to {"lf": 10, "hf": 0}.
-            dec_iter_step (Dict[str, int],, optional): Decoding iteration steps. Defaults to {"lf": 10, "hf": 10}.
-        """
         super().__init__(seq_len, seq_dim, condition, **kwargs)
 
         self.save_hyperparameters()
@@ -175,7 +180,7 @@ class TimeVQVAE(BaseModel):
         )
 
         # transformers / prior models
-        self.gamma = self.gamma_func("cosine")
+        self.gamma = self._gamma_func("cosine")
         emb_dim = hidden_size
         self.transformer_l = BidirectionalTransformer(
             "lf",
@@ -197,7 +202,7 @@ class TimeVQVAE(BaseModel):
         )
         self.mask_token_ids = {"lf": codebook_size, "hf": codebook_size}
 
-    def gamma_func(self, mode="cosine"):
+    def _gamma_func(self, mode="cosine"):
         if mode == "linear":
             return lambda r: 1 - r
         elif mode == "cosine":
@@ -210,7 +215,7 @@ class TimeVQVAE(BaseModel):
             raise NotImplementedError
 
     @torch.no_grad()
-    def encode_to_z_q(self, x, encoder, vq_model, svq_temp: Union[float, None] = None):
+    def _encode_to_z_q(self, x, encoder, vq_model, svq_temp: Union[float, None] = None):
         """
         encode x to zq
 
@@ -246,7 +251,7 @@ class TimeVQVAE(BaseModel):
         s_M = mask * s + (~mask) * masked_indices  # (b n); `~` reverses bool-typed data
         return s_M.long(), mask
 
-    def masked_prediction(self, transformer, class_condition, *s_in):
+    def _masked_prediction(self, transformer, class_condition, *s_in):
         """
         masked prediction with classifier-free guidance
         """
@@ -267,7 +272,7 @@ class TimeVQVAE(BaseModel):
                 )
             return logits
 
-    def loss_stage2(self, batch, batch_idx):
+    def _loss_stage2(self, batch, batch_idx):
         """
         x: (B, C, L)
         y: (B, 1)
@@ -283,8 +288,8 @@ class TimeVQVAE(BaseModel):
         self.encoder_h.eval()
         self.vq_model_h.eval()
 
-        _, s_l = self.encode_to_z_q(x, self.encoder_l, self.vq_model_l)  # (b n)
-        _, s_h = self.encode_to_z_q(x, self.encoder_h, self.vq_model_h)  # (b m)
+        _, s_l = self._encode_to_z_q(x, self.encoder_l, self.vq_model_l)  # (b n)
+        _, s_h = self._encode_to_z_q(x, self.encoder_h, self.vq_model_h)  # (b m)
 
         # mask tokens
         s_l_M, mask_l = self._randomly_mask_tokens(
@@ -295,10 +300,10 @@ class TimeVQVAE(BaseModel):
         )  # (b n), (b n) where 0 for masking and 1 for un-masking
 
         # prediction
-        logits_l = self.masked_prediction(
+        logits_l = self._masked_prediction(
             self.transformer_l, y, s_l_M.detach()
         )  # (b n k)
-        logits_h = self.masked_prediction(
+        logits_h = self._masked_prediction(
             self.transformer_h, y, s_l.detach(), s_h_M.detach()
         )
 
@@ -314,7 +319,7 @@ class TimeVQVAE(BaseModel):
         mask_pred_loss = mask_pred_loss_l + mask_pred_loss_h
         return mask_pred_loss, (mask_pred_loss_l, mask_pred_loss_h)
 
-    def loss_stage1(self, batch, batch_idx, return_x_rec: bool = False):
+    def _loss_stage1(self, batch, batch_idx, return_x_rec: bool = False):
         """
         :param x: input time series (b c l)
         """
@@ -399,12 +404,20 @@ class TimeVQVAE(BaseModel):
         return [opt1, opt2], [scheduler1, scheduler2]
 
     def training_step(self, batch, batch_idx):
+        """Two-stage training for TimeVQVAE. 
+        
+        Stage 1: Learning Vector Quantization
+        
+        Stage 2: Prior Learning
+        
+        .. note::
+            Note that TimeVQVAE is limited by `max_steps` instead of `max_epochs`.
+        """
         opt1, opt2 = self.optimizers()
         sch1, sch2 = self.lr_schedulers()
         if self.global_step < int(self.total_steps * self.hparams_initial.stage_split):
-            # print(111111111111)
             self.toggle_optimizer(opt1)
-            recons_loss, vq_losses, perplexities = self.loss_stage1(batch, batch_idx)
+            recons_loss, vq_losses, perplexities = self._loss_stage1(batch, batch_idx)
             loss = (
                 (recons_loss["LF.time"] + recons_loss["HF.time"])
                 + vq_losses["LF"]["loss"]
@@ -435,12 +448,10 @@ class TimeVQVAE(BaseModel):
                 self.log(f"train/{k}", loss_hist[k])
 
             self.untoggle_optimizer(opt1)
-            # return loss_hist
         else:
-            # print(222222222222)
             self.toggle_optimizer(opt2)
 
-            mask_pred_loss, (mask_pred_loss_l, mask_pred_loss_h) = self.loss_stage2(
+            mask_pred_loss, (mask_pred_loss_l, mask_pred_loss_h) = self._loss_stage2(
                 batch,
                 batch_idx,
             )
@@ -466,7 +477,7 @@ class TimeVQVAE(BaseModel):
 
     def validation_step(self, batch, batch_idx):
         if self.global_step < int(self.total_steps * self.hparams_initial.stage_split):
-            recons_loss, vq_losses, perplexities = self.loss_stage1(batch, batch_idx)
+            recons_loss, vq_losses, perplexities = self._loss_stage1(batch, batch_idx)
             loss = (
                 (recons_loss["LF.time"] + recons_loss["HF.time"])
                 + vq_losses["LF"]["loss"]
@@ -492,7 +503,7 @@ class TimeVQVAE(BaseModel):
 
             # return loss_hist
         else:
-            mask_pred_loss, (mask_pred_loss_l, mask_pred_loss_h) = self.loss_stage2(
+            mask_pred_loss, (mask_pred_loss_l, mask_pred_loss_h) = self._loss_stage2(
                 batch,
                 batch_idx,
             )
@@ -508,16 +519,16 @@ class TimeVQVAE(BaseModel):
             for k in loss_hist.keys():
                 self.log(f"val/{k}", loss_hist[k])
 
-    def iterative_decoding(self, num=1, mode="cosine", class_index=None, device="cpu"):
+    def _iterative_decoding(self, num=1, mode="cosine", class_index=None, device="cpu"):
         """
         It performs the iterative decoding and samples token indices for LF and HF.
         :param num: number of samples
         :return: sampled token indices for LF and HF
         """
-        s_l = self.create_input_tokens_normal(
+        s_l = self._create_input_tokens_normal(
             num, self.num_tokens_l, self.mask_token_ids["lf"], device
         )  # (b n)
-        s_h = self.create_input_tokens_normal(
+        s_h = self._create_input_tokens_normal(
             num, self.num_tokens_h, self.mask_token_ids["hf"], device
         )  # (b n)
 
@@ -527,22 +538,22 @@ class TimeVQVAE(BaseModel):
         unknown_number_in_the_beginning_h = torch.sum(
             s_h == self.mask_token_ids["hf"], dim=-1
         )  # (b,)
-        gamma = self.gamma_func(mode)
+        gamma = self._gamma_func(mode)
         # class_condition = (
         #     repeat(torch.Tensor([class_index]).int().to(device), "i -> b i", b=num)
         #     if class_index is not None
         #     else None
         # )  # (b 1)
         class_condition = class_index
-        s_l = self.first_pass(
+        s_l = self._first_pass(
             s_l, unknown_number_in_the_beginning_l, class_condition, gamma, device
         )
-        s_h = self.second_pass(
+        s_h = self._second_pass(
             s_l, s_h, unknown_number_in_the_beginning_h, class_condition, gamma, device
         )
         return s_l, s_h
 
-    def create_input_tokens_normal(self, num, num_tokens, mask_token_ids, device):
+    def _create_input_tokens_normal(self, num, num_tokens, mask_token_ids, device):
         """
         returns masked tokens
         """
@@ -550,7 +561,7 @@ class TimeVQVAE(BaseModel):
         masked_tokens = mask_token_ids * blank_tokens
         return masked_tokens.to(torch.int64)
 
-    def mask_by_random_topk(self, mask_len, probs, temperature=1.0, device="cpu"):
+    def _mask_by_random_topk(self, mask_len, probs, temperature=1.0, device="cpu"):
         """
         mask_len: (b 1)
         probs: (b n); also for the confidence scores
@@ -581,7 +592,7 @@ class TimeVQVAE(BaseModel):
         masking = masking.bool()
         return masking
 
-    def first_pass(
+    def _first_pass(
         self,
         s_l: torch.Tensor,
         unknown_number_in_the_beginning_l,
@@ -590,7 +601,7 @@ class TimeVQVAE(BaseModel):
         device,
     ):
         for t in range(self.T["lf"]):
-            logits_l = self.masked_prediction(
+            logits_l = self._masked_prediction(
                 self.transformer_l, class_condition, s_l
             )  # (b n k)
 
@@ -626,7 +637,7 @@ class TimeVQVAE(BaseModel):
             )  # `mask_len` should be equal or larger than zero.
 
             # Adds noise for randomness
-            masking = self.mask_by_random_topk(
+            masking = self._mask_by_random_topk(
                 mask_len,
                 selected_probs,
                 temperature=self.choice_temperatures["lf"] * (1.0 - ratio),
@@ -644,7 +655,7 @@ class TimeVQVAE(BaseModel):
 
         return s_l
 
-    def second_pass(
+    def _second_pass(
         self,
         s_l: torch.Tensor,
         s_h: torch.Tensor,
@@ -654,7 +665,7 @@ class TimeVQVAE(BaseModel):
         device,
     ):
         for t in range(self.T["hf"]):
-            logits_h = self.masked_prediction(
+            logits_h = self._masked_prediction(
                 self.transformer_h, class_condition, s_l, s_h
             )  # (b m k)
 
@@ -690,7 +701,7 @@ class TimeVQVAE(BaseModel):
             )  # `mask_len` should be equal or larger than zero.
 
             # Adds noise for randomness
-            masking = self.mask_by_random_topk(
+            masking = self._mask_by_random_topk(
                 mask_len,
                 selected_probs,
                 temperature=self.choice_temperatures["hf"] * (1.0 - ratio),
@@ -708,7 +719,7 @@ class TimeVQVAE(BaseModel):
 
         return s_h
 
-    def decode_token_ind_to_timeseries(
+    def _decode_token_ind_to_timeseries(
         self, s: torch.Tensor, frequency: str, return_representations: bool = False
     ):
         """
@@ -754,7 +765,7 @@ class TimeVQVAE(BaseModel):
 
         x_new_l, x_new_h, x_new = [], [], []
         quantize_new_l, quantize_new_h = [], []
-        sample_callback = self.iterative_decoding
+        sample_callback = self._iterative_decoding
         for i in range(n_iters):
             b = batch_size
             if (i + 1 == n_iters) and is_residual_batch:
@@ -764,18 +775,18 @@ class TimeVQVAE(BaseModel):
             )
 
             if return_representations:
-                x_l, quantize_l = self.decode_token_ind_to_timeseries(
+                x_l, quantize_l = self._decode_token_ind_to_timeseries(
                     embed_ind_l, "lf", True
                 )
-                x_h, quantize_h = self.decode_token_ind_to_timeseries(
+                x_h, quantize_h = self._decode_token_ind_to_timeseries(
                     embed_ind_h, "hf", True
                 )
                 x_l, quantize_l, x_h, quantize_h = x_l, quantize_l, x_h, quantize_h
                 quantize_new_l.append(quantize_l)
                 quantize_new_h.append(quantize_h)
             else:
-                x_l = self.decode_token_ind_to_timeseries(embed_ind_l, "lf")
-                x_h = self.decode_token_ind_to_timeseries(embed_ind_h, "hf")
+                x_l = self._decode_token_ind_to_timeseries(embed_ind_l, "lf")
+                x_h = self._decode_token_ind_to_timeseries(embed_ind_h, "hf")
 
             x_new_l.append(x_l)
             x_new_h.append(x_h)

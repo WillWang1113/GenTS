@@ -7,21 +7,45 @@ from gents.common._modules import RNNLayer
 
 
 class TimeGAN(BaseModel):
+    """`Time-series Generative Adversarial Networks <https://proceedings.neurips.cc/paper_files/paper/2019/file/c9efe5f26cd17ba6216bbe2a7d26d490-Paper.pdf>`_ 
+
+    Adapted from the `official codes <https://github.com/jsyoon0823/TimeGAN>`_
+    
+    .. note::
+        The orignial codes are based on Tensorflow, we adapt the source codes into pytorch.
+
+    Args:
+        seq_len (int): Target sequence length.
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        latent_dim (int, optional): Latent variable dimension. Defaults to 128.
+        hidden_size (int, optional): Hidden size for embedder, recovery, generator, supervisor, and discriminator. Defaults to 128.
+        num_layers (int, optional): RNN layers. Defaults to 1.
+        rnn_type (str, optional): RNN types, choose from `["gru", "lstm", "rnn"]`. Defaults to "gru".
+        gamma (float, optional): Loss coefficient for momount loss in Stage 3. Defaults to 1.0.
+        eta (float, optional): Loss coefficient for momount loss in Stage 3. Defaults to 1.0.
+        n_critic (int, optional): G/D update times. Defaults to 2.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
+    
     ALLOW_CONDITION = [None]
+
     def __init__(
         self,
         seq_len: int,
         seq_dim: int,
+        condition: str = None,
         latent_dim: int = 128,
         hidden_size: int = 128,
         num_layers: int = 1,
+        rnn_type: str = "gru",
         gamma: float = 1.0,
         eta: float = 1.0,
         n_critic: int = 2,
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
-        rnn_type: str = "gru",
-        condition: str = None,
         **kwargs,
     ):
         super().__init__(seq_len, seq_dim, condition)
@@ -119,7 +143,6 @@ class TimeGAN(BaseModel):
         ):
             # 2. Training only with supervised loss
             self.toggle_optimizer(gs_optim)
-            # z = torch.randn_like(x)  # ! original code: uniform distrib.
             h = self.embedder(x)
             h_hat_supervise = self.supervisor(h)
             loss = F.mse_loss(h[:, 1:], h_hat_supervise[:, :-1])
@@ -131,7 +154,7 @@ class TimeGAN(BaseModel):
 
         else:
             # 3. Joint Training
-            z = torch.rand_like(x)
+            z = torch.rand_like(x) # ! original code: uniform distrib.
 
             for _ in range(self.hparams.n_critic):
                 # Generator loss
@@ -164,13 +187,7 @@ class TimeGAN(BaseModel):
                         - torch.sqrt(torch.var(x, [0]) + 1e-6)
                     )
                 )
-                # g_loss_v1 = torch.mean(torch.abs(x_hat.mean(dim=0) - x.mean(dim=0)))
-                # g_loss_v2 = torch.mean(
-                #     torch.abs(
-                #         torch.sqrt(torch.var(x_hat, dim=0) + 1e-6)
-                #         - torch.sqrt(torch.var(x, dim=0) + 1e-6)
-                #     )
-                # )
+
                 g_loss_v = g_loss_v1 + g_loss_v2
                 g_loss = (
                     g_loss_u
@@ -246,15 +263,11 @@ class TimeGAN(BaseModel):
         return samples
         # return self._norm(samples, mode="denorm")
 
-    def on_fit_start(self):
-        train_dl = self.trainer.datamodule.train_dataloader()
-        all_x = torch.concat([batch["seq"] for batch in train_dl])
-        self.min_x = all_x.min(dim=0).values.min(dim=0).values.to(self.device)
-        self.max_x = all_x.max(dim=0).values.max(dim=0).values.to(self.device)
+    # def on_fit_start(self):
+    #     """TimeGAN will normalize time series into [0, 1] before training. After training, we will inverse normalize.
+    #     """
+    #     train_dl = self.trainer.datamodule.train_dataloader()
+    #     all_x = torch.concat([batch["seq"] for batch in train_dl])
+    #     self.min_x = all_x.min(dim=0).values.min(dim=0).values.to(self.device)
+    #     self.max_x = all_x.max(dim=0).values.max(dim=0).values.to(self.device)
 
-    # def _norm(self, x, mode="norm"):
-    #     return (
-    #         (x - self.min_x) / (self.max_x - self.min_x)
-    #         if mode == "norm"
-    #         else (x * (self.max_x - self.min_x)) + (self.min_x)
-    #     )

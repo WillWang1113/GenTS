@@ -5,7 +5,22 @@ from ._backbones import Generator, Discriminator
 
 
 class VanillaGAN(BaseModel):
-    """Vanilla GAN model with MLP Generator and Discriminator ."""
+    """Vanilla Wasserstein GAN with MLP Generator and Discriminator.
+    
+    For conditional generation, an extra MLP is used for embedding conditions.
+    
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given conditions, should be one of `ALLOW_CONDITION`. Defaults to None.
+        latent_dim (int, optional): Latent dimension for z. Defaults to 128.
+        hidden_size_list (list, optional): Hidden size for encoder and decoder. Defaults to [64, 128, 256].
+        clip_value (float, optional): Gradient clip value. Defaults to 0.01.
+        n_critic (int, optional): D/G update times. Defaults to 5.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
 
     ALLOW_CONDITION = [None, "predict", "impute", "class"]
 
@@ -22,18 +37,7 @@ class VanillaGAN(BaseModel):
         weight_decay: float = 1e-5,
         **kwargs,
     ):
-        """
-        Args:
-            seq_len (int): Target sequence length
-            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
-            condition (str, optional): Given conditions, allowing [None, 'predict', 'impute']. Defaults to None.
-            latent_dim (int, optional): Latent dimension for z. Defaults to 128.
-            hidden_size_list (list, optional): Hidden size for encoder and decoder. Defaults to [64, 128, 256].
-            clip_value (float, optional): Gradient clip value. Defaults to 0.01.
-            n_critic (int, optional): D/G update times. Defaults to 5.
-            lr (float, optional): Learning rate. Defaults to 1e-3.
-            weight_decay (float, optional): Weight decay. Defaults to 1e-5.
-        """
+
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         self.automatic_optimization = False
