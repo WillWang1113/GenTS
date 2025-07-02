@@ -23,8 +23,26 @@ from ._backbones import (
 
 
 class FourierDiffusion(BaseModel):
+    """`Time Series Diffusion in the Frequency Domain <https://arxiv.org/pdf/2402.05933>`_
+
+    Adapted from the `official codes <https://github.com/JonathanCrabbe/FourierDiffusion>`_
+
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int, optional): Target sequence dimension. Only for univariate time series Defaults to 1.
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        noise_schedule (str, optional): Diffusion noise schedule. Choose from `['vpsde', 'vesde']` Defaults to "vpsde".
+        hidden_size (int, optional): Model size of transformer layers. Defaults to 72.
+        num_layers (int, optional): Transformer layers. Defaults to 10.
+        n_head (int, optional): Attention heads. Defaults to 4.
+        n_diff_steps (int, optional): Total diffusion steps. Defaults to 1000.
+        likelihood_weighting (bool, optional): If `True`, weight the mixture of score matching losses according to https://arxiv.org/abs/2101.09258; otherwise use the weighting recommended in the original paper. Defaults to False.
+        lr (float, optional): Learning rate. Defaults to 1e-4.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
+
     ALLOW_CONDITION = [None]
-    scale_noise: bool = True
+    _scale_noise: bool = True
 
     def __init__(
         self,
@@ -37,8 +55,8 @@ class FourierDiffusion(BaseModel):
         num_layers: int = 10,
         n_head: int = 4,
         n_diff_steps: int = 1000,
-        lr: float = 1e-4,
         likelihood_weighting: bool = False,
+        lr: float = 1e-4,
         **kwargs,
     ) -> None:
         super().__init__(seq_len, seq_dim, condition, **kwargs)
@@ -60,11 +78,11 @@ class FourierDiffusion(BaseModel):
 
         # Loss function
         self.likelihood_weighting = likelihood_weighting
-        self.training_loss_fn, self.validation_loss_fn = self.set_loss_fn()
+        self.training_loss_fn, self.validation_loss_fn = self._set_loss_fn()
 
         # Model components
         self.pos_encoder = PositionalEncoding(d_model=hidden_size, max_len=self.max_len)
-        self.time_encoder = self.set_time_encoder()
+        self.time_encoder = self._set_time_encoder()
         self.embedder = nn.Linear(in_features=seq_dim, out_features=hidden_size)
         self.unembedder = nn.Linear(in_features=hidden_size, out_features=seq_dim)
         transformer_layer = nn.TransformerEncoderLayer(
@@ -146,7 +164,7 @@ class FourierDiffusion(BaseModel):
         lr_scheduler_config = {"scheduler": lr_scheduler, "interval": "step"}
         return {"optimizer": optimizer, "lr_scheduler": lr_scheduler_config}
 
-    def set_loss_fn(
+    def _set_loss_fn(
         self,
     ) -> tuple[
         Callable[[nn.Module, DiffusableBatch], torch.Tensor],
@@ -173,7 +191,7 @@ class FourierDiffusion(BaseModel):
                 f"Scheduler {self.noise_scheduler} not implemented yet, cannot set loss function."
             )
 
-    def set_time_encoder(self) -> TimeEncoding | GaussianFourierProjection:
+    def _set_time_encoder(self) -> TimeEncoding | GaussianFourierProjection:
         if isinstance(self.noise_scheduler, SDE):
             return GaussianFourierProjection(d_model=self.d_model)
 
@@ -182,7 +200,7 @@ class FourierDiffusion(BaseModel):
                 f"Scheduler {self.noise_scheduler} not implemented yet, cannot set time encoder."
             )
 
-    def reverse_diffusion_step(self, batch: DiffusableBatch) -> torch.Tensor:
+    def _reverse_diffusion_step(self, batch: DiffusableBatch) -> torch.Tensor:
         # Get X and timesteps
         X = batch.X
         timesteps = batch.timesteps
@@ -239,7 +257,7 @@ class FourierDiffusion(BaseModel):
                 sample_batch_size,
             )
             # Sample from noise distribution
-            X = self.sample_prior(batch_size)
+            X = self._sample_prior(batch_size)
 
             # Perform the diffusion step by step
             for t in self.noise_scheduler.timesteps:
@@ -255,14 +273,14 @@ class FourierDiffusion(BaseModel):
                 batch = DiffusableBatch(X=X, y=condition, timesteps=timesteps)
                 # Return denoised X
 
-                X = self.reverse_diffusion_step(batch)
+                X = self._reverse_diffusion_step(batch)
 
             # Add the samples to the list
             all_samples.append(X.cpu())
         all_samples = torch.cat(all_samples, dim=0)
         return idft(all_samples)
 
-    def sample_prior(self, batch_size: int) -> torch.Tensor:
+    def _sample_prior(self, batch_size: int) -> torch.Tensor:
         # Sample from the prior distribution
         if isinstance(self.noise_scheduler, SDE):
             X = self.noise_scheduler.prior_sampling(
@@ -277,6 +295,20 @@ class FourierDiffusion(BaseModel):
 
 
 class FourierDiffusionMLP(FourierDiffusion):
+    """FourierDiffusion with MLP backbone
+
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int, optional): Target sequence dimension. Only for univariate time series Defaults to 1.
+        noise_schedule (str, optional): Diffusion noise schedule. Choose from `['vpsde', 'vesde']` Defaults to "vpsde".
+        hidden_size (int, optional): Model size of transformer layers. Defaults to 72.
+        num_layers (int, optional): Transformer layers. Defaults to 10.
+        n_diff_steps (int, optional): Total diffusion steps. Defaults to 1000.
+        likelihood_weighting (bool, optional): If `True`, weight the mixture of score matching losses according to https://arxiv.org/abs/2101.09258; otherwise use the weighting recommended in the original paper. Defaults to False.
+        lr (float, optional): Learning rate. Defaults to 1e-4.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+        
+    """
     def __init__(
         self,
         seq_len: int,
@@ -287,8 +319,8 @@ class FourierDiffusionMLP(FourierDiffusion):
         d_mlp: int = 1024,
         num_layers: int = 10,
         n_diff_steps: int = 1000,
-        lr: float = 1e-4,
         likelihood_weighting: bool = False,
+        lr: float = 1e-4,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -366,6 +398,19 @@ class FourierDiffusionMLP(FourierDiffusion):
 
 
 class FourierDiffusionLSTM(FourierDiffusion):
+    """FourierDiffusion with LSTM backbone
+
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int, optional): Target sequence dimension. Only for univariate time series Defaults to 1.
+        noise_schedule (str, optional): Diffusion noise schedule. Choose from `['vpsde', 'vesde']` Defaults to "vpsde".
+        hidden_size (int, optional): Model size of transformer layers. Defaults to 72.
+        num_layers (int, optional): Transformer layers. Defaults to 10.
+        n_diff_steps (int, optional): Total diffusion steps. Defaults to 1000.
+        likelihood_weighting (bool, optional): If `True`, weight the mixture of score matching losses according to https://arxiv.org/abs/2101.09258; otherwise use the weighting recommended in the original paper. Defaults to False.
+        lr (float, optional): Learning rate. Defaults to 1e-4.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
     def __init__(
         self,
         seq_len: int,
@@ -375,8 +420,8 @@ class FourierDiffusionLSTM(FourierDiffusion):
         hidden_size: int = 72,
         num_layers: int = 3,
         n_diff_steps: int = 1000,
-        lr: float = 1e-3,
         likelihood_weighting: bool = False,
+        lr: float = 1e-3,
         **kwargs,
     ) -> None:
         super().__init__(

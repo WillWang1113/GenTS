@@ -163,7 +163,7 @@ class DiffusionProcess():
     @torch.no_grad()
     def interpolate(self, x, mask, xT=None):
         if xT is None:
-            xT = torch.randn([x.shape[0], *self.shape]).to(device=self.device)
+            xT = torch.randn([x.shape[0], *self.shape]).to(device=x.device)
 
         return self.impute(x, xT, mask)
 
@@ -171,6 +171,6 @@ class DiffusionProcess():
     @torch.no_grad()
     def forecasting(self, x, pad, f_shape, xT=None):
         if xT is None:
-            xT = torch.randn([x.shape[0], *self.shape]).to(device=self.device)
+            xT = torch.randn([x.shape[0], *self.shape]).to(device=x.device)
 
         return self.forecast(x, xT, pad, f_shape)

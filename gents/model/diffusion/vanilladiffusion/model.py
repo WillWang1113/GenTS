@@ -1,27 +1,45 @@
-from math import e
 import torch
 import torch.nn.functional as F
 
 
 from gents.model.base import BaseModel
-from ._backbones import Denoiser, DenoiserTransformer
 from ._utils import linear_schedule, cosine_schedule
-from ._unet import Unet1D
 from ._dit import DiT
 
 
 class VanillaDDPM(BaseModel):
-    """Vanilla DDPM with DiT backbone."""
+    """Vanilla DDPM with DiT backbone.
+    
+    For conditional generation, an extra MLP is used for embedding conditions.
 
-    ALLOW_CONDITION = [None, "predict", "impute", 'class']
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given conditions, allowing [None, 'predict', 'impute']. Defaults to None.
+        d_model (int, optional): DiT model size. Defaults to 128.
+        n_layers (int, optional): DiT depth. Defaults to 4.
+        num_heads (int, optional): Attention heads in DiT. Defaults to 8.
+        mlp_ratio (float, optional): Hidden size ratio of `d_model` in DiT block, i.e. `hidden_size = d_model * mlp_ratio`. Defaults to 4.0.
+        patch_size (int, optional): Patchify length of time series, should be factors of `seq_len`, i.e. `seq_len % patch_len = 0`. Defaults to 16.
+        noise_schedule (str, optional): Noise schedule of DDPM, ['cosine', 'linear']. Defaults to "cosine".
+        n_diff_steps (int, optional): Total diffusion steps. Defaults to 1000.
+        pred_x0 (bool, optional): Predict x_0 or noise. Defaults to True.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
+
+    ALLOW_CONDITION = [None, "predict", "impute", "class"]
 
     def __init__(
         self,
         seq_len: int,
         seq_dim: int,
         condition: str = None,
-        latent_dim: int = 128,
+        d_model: int = 128,
         n_layers: int = 4,
+        num_heads: int = 8,
+        mlp_ratio: float = 4.0,
         patch_size: int = 16,
         noise_schedule: str = "cosine",
         n_diff_steps: int = 1000,
@@ -31,47 +49,55 @@ class VanillaDDPM(BaseModel):
         **kwargs,
     ) -> None:
         """
+
+
         Args:
             seq_len (int): Target sequence length
             seq_dim (int): Target sequence dimension, for univariate time series, set as 1
             condition (str, optional): Given conditions, allowing [None, 'predict', 'impute']. Defaults to None.
-            latent_dim (int, optional): Latent dim. Defaults to 128.
-            hidden_size_list (list, optional): Hidden size for Denoiser MLP. Defaults to [64, 128, 256].
+            d_model (int, optional): DiT model size. Defaults to 128.
+            n_layers (int, optional): DiT depth. Defaults to 4.
+            num_heads (int, optional): Attention heads in DiT. Defaults to 8.
+            mlp_ratio (float, optional): Hidden size ratio of `d_model` in DiT block, i.e. `hidden_size = d_model * mlp_ratio`. Defaults to 4.0.
+            patch_size (int, optional): Patchify length of time series, should be factors of `seq_len`, i.e. `seq_len % patch_len = 0`. Defaults to 16.
             noise_schedule (str, optional): Noise schedule of DDPM, ['cosine', 'linear']. Defaults to "cosine".
             n_diff_steps (int, optional): Total diffusion steps. Defaults to 1000.
             pred_x0 (bool, optional): Predict x_0 or noise. Defaults to True.
             lr (float, optional): Learning rate. Defaults to 1e-3.
             weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+            **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+
         """
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         if self.condition == "predict":
             cond_seq_len = self.obs_len
             cond_seq_chnl = seq_dim
-            cond_n_class= None
+            cond_n_class = None
         elif self.condition == "impute":
             cond_seq_len = seq_len
             cond_seq_chnl = seq_dim
-            cond_n_class= None
-        elif self.condition == 'class':
+            cond_n_class = None
+        elif self.condition == "class":
             cond_seq_len = None
             cond_seq_chnl = None
-            cond_n_class= self.class_num
+            cond_n_class = self.class_num
         else:
             cond_seq_len = None
             cond_seq_chnl = None
             cond_n_class = None
-            
+
         self.backbone = DiT(
             seq_channels=seq_dim,
             seq_length=seq_len,
             cond_seq_len=cond_seq_len,
             cond_seq_chnl=cond_seq_chnl,
             cond_n_class=cond_n_class,
-            d_model=latent_dim,
+            d_model=d_model,
             patch_size=patch_size,
             n_layers=n_layers,
-            
+            num_heads=num_heads,
+            mlp_ratio=mlp_ratio,
         )
         # self.backbone = Denoiser(**self.hparams)
         # self.backbone = DenoiserTransformer(seq_len, seq_dim, latent_dim, condition=condition)
@@ -179,7 +205,7 @@ class VanillaDDPM(BaseModel):
             x = torch.randn(
                 (n_sample, self.hparams_initial.seq_len, self.hparams_initial.seq_dim)
             ).to(self.device)
-            all_samples = self.sample_loop(x)
+            all_samples = self._sample_loop(x)
         else:
             # if self.condition == "impute":
             # condition = kwargs["seq"] * (~condition).int()
@@ -198,7 +224,7 @@ class VanillaDDPM(BaseModel):
                     ),
                     device=self.device,
                 )
-                x = self.sample_loop(x, condition)
+                x = self._sample_loop(x, condition)
                 all_samples.append(x)
             all_samples = torch.stack(all_samples, dim=-1)
 
@@ -228,7 +254,7 @@ class VanillaDDPM(BaseModel):
 
         return loss
 
-    def sample_loop(self, x, condition=None):
+    def _sample_loop(self, x, condition=None):
         for t in reversed(range(0, self.n_diff_steps)):
             z = torch.randn_like(x)
             t_tensor = torch.tensor(t).repeat(x.shape[0]).type_as(x)

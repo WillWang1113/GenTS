@@ -10,7 +10,7 @@ from .diffusion import (
     ImagenTime,FIDE
 )
 from .vae import VanillaVAE, TimeVAE, TimeVQVAE, KoVAE
-from .gan import TimeGAN, VanillaGAN, GTGAN, COSCIGAN, AST, PSAGAN, RCGAN
+from .gan import TimeGAN, VanillaGAN, GTGAN, COSCIGAN, PSAGAN, RCGAN
 from .flow import VanillaMAF, FourierFlow
 from .diffeq import LatentODE, LatentSDE, SDEGAN, LS4
 
@@ -25,7 +25,7 @@ __all__ = [
     "PSAGAN",
     "COSCIGAN",
     "GTGAN",
-    "AST",
+    # "AST",
     "VanillaDDPM",
     "FourierDiffusion",
     "FourierDiffusionLSTM",

@@ -1,5 +1,5 @@
 from argparse import Namespace
-from typing import Dict
+from typing import Dict, List
 
 import torch
 
@@ -10,39 +10,73 @@ from ._utils import p_sample_loop, q_sample
 
 
 class TMDM(BaseModel):
+    """Transformer-Modulated Diffusion Models (`TMDM <https://openreview.net/pdf?id=qae04YACHs>`_) for Probabilistic Multivariate Time Series Forecasting
+
+    Adapted from the `official codes <https://github.com/LiYuxin321/TMDM>`_
+    
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to "predict".
+        emb_add_pos (bool, optional): Whether use position embedding of time series. Defaults to True.
+        emb_add_temporal (bool, optional): Whether use time features of time series. Defaults to False.
+        freq (str, optional): Time series frequency. Only effective when `emb_add_temporal=True`. Defaults to None.
+        emb_temporal_type (str, optional): Time features embedding type. Choose from [None, 'timeF', 'fixed']. Only effective when `emb_add_temporal=True`.  Defaults to None.
+        k_cond (float, optional): Weight coefficient of condition loss. Defaults to 1.0.
+        k_z (float, optional): Weight coefficient of KL loss. Defaults to 1e-2.
+        d_model (int, optional): Model size. Defaults to 512.
+        n_heads (int, optional): Attention heads. Defaults to 8.
+        e_layers (int, optional): Encoder layers. Defaults to 2.
+        d_layers (int, optional): Decoder layers. Defaults to 1.
+        d_ff (int, optional): Feedforward network size. Defaults to 2048.
+        factor (float, optional): Factor in attention. Seems to be useless. Defaults to 3.
+        dropout (float, optional): Dropout rate. Defaults to 0.05.
+        activation (str, optional): Activation in transformer. Defaults to "gelu".
+        p_hidden_dims (List[int], optional): Project hidden sizes in NSformer. Defaults to [64, 64].
+        p_hidden_layers (int, optional): Project hidden layers in NSformer. Defaults to 2.
+        CART_input_x_embed_dim (int, optional): Denoiser model size. Defaults to 32.
+        n_diff_steps (int, optional): Total diffusion steps. Defaults to 100.
+        beta_schedule (str, optional): Diffusion noise schedule. Choose from `['linear', 'const', 'quad', 'jsd', 'sigmoid', 'cosine', 'cosine_reverse', 'cosine_anneal']`. Defaults to "linear".
+        beta_start (float, optional): First step noise schedule. Defaults to 1e-4.
+        beta_end (float, optional): Last step noise schedule. Defaults to 2e-2.
+        cat_x (bool, optional): Whether to concat look back window in the Denoisor when `cat_y_pred=False`. Defaults to True.
+        cat_y_pred (bool, optional): Whether to concat NSformer prediction in the Denoisor. Defaults to True.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 0.0.
+    """
+
     ALLOW_CONDITION = ["predict"]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim,
-        emb_add_pos=True,
-        emb_add_temporal=False,
-        freq=None,
-        emb_temporal_type=None,
-        k_cond=1.0,
-        k_z=1e-2,
-        d_z=8,
-        d_model=512,
-        n_heads=8,
-        e_layers=2,
-        d_layers=1,
-        d_ff=2048,
-        factor=3,
-        dropout=0.05,
-        activation="gelu",
-        p_hidden_dims=[64, 64],
-        p_hidden_layers=2,
-        CART_input_x_embed_dim=32,
-        n_diff_steps=100,
-        beta_schedule="linear",
-        beta_start=1e-4,
-        beta_end=2e-2,
-        cat_x=True,
-        cat_y_pred=True,
-        lr=1e-3,
-        weight_decay=0.0,
-        condition="predict",
+        seq_len: int,
+        seq_dim: int,
+        condition: str = "predict",
+        emb_add_pos: bool = True,
+        emb_add_temporal: bool = False,
+        freq: str = None,
+        emb_temporal_type: str = None,
+        k_cond: float = 1.0,
+        k_z: float = 1e-2,
+        d_model: int = 512,
+        n_heads: int = 8,
+        e_layers: int = 2,
+        d_layers: int = 1,
+        d_ff: int = 2048,
+        factor: float = 3,
+        dropout: float = 0.05,
+        activation: str = "gelu",
+        p_hidden_dims: List[int] = [64, 64],
+        p_hidden_layers: int = 2,
+        CART_input_x_embed_dim: int = 32,
+        n_diff_steps: int = 100,
+        beta_schedule: str = "linear",
+        beta_start: float = 1e-4,
+        beta_end: float = 2e-2,
+        cat_x: bool = True,
+        cat_y_pred: bool = True,
+        lr: float = 1e-3,
+        weight_decay: float = 0.0,
         **kwargs,
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
@@ -107,7 +141,6 @@ class TMDM(BaseModel):
         # decoder input
         dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len :, :])
         dec_inp = torch.cat([batch_y[:, : self.args.label_len, :], dec_inp], dim=1)
-
         _, y_0_hat_batch, _, z_sample = self.cond_pred_model(
             batch_x, batch_x_mark, dec_inp, batch_y_mark
         )

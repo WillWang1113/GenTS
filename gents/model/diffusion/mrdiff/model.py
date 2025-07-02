@@ -1,4 +1,5 @@
 from argparse import Namespace
+from typing import List
 
 import numpy as np
 import torch
@@ -17,40 +18,80 @@ from ._backbones import (
 
 
 class MrDiff(BaseModel):
+    """`MrDiff <https://openreview.net/pdf?id=mmjnr0G8ZY>`_: Multi-resolution Diffusion Models for Time Series Forecasting
+    
+    Adapted from the official codes that provided by Lifeng Shen (lshenae@connect.ust.hk)
+
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int, optional): Target sequence dimension. Only for univariate time series Defaults to 1.
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to 'predict'.
+        n_diff_steps (int, optional): Total diffusion steps. Defaults to 100.
+        smoothed_factors (List[int], optional): Series decomposition kernel size list. Defaults to [5, 25, 51].
+        affine (bool, optional): Whether to allow RevIN affine. Only effective when `use_window_normalization=True`. Defaults to False.
+        subtract_last (bool, optional): Whether use last observed time step value to normalize window. Only effective when `use_window_normalization=True`. Defaults to True.
+        use_window_normalization (bool, optional): Whether to use RevIN for window normalization. Defaults to True.
+        use_future_mixup (bool, optional): Whether to use futrue mixup. Defaults to True.
+        use_ar_init (bool, optional): Whether to concat with auto-regressive input. Defaults to False.
+        use_residual (bool, optional): Whether to use residual connection in the output of Denoiser. Defaults to True.
+        type_sampler (str, optional): Backward sampler. Choose from `['dpm', 'none']` Defaults to "dpm".
+        individual (bool, optional): If `True`, build individual network for each time series variate. Defaults to True.
+        ddpm_inp_embed (int, optional): Input embedding dimension. Defaults to 64.
+        ddpm_layers_inp (int, optional): Number of input layers. Defaults to 10.
+        ddpm_dim_diff_steps (int, optional): Embedding dimension for diffusion steps. Defaults to 256.
+        ddpm_channels_conv (int, optional): Conv layer output channels. Defaults to 128.
+        ddpm_channels_fusion_I (int, optional): Conv layer output channels after concating diffusion step embedding and noisy data embedding. Defaults to 256.
+        ddpm_layers_I (int, optional): Number of conv layers for fusing diffusion step embedding and noisy data embedding. Defaults to 5.
+        ddpm_layers_II (int, optional): Number of conv layers for fusing all information and output. Defaults to 10.
+        dec_channel_nums (int, optional): Conv layer output channels for fusing all information and output. Defaults to 256.
+        cond_network_type (str, optional): Conditiona network type for embedding lookback window and output prediction. Choose from `['Linear', 'CNN']`. Defaults to 'Linear'.
+        cond_ddpm_num_layers (int, optional): Number of cov layers for condition network. Only effective when `cond_network_type='CNN'`. Defaults to 5.
+        cond_ddpm_channels_conv (int, optional): Conv layer output channels of condition network. Only effective when `cond_network_type='CNN'`. Defaults to 256.
+        our_ddpm_clip (int, optional): Clip the denoised output into `[-our_ddpm_clip, our_ddpm_clip]`. Defaults to 100.
+        parameterization (str, optional): Denoising training target. Choose from `['noise', 'x_start']`. If `x_start`, predict clean time series. If `noise`, predict noise.  Defaults to "x_start".
+        beta_dist_alpha (float, optional): For future mixup noise, Beta distribution parameter. If `-1`, use Gaussian distribution. Defaults to -1.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 0.00001.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
+
     ALLOW_CONDITION = ["predict"]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim=1,
-        n_diff_steps=100,
-        smoothed_factors=[5, 25, 51],
-        affine=False,
-        subtract_last=True,
-        use_window_normalization=True,
-        use_future_mixup=True,
-        use_ar_init=False,
-        use_residual=True,
-        type_sampler="dpm",
-        lr=1e-3,
-        weight_decay=0.00001,
-        individual=True,
-        ddpm_inp_embed=64,
-        ddpm_layers_inp=10,
-        ddpm_dim_diff_steps=256,
-        ddpm_channels_conv=128,
-        ddpm_channels_fusion_I=256,
-        ddpm_layers_I=5,
-        ddpm_layers_II=10,
-        dec_channel_nums=256,
-        cond_ddpm_num_layers=5,
-        cond_ddpm_channels_conv=256,
-        our_ddpm_clip=100,
-        parameterization="x_start",
-        beta_dist_alpha=-1,
-        condition="predict",
+        seq_len: int,
+        seq_dim: int = 1,
+        condition: str = "predict",
+        n_diff_steps: int = 100,
+        smoothed_factors: List[int] = [5, 25, 51],
+        affine: bool = False,
+        subtract_last: bool = True,
+        use_window_normalization: bool = True,
+        use_future_mixup: bool = True,
+        use_ar_init: bool = False,
+        use_residual: bool = True,
+        type_sampler: str = "dpm",
+        individual: bool = True,
+        ddpm_inp_embed: int = 64,
+        ddpm_layers_inp: int = 10,
+        ddpm_dim_diff_steps: int = 256,
+        ddpm_channels_conv: int = 128,
+        ddpm_channels_fusion_I: int = 256,
+        ddpm_layers_I: int = 5,
+        ddpm_layers_II: int = 10,
+        dec_channel_nums: int = 256,
+        cond_network_type: str = "Linear",
+        cond_ddpm_num_layers: int = 5,
+        cond_ddpm_channels_conv: int = 256,
+        our_ddpm_clip: int = 100,
+        parameterization: str = "x_start",
+        beta_dist_alpha: float = -1,
+        lr: float = 1e-3,
+        weight_decay: float = 0.00001,
         **kwargs,
     ):
+
+
         super(MrDiff, self).__init__(seq_len, seq_dim, condition, **kwargs)
         self.condition = "predict"
         self.save_hyperparameters()
@@ -62,7 +103,7 @@ class MrDiff(BaseModel):
         args.num_vars = seq_dim
         args.diff_steps = n_diff_steps
         args.features = "S" if seq_dim == 1 else "M"
-        args.ablation_study_F_type = "Linear"
+        args.ablation_study_F_type = cond_network_type
         args.device = self.device
         self.args = args
         # self.device = args.device

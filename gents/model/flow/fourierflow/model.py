@@ -27,23 +27,48 @@ if not sys.warnoptions:
 
 
 class FourierFlow(BaseModel):
-    """ Only on CPU and seq_dim=1"""
+    """Generative Time-series Modeling with `Fourier Flow <https://openreview.net/pdf?id=PpshD0AXfA>`_ .
+
+    Adapted from the `official codes <https://github.com/ahmedmalaa/Fourier-flows>`_
+
+    .. note::
+        Only support for CPU training and univariate time series
+    
+    .. note::
+        For odd `seq_len`, `FourierFlow` will manually repeat the first time step to make it even, 
+        since it only handles the even input time series.
+
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int, optional): Target sequence dimension. Only for univariate time series Defaults to 1.
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        d_model (int, optional): Model size. Defaults to 64.
+        n_flows (int, optional): The number of flow blocks. Defaults to 10.
+        FFT (bool, optional): Whether to use FFT embedding. Defaults to True.
+        flip (bool, optional): Whether to flip latents during flows. Defaults to True.
+        normalize (bool, optional): Whether to z-score normalize. Defaults to False.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-6.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
+
     ALLOW_CONDITION = [None]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim=1,
-        d_model=64,
-        n_flows=10,
-        condition=None,
-        FFT=True,
-        flip=True,
-        normalize=False,
-        lr=1e-3,
-        weight_decay=1e-6,
+        seq_len: int,
+        seq_dim: int = 1,
+        condition: str = None,
+        d_model: int = 64,
+        n_flows: int = 10,
+        FFT: bool = True,
+        flip: bool = True,
+        normalize: bool = False,
+        lr: float = 1e-3,
+        weight_decay: float = 1e-6,
         **kwargs,
     ):
+
         super().__init__(seq_len, seq_dim, condition)
         self.save_hyperparameters()
         assert seq_dim == 1, "Only support univariate time series"
@@ -91,7 +116,7 @@ class FourierFlow(BaseModel):
 
         return x, log_pz, sum(log_jacobs)
 
-    def inverse(self, z):
+    def _inverse(self, z):
         for bijector, f in zip(reversed(self.bijectors), reversed(self.flips)):
             z = bijector.inverse(z, flip=f)
 
@@ -148,7 +173,7 @@ class FourierFlow(BaseModel):
         p_Z = MultivariateNormal(mu, cov)
         z = p_Z.rsample(sample_shape=(n_sample,))
 
-        X_sample = self.inverse(z)
+        X_sample = self._inverse(z)
         if self.seq_len % 2 == 0:
             # If the sequence length is odd, we need to remove the first time step
             # to make it compatible with the Fourier Transform

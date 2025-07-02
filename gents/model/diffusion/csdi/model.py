@@ -5,26 +5,51 @@ from ._backbones import CSDI_Forecasting, CSDI_Physio
 
 
 class CSDI(BaseModel):
+    """`CSDI <https://arxiv.org/pdf/2107.03502>`_: Conditional Score-based Diffusion Models for Probabilistic Time Series Imputation
+
+    Adapted from the `official codes <https://github.com/ermongroup/CSDI>`_
+
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to 'impute'.
+        n_diff_steps (int, optional): Total diffusion steps. Defaults to 50.
+        n_layers (int, optional): Residual block layers. Defaults to 4.
+        d_model (int, optional): Model size. Defaults to 64.
+        nheads (int, optional): Attention heads. Defaults to 8.
+        diffusion_embedding_dim (int, optional): Embedding dim of diffusion steps. Defaults to 128.
+        schedule (str, optional): Diffusion noise schedule. Choose from `['quad', 'linear']` Defaults to "quad".
+        beta_start (float, optional): First step noise schedule. Defaults to 0.0001.
+        beta_end (float, optional): Last step noise schedule. Defaults to 0.5.
+        timeemb (int, optional): Embedding dim for time steps of time series. Defaults to 128.
+        featureemb (int, optional): Embedding dim for sequence dimension of time series. Defaults to 16.
+        target_strategy (str, optional): Missing data strategy used for simulating training. Choose from `['random', 'mix']` Defaults to "random".
+        num_sample_features (int, optional): The number of time series dimensions randomly sampled for training. If greater than `seq_dim`, then all channels are used. Defaults to 64.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-6.
+    """
+
     ALLOW_CONDITION = ["predict", "impute"]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim,
-        condition="impute",
-        n_diff_steps=50,
-        n_layers=4,
-        d_model=64,
-        nheads=8,
-        diffusion_embedding_dim=128,
-        schedule="quad",
-        beta_start=0.0001,
-        beta_end=0.5,
-        timeemb=128,
-        featureemb=16,
-        target_strategy="random",
-        lr=1e-3,
-        weight_decay=1e-6,
+        seq_len: int,
+        seq_dim: int,
+        condition: str = "impute",
+        n_diff_steps: int = 50,
+        n_layers: int = 4,
+        d_model: int = 64,
+        nheads: int = 8,
+        diffusion_embedding_dim: int = 128,
+        schedule: str = "quad",
+        beta_start: float = 0.0001,
+        beta_end: float = 0.5,
+        timeemb: int = 128,
+        featureemb: int = 16,
+        target_strategy: str = "random",
+        num_sample_features: int = 64,
+        lr: float = 1e-3,
+        weight_decay: float = 1e-6,
         **kwargs,
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
@@ -37,7 +62,7 @@ class CSDI(BaseModel):
                 timeemb=timeemb,
                 featureemb=featureemb,
                 target_strategy=target_strategy,
-                num_sample_features=64,
+                num_sample_features=num_sample_features,
             ),
             diffusion=dict(
                 layers=n_layers,
@@ -86,8 +111,8 @@ class CSDI(BaseModel):
                 * 1.0,
             )
         else:
-            observed_mask = batch['data_mask']
-            
+            observed_mask = batch["data_mask"]
+
             # observed_mask = ~torch.isnan(total_seq)
             target_mask = torch.isnan(batch["c"])
             target_mask = ~target_mask
@@ -128,7 +153,9 @@ class CSDI(BaseModel):
             observed_data = torch.concat(
                 [
                     condition,
-                    torch.zeros((condition.shape[0], self.seq_len, self.seq_dim)).to(self.device),
+                    torch.zeros((condition.shape[0], self.seq_len, self.seq_dim)).to(
+                        self.device
+                    ),
                 ],
                 dim=1,
             )

@@ -22,7 +22,7 @@ dm = Spiral2D(
 )
 model = VanillaDDPM(
     patch_size=8,
-    latent_dim=128,
+    d_model=128,
     seq_len=dm.seq_len,
     seq_dim=dm.seq_dim, class_num=2, condition='class', pred_x0=False
 )

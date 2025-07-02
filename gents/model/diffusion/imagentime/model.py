@@ -1,4 +1,5 @@
 from argparse import Namespace
+from typing import List
 import torch
 from contextlib import contextmanager
 
@@ -9,47 +10,69 @@ from ._sampler import DiffusionProcess
 
 
 class ImagenTime(BaseModel):
+    """Utilizing Image Transforms and Diffusion Models for Generative Modeling of Short and Long Time Series (`ImagenTime <https://openreview.net/forum?id=2NfBBpbN9x&noteId=uYWwrwEW6Y>`_)
+    
+    Adapted from the `official codes <https://github.com/azencot-group/ImagenTime>`_
+    
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int, optional): Target sequence dimension. Only for univariate time series Defaults to 1.
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        missing_rate (float, optional): Missing rate for simulation. Only effective when `condition='impute'` Defaults to 0.
+        n_diff_steps (int, optional): Total diffusion steps. Defaults to 18.
+        d_model (int, optional): Model size. Defaults to 128.
+        use_stft (bool, optional): Whether to use short-term Fourier transform for embedding time series. If `False`, use delay embedding. Defaults to False.
+        delay (int, optional): Stride when using delay embedding. Defaults to 3.
+        embedding (int, optional): Window size when use delay embedding. Defaults to 8.
+        n_fft (int, optional): Size of FFT, creates n_fft // 2 + 1 bins. Defaults to 101.
+        hop_length (int, optional): Length of hop between STFT windows. Defaults to 25.
+        ch_mult (List[int], optional): Per-resolution multipliers for the number of channels in UNet. Defaults to [1, 2, 2, 2].
+        attn_resolution (List[int], optional): List of resolutions with self-attention in UNet. Defaults to [8, 4, 2].
+        beta1 (float, optional): First step noise schedule. Defaults to 1e-5.
+        betaT (float, optional): Last step noise schedule. Defaults to 1e-2.
+        ema (bool, optional): Whether to use Exponential Moving Average (EMA) for model weights. Defaults to True.
+        ema_warmup (int, optional): Warmup training step for EMA. Defaults to 100.
+        deterministic_sampling (bool, optional): Whether to use deterministic backward sampling. Defaults to True.
+        lr (float, optional): Learning rate. Defaults to 1e-4.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+    """
     ALLOW_CONDITION = [None, "predict", "impute"]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim,
-        missing_rate=0,
-        condition=None,
-        n_diff_steps=18,
-        d_model=128,
-        use_stft=False,
-        delay=3,
-        embedding=8,
-        n_fft=101,
-        hop_length=25,
-        ch_mult=[1, 2, 2, 2],
-        attn_resolution=[8, 4, 2],
-        beta1=1e-5,
-        betaT=1e-2,
-        lr=1e-4,
-        weight_decay=1e-5,
-        ema=True,
-        ema_warmup=100,
-        deterministic_sampling=True,
+        seq_len: int,
+        seq_dim: int,
+        condition: str = None,
+        missing_rate: float = 0,
+        n_diff_steps: int = 18,
+        d_model: int = 128,
+        use_stft: bool = False,
+        delay: int = 3,
+        embedding: int = 8,
+        n_fft: int = 101,
+        hop_length: int = 25,
+        ch_mult: List[int]=[1, 2, 2, 2],
+        attn_resolution: List[int]=[8, 4, 2],
+        beta1: float = 1e-5,
+        betaT: float = 1e-2,
+        ema: bool = True,
+        ema_warmup: int = 100,
+        deterministic_sampling: bool = True,
+        lr: float = 1e-4,
+        weight_decay: float = 1e-5,
         **kwargs,
     ):
-        """
-        beta_1    : beta_1 of diffusion process
-        beta_T    : beta_T of diffusion process
-        T         : Diffusion Steps
-        """
-
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
-        
+
         if self.condition == "impute":
             assert missing_rate > 0, "mask_rate must be greater than 0 for imputation"
-        
+
         if self.condition is not None:
-            assert not use_stft, "STFT embedding is not supported for imputation or prediction"
-            
+            assert not use_stft, (
+                "STFT embedding is not supported for imputation or prediction"
+            )
+
         args = Namespace(**self.hparams_initial)
         args.obs_len = self.obs_len if self.condition == "predict" else 0
         args.diffusion_steps = n_diff_steps
@@ -100,7 +123,7 @@ class ImagenTime(BaseModel):
 
         self.args = args
 
-    def ts_to_img(self, signal, pad_val=None):
+    def _ts_to_img(self, signal, pad_val=None):
         """
         Args:
             signal: signal to convert to image
@@ -116,11 +139,11 @@ class ImagenTime(BaseModel):
             else self.ts_img.ts_to_img(signal)
         )
 
-    def img_to_ts(self, img):
+    def _img_to_ts(self, img):
         return self.ts_img.img_to_ts(img)
 
     # init the min and max values for the STFTEmbedder, this function must be called before the training loop starts
-    def init_stft_embedder(self, train_loader):
+    def _init_stft_embedder(self, train_loader):
         """
         Args:
             train_loader: training data
@@ -133,10 +156,10 @@ class ImagenTime(BaseModel):
         )
         data = []
         for i, data_batch in enumerate(train_loader):
-            data.append(data_batch['seq'])
+            data.append(data_batch["seq"])
         self.ts_img.cache_min_max_params(torch.cat(data, dim=0))
 
-    def loss_fn(self, x):
+    def _loss_fn(self, x):
         """
         x          : real data if idx==None else perturbation data
         idx        : if None (training phase), we perturbed random index.
@@ -153,16 +176,16 @@ class ImagenTime(BaseModel):
 
         return loss
 
-    def loss_fn_impute(self, x, mask):
+    def _loss_fn_impute(self, x, mask):
         """
         x          : real data if idx==None else perturbation data
         idx        : if None (training phase), we perturbed random index.
         """
 
         # to_log = {}
-        output, weight = self.forward_impute(x, mask)
-        x = self.unpad(x * (1 - mask), x.shape)
-        output = self.unpad(output * (1 - mask), x.shape)
+        output, weight = self._forward_impute(x, mask)
+        x = self._unpad(x * (1 - mask), x.shape)
+        output = self._unpad(output * (1 - mask), x.shape)
         loss = (weight * (output - x).square()).mean()
         # to_log["karras loss"] = loss.detach().item()
 
@@ -177,7 +200,7 @@ class ImagenTime(BaseModel):
         D_yn = self.net(y + n, sigma, labels, augment_labels=augment_labels)
         return D_yn, weight
 
-    def forward_impute(self, x, mask, labels=None, augment_pipe=None):
+    def _forward_impute(self, x, mask, labels=None, augment_pipe=None):
         rnd_normal = torch.randn([x.shape[0], 1, 1, 1], device=x.device)
         sigma = (rnd_normal * self.P_std + self.P_mean).exp()
         weight = (sigma**2 + self.sigma_data**2) / (sigma * self.sigma_data) ** 2
@@ -194,7 +217,7 @@ class ImagenTime(BaseModel):
         D_yn = self.net(y + x_to_impute, sigma, labels, augment_labels=augment_labels)
         return D_yn, weight
 
-    def forward_forecast(self, past, future, labels=None, augment_pipe=None):
+    def _forward_forecast(self, past, future, labels=None, augment_pipe=None):
         s, e = past.shape[-1], future.shape[-1]
         rnd_normal = torch.randn([past.shape[0], 1, 1, 1], device=past.device)
         sigma = (rnd_normal * self.P_std + self.P_mean).exp()
@@ -203,13 +226,13 @@ class ImagenTime(BaseModel):
             augment_pipe(past) if augment_pipe is not None else (past, None)
         )
         n = torch.randn_like(future) * sigma
-        full_seq = self.pad_f(torch.cat([past, future + n], dim=-1))
+        full_seq = self._pad_f(torch.cat([past, future + n], dim=-1))
         D_yn = self.net(full_seq, sigma, labels, augment_labels=augment_labels)[
             ..., s : (s + e)
         ]
         return D_yn, weight
 
-    def pad_f(self, x):
+    def _pad_f(self, x):
         """
         Pads the input tensor x to make it square along the last two dimensions.
         """
@@ -226,7 +249,7 @@ class ImagenTime(BaseModel):
         x_padded = torch.nn.functional.pad(x, padding, mode="constant", value=0)
         return x_padded
 
-    def unpad(self, x, original_shape):
+    def _unpad(self, x, original_shape):
         """
         Removes the padding from the tensor x to get back to its original shape.
         """
@@ -234,7 +257,7 @@ class ImagenTime(BaseModel):
         return x[:, :, :original_cols, :original_rows]
 
     @contextmanager
-    def ema_scope(self, context=None):
+    def _ema_scope(self, context=None):
         """
         Context manager to temporarily switch to EMA weights during inference.
         Args:
@@ -275,8 +298,8 @@ class ImagenTime(BaseModel):
     def training_step(self, batch, batch_idx):
         if self.condition is None:
             x_ts = batch["seq"]
-            x_img = self.ts_to_img(x_ts)
-            loss = self.loss_fn(x_img)
+            x_img = self._ts_to_img(x_ts)
+            loss = self._loss_fn(x_img)
         else:
             x_ts = batch["seq"]
             if self.condition == "impute":
@@ -290,10 +313,10 @@ class ImagenTime(BaseModel):
                 mask_ts[:, : self.hparams.obs_len] = 1.0
 
             # transform to image
-            x_ts_img = self.ts_to_img(x_ts)
+            x_ts_img = self._ts_to_img(x_ts)
             # pad mask with 1
-            mask_ts_img = self.ts_to_img(mask_ts, pad_val=1)
-            loss = self.loss_fn_impute(x_ts_img, mask_ts_img)
+            mask_ts_img = self._ts_to_img(mask_ts, pad_val=1)
+            loss = self._loss_fn_impute(x_ts_img, mask_ts_img)
 
         self.log("train_loss", loss, prog_bar=True, logger=True)
         return loss
@@ -312,13 +335,13 @@ class ImagenTime(BaseModel):
 
         if self.condition is None:
             x_ts = batch["seq"]
-            x_img = self.ts_to_img(x_ts)
-            loss = self.loss_fn(x_img)
+            x_img = self._ts_to_img(x_ts)
+            loss = self._loss_fn(x_img)
         else:
             x_ts = batch["seq"]
             if self.condition == "impute":
                 # --- generate random mask and mask x as it time series --- #
-                mask_ts = ~torch.isnan(batch['c'])
+                mask_ts = ~torch.isnan(batch["c"])
                 mask_ts = mask_ts.float()
                 # mask_ts = (~batch["c"]).float()
             else:
@@ -326,16 +349,16 @@ class ImagenTime(BaseModel):
                 mask_ts[:, : self.hparams.obs_len] = 1.0
 
             # transform to image
-            x_ts_img = self.ts_to_img(x_ts)
+            x_ts_img = self._ts_to_img(x_ts)
             # pad mask with 1
-            mask_ts_img = self.ts_to_img(mask_ts, pad_val=1)
+            mask_ts_img = self._ts_to_img(mask_ts, pad_val=1)
 
             # sample from the model
             # and impute, both interpolation and extrapolation are similar just the mask is different
             x_img_sampled = process.interpolate(x_ts_img, mask_ts_img).to(
                 x_ts_img.device
             )
-            x_ts_sampled = self.img_to_ts(x_img_sampled)
+            x_ts_sampled = self._img_to_ts(x_img_sampled)
             loss = torch.nn.functional.mse_loss(
                 x_ts[mask_ts == 0].to(x_ts.device), x_ts_sampled[mask_ts == 0]
             )
@@ -344,6 +367,7 @@ class ImagenTime(BaseModel):
         return loss
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
+        self.args.device = self.device
         process = DiffusionProcess(
             self.args,
             self.net,
@@ -356,7 +380,7 @@ class ImagenTime(BaseModel):
         if self.condition is None:
             x_img_sampled = process.sampling(sampling_number=n_sample)
             # --- convert to time series --
-            all_ts_samples = self.img_to_ts(x_img_sampled)
+            all_ts_samples = self._img_to_ts(x_img_sampled)
         else:
             x_ts = kwargs["seq"]
             if self.condition == "impute":
@@ -369,18 +393,18 @@ class ImagenTime(BaseModel):
                 mask_ts[:, : self.hparams.obs_len] = 1.0
 
             # transform to image
-            x_ts_img = self.ts_to_img(x_ts)
+            x_ts_img = self._ts_to_img(x_ts)
             # pad mask with 1
-            mask_ts_img = self.ts_to_img(mask_ts, pad_val=1)
+            mask_ts_img = self._ts_to_img(mask_ts, pad_val=1)
 
             # sample from the model
             # and impute, both interpolation and extrapolation are similar just the mask is different
             all_ts_samples = []
             for i in range(n_sample):
                 x_img_sampled = process.interpolate(x_ts_img, mask_ts_img).to(
-                    x_ts_img.device
+                    self.device
                 )
-                x_ts_sampled = self.img_to_ts(x_img_sampled)
+                x_ts_sampled = self._img_to_ts(x_img_sampled)
                 all_ts_samples.append(x_ts_sampled)
             all_ts_samples = torch.stack(all_ts_samples, dim=-1)
 
@@ -396,4 +420,4 @@ class ImagenTime(BaseModel):
 
     def on_fit_start(self):
         if self.args.use_stft:
-            self.init_stft_embedder(self.trainer.datamodule.train_dataloader())
+            self._init_stft_embedder(self.trainer.datamodule.train_dataloader())

@@ -14,39 +14,73 @@ from ._utils import cosine_beta_schedule, linear_beta_schedule
 
 
 class DiffusionTS(BaseModel):
+    """`Diffusion-TS <https://openreview.net/pdf?id=4h1apFjO99>`_: Interpretable Diffusion for General Time Series Generation.
+
+    Adapted from the `official codes <https://github.com/Y-debug-sys/Diffusion-TS>`_
+
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        n_layer_enc (int, optional): Encoder layers. Defaults to 3.
+        n_layer_dec (int, optional): Decoder layers. Defaults to 6.
+        d_model (int, optional): Model size. Defaults to 128.
+        n_diff_steps (int, optional): Total diffusion steps. Defaults to 1000.
+        n_sample_steps (int, optional): Number of backward sample steps. Defaults to None.
+        loss_type (str, optional): Loss function type. Choose from `['l1', 'l2']`. Defaults to "l1".
+        beta_schedule (str, optional): Diffusion noise schedule. Choose from `['linear', 'cosine']`. Defaults to "cosine".
+        n_heads (int, optional): Attention heads in transformer. Defaults to 4.
+        mlp_hidden_times (int, optional): Hidden size ratio of `d_model` in Transformer, i.e. `hidden_size = d_model * mlp_hidden_times`. Defaults to 4.
+        eta (float, optional): Coefficient of DDIM random noise. `eta=0` means deterministic sampling. Defaults to 0.0.
+        attn_pd (float, optional): Attention dropout rate in Transformer. Defaults to 0.0.
+        resid_pd (float, optional): MLP dropout rate in Transformer. Defaults to 0.0.
+        kernel_size (int, optional): Kernel size of conv layer in Transformer. Defaults to None.
+        padding_size (int, optional): Padding size of conv layer in Transformer. Defaults to None.
+        use_ff (bool, optional): Whether to use Fourier Transform for regularization. Defaults to True.
+        reg_weight (float, optional): Weight coefficient of Fourier loss. Defaults to None.
+        ema_decay (float, optional): Exponential Moving Average (EMA) decay rate of model weights. Defaults to 0.995.
+        ema_update_every (int, optional): EMA update interval. Defaults to 10.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
+
     ALLOW_CONDITION = [None, "predict", "impute"]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim,
-        condition=None,
-        n_layer_enc=3,
-        n_layer_dec=6,
-        d_model=128,
-        n_diff_steps=1000,
-        n_sample_steps=None,
-        loss_type="l1",
-        beta_schedule="cosine",
-        n_heads=4,
-        mlp_hidden_times=4,
-        eta=0.0,
-        attn_pd=0.0,
-        resid_pd=0.0,
-        kernel_size=None,
-        padding_size=None,
-        use_ff=True,
-        reg_weight=None,
-        ema_decay=0.995,
-        ema_update_every=10,
-        lr=1e-3,
+        seq_len: int,
+        seq_dim: int,
+        condition: str = None,
+        n_layer_enc: int = 3,
+        n_layer_dec: int = 6,
+        d_model: int = 128,
+        n_diff_steps: int = 1000,
+        n_sample_steps: int = None,
+        loss_type: str = "l1",
+        beta_schedule: str = "cosine",
+        n_heads: int = 4,
+        mlp_hidden_times: int = 4,
+        eta: float = 0.0,
+        attn_pd: float = 0.0,
+        resid_pd: float = 0.0,
+        kernel_size: int = None,
+        padding_size: int = None,
+        use_ff: bool = True,
+        reg_weight: float = None,
+        ema_decay: float = 0.995,
+        ema_update_every: int = 10,
+        lr: float = 1e-3,
+        weight_decay: float = 1e-6,
         **kwargs,
     ):
         super(DiffusionTS, self).__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
-        
+
         self.eta, self.use_ff = eta, use_ff
-        self.total_seq_len = seq_len + self.obs_len if condition == "predict" else seq_len
+        self.total_seq_len = (
+            seq_len + self.obs_len if condition == "predict" else seq_len
+        )
         self.predict_length = seq_len
         self.feature_size = seq_dim
         self.ff_weight = default(reg_weight, math.sqrt(self.total_seq_len) / 5)
@@ -146,19 +180,21 @@ class DiffusionTS(BaseModel):
 
         # TODO: change to torch.utils.swa_utils.AveragedModel
         self.ema = EMA(self.model, beta=ema_decay, update_every=ema_update_every)
+        
+        
 
-    def predict_noise_from_start(self, x_t, t, x0):
+    def _predict_noise_from_start(self, x_t, t, x0):
         return (
             extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape) * x_t - x0
         ) / extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape)
 
-    def predict_start_from_noise(self, x_t, t, noise):
+    def _predict_start_from_noise(self, x_t, t, noise):
         return (
             extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape) * x_t
             - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape) * noise
         )
 
-    def q_posterior(self, x_start, x_t, t):
+    def _q_posterior(self, x_start, x_t, t):
         posterior_mean = (
             extract(self.posterior_mean_coef1, t, x_t.shape) * x_start
             + extract(self.posterior_mean_coef2, t, x_t.shape) * x_t
@@ -169,12 +205,12 @@ class DiffusionTS(BaseModel):
         )
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
 
-    def output(self, x, t, padding_masks=None):
+    def _output(self, x, t, padding_masks=None):
         trend, season = self.model(x, t, padding_masks=padding_masks)
         model_output = trend + season
         return model_output
 
-    def model_predictions(self, x, t, clip_x_start=False, padding_masks=None):
+    def _model_predictions(self, x, t, clip_x_start=False, padding_masks=None):
         if padding_masks is None:
             padding_masks = torch.ones(
                 x.shape[0], self.total_seq_len, dtype=bool, device=x.device
@@ -183,29 +219,29 @@ class DiffusionTS(BaseModel):
         maybe_clip = (
             partial(torch.clamp, min=-1.0, max=1.0) if clip_x_start else identity
         )
-        x_start = self.output(x, t, padding_masks)
+        x_start = self._output(x, t, padding_masks)
         x_start = maybe_clip(x_start)
-        pred_noise = self.predict_noise_from_start(x, t, x_start)
+        pred_noise = self._predict_noise_from_start(x, t, x_start)
         return pred_noise, x_start
 
-    def p_mean_variance(self, x, t, clip_denoised=False):
-        _, x_start = self.model_predictions(x, t)
+    def _p_mean_variance(self, x, t, clip_denoised=False):
+        _, x_start = self._model_predictions(x, t)
         if clip_denoised:
             x_start.clamp_(-1.0, 1.0)
-        model_mean, posterior_variance, posterior_log_variance = self.q_posterior(
+        model_mean, posterior_variance, posterior_log_variance = self._q_posterior(
             x_start=x_start, x_t=x, t=t
         )
         return model_mean, posterior_variance, posterior_log_variance, x_start
 
-    def p_sample(self, x, t: int, clip_denoised=False, cond_fn=None, model_kwargs=None):
+    def _p_sample(self, x, t: int, clip_denoised=False, cond_fn=None, model_kwargs=None):
         b, *_, device = *x.shape, self.betas.device
         batched_times = torch.full((x.shape[0],), t, device=x.device, dtype=torch.long)
-        model_mean, _, model_log_variance, x_start = self.p_mean_variance(
+        model_mean, _, model_log_variance, x_start = self._p_mean_variance(
             x=x, t=batched_times, clip_denoised=clip_denoised
         )
         noise = torch.randn_like(x) if t > 0 else 0.0  # no noise if t == 0
         if cond_fn is not None:
-            model_mean = self.condition_mean(
+            model_mean = self._condition_mean(
                 cond_fn,
                 model_mean,
                 model_log_variance,
@@ -217,7 +253,7 @@ class DiffusionTS(BaseModel):
         return pred_series, x_start
 
     @torch.no_grad()
-    def sample_uncond(self, shape):
+    def _sample_uncond(self, shape):
         device = self.betas.device
         img = torch.randn(shape, device=device)
         for t in tqdm(
@@ -225,11 +261,11 @@ class DiffusionTS(BaseModel):
             desc="sampling loop time step",
             total=self.num_timesteps,
         ):
-            img, _ = self.p_sample(img, t)
+            img, _ = self._p_sample(img, t)
         return img
 
     @torch.no_grad()
-    def fast_sample_uncond(self, shape, clip_denoised=False):
+    def _fast_sample_uncond(self, shape, clip_denoised=False):
         batch, device, total_timesteps, sampling_timesteps, eta = (
             shape[0],
             self.betas.device,
@@ -249,7 +285,7 @@ class DiffusionTS(BaseModel):
 
         for time, time_next in tqdm(time_pairs, desc="sampling loop time step"):
             time_cond = torch.full((batch,), time, device=device, dtype=torch.long)
-            pred_noise, x_start, *_ = self.model_predictions(
+            pred_noise, x_start, *_ = self._model_predictions(
                 img, time_cond, clip_x_start=clip_denoised
             )
 
@@ -268,18 +304,20 @@ class DiffusionTS(BaseModel):
 
         return img
 
-    def generate_mts(self, batch_size=16, model_kwargs=None, cond_fn=None):
+    def _generate_mts(self, batch_size=16, model_kwargs=None, cond_fn=None):
         feature_size, seq_length = self.feature_size, self.total_seq_len
         if cond_fn is not None:
             sample_fn = (
-                self.fast_sample_cond if self.fast_sampling else self.sample_cond
+                self._fast_sample_cond if self.fast_sampling else self._sample_cond
             )
             return sample_fn(
                 (batch_size, seq_length, feature_size),
                 model_kwargs=model_kwargs,
                 cond_fn=cond_fn,
             )
-        sample_fn = self.fast_sample_uncond if self.fast_sampling else self.sample_uncond
+        sample_fn = (
+            self._fast_sample_uncond if self.fast_sampling else self._sample_uncond
+        )
         return sample_fn((batch_size, seq_length, feature_size))
 
     @property
@@ -291,7 +329,7 @@ class DiffusionTS(BaseModel):
         else:
             raise ValueError(f"invalid loss type {self.loss_type}")
 
-    def q_sample(self, x_start, t, noise=None):
+    def _q_sample(self, x_start, t, noise=None):
         noise = default(noise, lambda: torch.randn_like(x_start))
         return (
             extract(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start
@@ -303,8 +341,8 @@ class DiffusionTS(BaseModel):
         if target is None:
             target = x_start
 
-        x = self.q_sample(x_start=x_start, t=t, noise=noise)  # noise sample
-        model_out = self.output(x, t, padding_masks)
+        x = self._q_sample(x_start=x_start, t=t, noise=noise)  # noise sample
+        model_out = self._output(x, t, padding_masks)
 
         train_loss = self.loss_fn(model_out, target, reduction="none")
 
@@ -334,7 +372,7 @@ class DiffusionTS(BaseModel):
         t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
         return self._train_loss(x_start=x, t=t, **kwargs)
 
-    def return_components(self, x, t: int):
+    def _return_components(self, x, t: int):
         (
             b,
             c,
@@ -345,11 +383,11 @@ class DiffusionTS(BaseModel):
         assert n == feature_size, f"number of variable must be {feature_size}"
         t = torch.tensor([t])
         t = t.repeat(b).to(device)
-        x = self.q_sample(x, t)
+        x = self._q_sample(x, t)
         trend, season, residual = self.model(x, t, return_res=True)
         return trend, season, residual, x
 
-    def fast_sample_infill(
+    def _fast_sample_infill(
         self,
         shape,
         target,
@@ -378,7 +416,7 @@ class DiffusionTS(BaseModel):
             time_pairs, desc="conditional sampling loop time step"
         ):
             time_cond = torch.full((batch,), time, device=device, dtype=torch.long)
-            pred_noise, x_start, *_ = self.model_predictions(
+            pred_noise, x_start, *_ = self._model_predictions(
                 img, time_cond, clip_x_start=clip_denoised
             )
 
@@ -396,7 +434,7 @@ class DiffusionTS(BaseModel):
             noise = torch.randn_like(img)
 
             img = pred_mean + sigma * noise
-            img = self.langevin_fn(
+            img = self._langevin_fn(
                 sample=img,
                 mean=pred_mean,
                 sigma=sigma,
@@ -405,14 +443,14 @@ class DiffusionTS(BaseModel):
                 partial_mask=partial_mask,
                 **model_kwargs,
             )
-            target_t = self.q_sample(target, t=time_cond)
+            target_t = self._q_sample(target, t=time_cond)
             img[partial_mask] = target_t[partial_mask]
 
         img[partial_mask] = target[partial_mask]
 
         return img
 
-    def sample_infill(
+    def _sample_infill(
         self,
         shape,
         target,
@@ -431,7 +469,7 @@ class DiffusionTS(BaseModel):
             desc="conditional sampling loop time step",
             total=self.num_timesteps,
         ):
-            img = self.p_sample_infill(
+            img = self._p_sample_infill(
                 x=img,
                 t=t,
                 clip_denoised=clip_denoised,
@@ -443,7 +481,7 @@ class DiffusionTS(BaseModel):
         img[partial_mask] = target[partial_mask]
         return img
 
-    def p_sample_infill(
+    def _p_sample_infill(
         self,
         x,
         target,
@@ -454,14 +492,14 @@ class DiffusionTS(BaseModel):
     ):
         b, *_, device = *x.shape, self.betas.device
         batched_times = torch.full((x.shape[0],), t, device=x.device, dtype=torch.long)
-        model_mean, _, model_log_variance, _ = self.p_mean_variance(
+        model_mean, _, model_log_variance, _ = self._p_mean_variance(
             x=x, t=batched_times, clip_denoised=clip_denoised
         )
         noise = torch.randn_like(x) if t > 0 else 0.0  # no noise if t == 0
         sigma = (0.5 * model_log_variance).exp()
         pred_img = model_mean + sigma * noise
 
-        pred_img = self.langevin_fn(
+        pred_img = self._langevin_fn(
             sample=pred_img,
             mean=model_mean,
             sigma=sigma,
@@ -471,12 +509,12 @@ class DiffusionTS(BaseModel):
             **model_kwargs,
         )
 
-        target_t = self.q_sample(target, t=batched_times)
+        target_t = self._q_sample(target, t=batched_times)
         pred_img[partial_mask] = target_t[partial_mask]
 
         return pred_img
 
-    def langevin_fn(
+    def _langevin_fn(
         self,
         coef,
         partial_mask,
@@ -506,7 +544,7 @@ class DiffusionTS(BaseModel):
                 optimizer = torch.optim.Adagrad([input_embs_param], lr=learning_rate)
                 optimizer.zero_grad()
 
-                x_start = self.output(x=input_embs_param, t=t)
+                x_start = self._output(x=input_embs_param, t=t)
 
                 if sigma.mean() == 0:
                     logp_term = (
@@ -535,7 +573,7 @@ class DiffusionTS(BaseModel):
         sample[~partial_mask] = input_embs_param.data[~partial_mask]
         return sample
 
-    def condition_mean(self, cond_fn, mean, log_variance, x, t, model_kwargs=None):
+    def _condition_mean(self, cond_fn, mean, log_variance, x, t, model_kwargs=None):
         """
         Compute the mean for the previous step, given a function cond_fn that
         computes the gradient of a conditional log probability with respect to
@@ -548,7 +586,7 @@ class DiffusionTS(BaseModel):
         new_mean = mean.float() + torch.exp(log_variance) * gradient.float()
         return new_mean
 
-    def condition_score(self, cond_fn, x_start, x, t, model_kwargs=None):
+    def _condition_score(self, cond_fn, x_start, x, t, model_kwargs=None):
         """
         Compute what the p_mean_variance output would have been, should the
         model's score function be conditioned by cond_fn.
@@ -560,14 +598,14 @@ class DiffusionTS(BaseModel):
         """
         alpha_bar = extract(self.alphas_cumprod, t, x.shape)
 
-        eps = self.predict_noise_from_start(x, t, x_start)
+        eps = self._predict_noise_from_start(x, t, x_start)
         eps = eps - (1 - alpha_bar).sqrt() * cond_fn(x, t, **model_kwargs)
 
-        pred_xstart = self.predict_start_from_noise(x, t, eps)
-        model_mean, _, _ = self.q_posterior(x_start=pred_xstart, x_t=x, t=t)
+        pred_xstart = self._predict_start_from_noise(x, t, eps)
+        model_mean, _, _ = self._q_posterior(x_start=pred_xstart, x_t=x, t=t)
         return model_mean, pred_xstart
 
-    def sample_cond(self, shape, clip_denoised=False, model_kwargs=None, cond_fn=None):
+    def _sample_cond(self, shape, clip_denoised=False, model_kwargs=None, cond_fn=None):
         """
         Generate samples from the model and yield intermediate samples from
         each timestep of diffusion.
@@ -579,7 +617,7 @@ class DiffusionTS(BaseModel):
             desc="sampling loop time step",
             total=self.num_timesteps,
         ):
-            img, x_start = self.p_sample(
+            img, x_start = self._p_sample(
                 img,
                 t,
                 clip_denoised=clip_denoised,
@@ -588,7 +626,7 @@ class DiffusionTS(BaseModel):
             )
         return img
 
-    def fast_sample_cond(
+    def _fast_sample_cond(
         self, shape, clip_denoised=False, model_kwargs=None, cond_fn=None
     ):
         batch, device, total_timesteps, sampling_timesteps, eta = (
@@ -611,15 +649,15 @@ class DiffusionTS(BaseModel):
 
         for time, time_next in tqdm(time_pairs, desc="sampling loop time step"):
             time_cond = torch.full((batch,), time, device=device, dtype=torch.long)
-            pred_noise, x_start, *_ = self.model_predictions(
+            pred_noise, x_start, *_ = self._model_predictions(
                 img, time_cond, clip_x_start=clip_denoised
             )
 
             if cond_fn is not None:
-                _, x_start = self.condition_score(
+                _, x_start = self._condition_score(
                     cond_fn, x_start, img, time_cond, model_kwargs=model_kwargs
                 )
-                pred_noise = self.predict_noise_from_start(img, time_cond, x_start)
+                pred_noise = self._predict_noise_from_start(img, time_cond, x_start)
 
             if time_next < 0:
                 img = x_start
@@ -656,7 +694,7 @@ class DiffusionTS(BaseModel):
         # self.model.load_state_dict(self.ema.ema_model.state_dict())
 
         if self.condition is None:
-            sample = self.generate_mts(batch_size=n_sample)
+            sample = self._generate_mts(batch_size=n_sample)
             # samples = np.row_stack([samples, sample.detach().cpu().numpy()])
             return sample
         else:
@@ -664,7 +702,7 @@ class DiffusionTS(BaseModel):
             # x = kwargs.get("seq", None)
             # assert x is not None, "x must be provided for sampling"
             # assert x.shape[1] == self.total_seq_len
-            
+
             # t_m is mask
             # 0: missing
             # 1: observed
@@ -673,7 +711,7 @@ class DiffusionTS(BaseModel):
                 t_m[:, -self.predict_length :, :] = 0
                 t_m = t_m.bool()
                 target = torch.zeros(x_shape).to(self.device)
-                target[:, :self.obs_len, :] = condition
+                target[:, : self.obs_len, :] = condition
             else:
                 t_m = ~torch.isnan(condition)
                 target = torch.nan_to_num(condition)
@@ -681,7 +719,7 @@ class DiffusionTS(BaseModel):
             all_samples = []
             for i in range(n_sample):
                 if sampling_steps == self.num_timesteps:
-                    sample = self.sample_infill(
+                    sample = self._sample_infill(
                         shape=x_shape,
                         target=target,
                         # target=x * t_m,
@@ -689,7 +727,7 @@ class DiffusionTS(BaseModel):
                         model_kwargs=model_kwargs,
                     )
                 else:
-                    sample = self.fast_sample_infill(
+                    sample = self._fast_sample_infill(
                         shape=x_shape,
                         target=target,
                         # target=x * t_m,
@@ -710,9 +748,9 @@ class DiffusionTS(BaseModel):
             filter(lambda p: p.requires_grad, self.model.parameters()),
             lr=self.hparams.lr,
             betas=[0.9, 0.96],
+            weight_decay=self.hparams.weight_decay,
         )
         return optim
 
     def on_fit_end(self):
         self.model.load_state_dict(self.ema.ema_model.state_dict())
-        # return super().on_fit_end()

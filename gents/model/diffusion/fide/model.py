@@ -12,20 +12,46 @@ import torch
 
 
 class FIDE(BaseModel):
+    """`FIDE <https://openreview.net/pdf?id=5HQhYiGnYb>`_: Frequency-Inflated Conditional Diffusion Model for Extreme-Aware Time Series Generation
+
+    Adapted from the `official codes <https://github.com/galib19/FIDE>`_
+    
+    .. note::
+        Only support for univariate time series.
+    
+    .. warning::
+        The original paper claimed an innovation on regularization on loss function. 
+        However, in the original codes, the regularization term is detached from the computation graph, which may cause no gradients.
+    
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        n_diff_steps (int, optional): Total diffusion steps. Defaults to 100.
+        d_model (int, optional): Model size. Defaults to 64.
+        is_regularizer (bool, optional): Whether to add extreme value regularization. Defaults to True.
+        high_freq_inflation_rate (float, optional): High frequency inflation rate. Should be greater than 1. Defaults to 1.1.
+        percentage_of_freq_enhanced (float, optional): Percentage of frequencies that are inflated/enhanced. Defaults to 0.2.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-6.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+
+    """
+
     ALLOW_CONDITION = [None]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim=1,
-        condition=None,
-        n_diff_steps=100,
-        d_model=64,
-        lr=1e-3,
-        weight_decay=1e-6,
-        is_regularizer=True,
-        high_freq_inflation_rate=1.1,
-        percentage_of_freq_enhanced=0.2,
+        seq_len: int,
+        seq_dim: int = 1,
+        condition: str = None,
+        n_diff_steps: int = 100,
+        d_model: int = 64,
+        is_regularizer: bool = True,
+        high_freq_inflation_rate: float = 1.1,
+        percentage_of_freq_enhanced: float = 0.2,
+        lr: float = 1e-3,
+        weight_decay: float = 1e-6,
         **kwargs,
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
@@ -82,7 +108,9 @@ class FIDE(BaseModel):
             self.device
         )
         bm_samples_conditional = bm_samples_conditional.reshape(-1, 1, 1)
-        t_grid = torch.linspace(0, self.seq_len, self.seq_len).view(1, -1, 1).to(self.device)
+        t_grid = (
+            torch.linspace(0, self.seq_len, self.seq_len).view(1, -1, 1).to(self.device)
+        )
         samples_ddpm = self.sample_loop(
             t_grid.repeat(n_sample, 1, 1), bm_samples_conditional
         )

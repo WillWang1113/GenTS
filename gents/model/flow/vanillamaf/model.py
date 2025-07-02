@@ -10,7 +10,19 @@ from gents.model.base import BaseModel
 
 
 class VanillaMAF(BaseModel):
-    """Vanilla Masked Autoregressive Flow with MADE."""
+    """Vanilla Masked Autoregressive Flow (MAF) with MADE.
+    
+    For conditional generation, an extra MLP is used for embedding conditions.
+    
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given conditions, should be one of `ALLOW_CONDITION`. Defaults to None.
+        hidden_size_list (List[int], optional): Hidden size for MADE. Defaults to [64, 128, 256].
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
 
     ALLOW_CONDITION = [None, "predict", "impute", "class"]
 
@@ -24,16 +36,6 @@ class VanillaMAF(BaseModel):
         weight_decay: float = 1e-5,
         **kwargs,
     ):
-        """_summary_
-
-        Args:
-            seq_len (int): Target sequence length
-            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
-            condition (str, optional): Given conditions, allowing [None, 'predict', 'impute']. Defaults to None.
-            hidden_size_list (List[int], optional): Hidden size for MADE. Defaults to [64, 128, 256].
-            lr (float, optional): Learning rate. Defaults to 1e-3.
-            weight_decay (float, optional): Weight decay. Defaults to 1e-5.
-        """
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         modules = []
