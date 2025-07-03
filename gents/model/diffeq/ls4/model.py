@@ -6,13 +6,80 @@ import torch
 
 
 class LS4(BaseModel):
-    """`Deep Latent State Space Models for Time-Series Generation <https://arxiv.org/abs/2212.12749>`
+    """`Deep Latent State Space Models for Time-Series Generation <https://arxiv.org/abs/2212.12749>`_
 
     Adapted from the `official codes <https://github.com/alexzhou907/ls4>`_
 
     .. note::
         LS4 allows for irregular data. Imputation in LS4 is only interpolation, 
         i.e. only impute the missing steps that all channels are missing.
+    
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        latent_dim (int, optional): Latent dimension. Defaults to 10.
+        bidirectional (bool, optional): Whether to be bidirectional. Defaults to False.
+        sigma (float, optional): Std of generated data. Seems to be useless Defaults to 0.1.
+        enc_hidden_size (int, optional): Encoder hidden size. Defaults to 64.
+        enc_n_layers (int, optional): Encoder layers. Defaults to 4.
+        enc_backbone (str, optional): Encoder backbone. Choose from `['autoreg', 'seq']`. Defaults to "autoreg".
+        enc_use_unet (bool, optional): If `True`, encoder will use a unet-like architecture, adding (Residual (S4) --> Residual (FF)) layers before downpooling.
+            All else fixed, this slows down inference (and slightly slows training), but generally improves performance.
+            We use this variant when dropping in SaShiMi into diffusion models, and this should generally be preferred
+            for non-autoregressive models. Defaults to False.
+        enc_pool (List[int], optional): Pooling factor at each level. Pooling shrinks the sequence length at lower levels.
+            We experimented with a pooling factor of 4 with 1 to 4 tiers of pooling and found 2 tiers to be best.
+            It's possible that a different combination of pooling factors and number of tiers may perform better. Defaults to [].
+        enc_ff_layers (int, optional): Expansion factor for the FF inverted bottleneck. We generally found 2 to perform best (among 2, 4). Defaults to 2.
+        enc_expand (int, optional): Expansion factor when pooling. Features are expanded (i.e. the model becomes wider) at lower levels of the architecture.
+            We generally found 2 to perform best (among 2, 4). Defaults to 2.
+        enc_s4type (str, optional): S4 network type for encoder. Choose from `['s4', 's4d', 's4d_joint']`. Defaults to "s4".
+        enc_dropout (float, optional): Encoder dropout. Defaults to 0.0.
+        enc_use_latent (bool, optional): Whether to use latent variables. Defaults to True.
+        enc_latent_type (str, optional): If `enc_use_latent=True`, choose from ['none', 'split', 'const_std', 'single', 'joint']. Defaults to "split".
+        enc_lr (float, optional): Encoder learning rate. Defaults to 1e-3.
+        dec_activation (str, optional): Decoder activation type. Choose from `[None, 'id', 'identity', 'linear', 'tanh', 'relu', 'gelu', 'swish', 'silu', 'glu', 'sigmoid', 'modrelu']` Defaults to "identity".
+        dec_hidden_size (int, optional): Decoder hidden size. Defaults to 64.
+        dec_n_layers (int, optional): Decoder layers. Defaults to 4.
+        dec_backbone (str, optional): Decoder backbone. Choose from `['autoreg', 'seq']`. Defaults to "autoreg".
+        dec_use_unet (bool, optional): If `True`, encoder will use a unet-like architecture, adding (Residual (S4) --> Residual (FF)) layers before downpooling.
+            All else fixed, this slows down inference (and slightly slows training), but generally improves performance.
+            We use this variant when dropping in SaShiMi into diffusion models, and this should generally be preferred
+            for non-autoregressive models. Defaults to False.
+        dec_pool (List[int], optional): Pooling factor at each level. Pooling shrinks the sequence length at lower levels.
+            We experimented with a pooling factor of 4 with 1 to 4 tiers of pooling and found 2 tiers to be best.
+            It's possible that a different combination of pooling factors and number of tiers may perform better. Defaults to [].
+        dec_ff_layers (int, optional): Expansion factor for the FF inverted bottleneck. We generally found 2 to perform best (among 2, 4). Defaults to 2.
+        dec_expand (int, optional): Expansion factor when pooling. Features are expanded (i.e. the model becomes wider) at lower levels of the architecture.
+            We generally found 2 to perform best (among 2, 4). Defaults to 2.
+        dec_s4type (str, optional): S4 network type for encoder. Choose from `['s4', 's4d', 's4d_joint']`. Defaults to "s4".
+        dec_dropout (float, optional): Decoder dropout. Defaults to 0.0.
+        dec_use_latent (bool, optional): Whether to use latent variable. Defaults to False.
+        dec_latent_type (str, optional): If `enc_use_latent=True`, choose from ['none', 'split', 'const_std', 'single', 'joint']. Defaults to "none".
+        dec_lr (float, optional): Decoder learning rate. Defaults to 1e-3.
+        prior_hidden_size (int, optional): Prior net hidden size. Defaults to 64.
+        prior_n_layers (int, optional): Prior net layers. Defaults to 4.
+        prior_backbone (str, optional): Prior net backbone. Choose from `['autoreg', 'seq']`. Defaults to "autoreg".
+        prior_use_unet (bool, optional): If `True`, encoder will use a unet-like architecture, adding (Residual (S4) --> Residual (FF)) layers before downpooling.
+            All else fixed, this slows down inference (and slightly slows training), but generally improves performance.
+            We use this variant when dropping in SaShiMi into diffusion models, and this should generally be preferred
+            for non-autoregressive models. Defaults to False.
+        prior_pool (List[int], optional): Pooling factor at each level. Pooling shrinks the sequence length at lower levels.
+            We experimented with a pooling factor of 4 with 1 to 4 tiers of pooling and found 2 tiers to be best.
+            It's possible that a different combination of pooling factors and number of tiers may perform better. Defaults to [].
+        prior_ff_layers (int, optional): Expansion factor for the FF inverted bottleneck. We generally found 2 to perform best (among 2, 4). Defaults to 2.
+        prior_expand (int, optional): Expansion factor when pooling. Features are expanded (i.e. the model becomes wider) at lower levels of the architecture.
+            We generally found 2 to perform best (among 2, 4). Defaults to 2.
+        prior_s4type (str, optional): S4 network type for encoder. Choose from `['s4', 's4d', 's4d_joint']`. Defaults to "s4".
+        prior_dropout (float, optional): Prior net dropout rate. Defaults to 0.0.
+        prior_use_latent (bool, optional): Whether to use latent variable.. Defaults to True.
+        prior_latent_type (str, optional): If `enc_use_latent=True`, choose from ['none', 'split', 'const_std', 'single', 'joint']. Defaults to "split".
+        prior_lr (float, optional): Prior net learning rate. Defaults to 1e-3.
+        lr (float, optional): Learning rate for other parameters. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+
     """
 
     ALLOW_CONDITION = [None, "predict", "impute"]
@@ -69,74 +136,6 @@ class LS4(BaseModel):
         weight_decay: float = 1e-5,
         **kwargs,
     ):
-        """_summary_
-
-        Args:
-            seq_len (int): Target sequence length
-            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
-            condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
-            latent_dim (int, optional): Latent dimension. Defaults to 10.
-            bidirectional (bool, optional): Whether to be bidirectional. Defaults to False.
-            sigma (float, optional): Std of generated data. Seems to be useless Defaults to 0.1.
-            enc_hidden_size (int, optional): Encoder hidden size. Defaults to 64.
-            enc_n_layers (int, optional): Encoder layers. Defaults to 4.
-            enc_backbone (str, optional): Encoder backbone. Choose from `['autoreg', 'seq']`. Defaults to "autoreg".
-            enc_use_unet (bool, optional): If `True`, encoder will use a unet-like architecture, adding (Residual (S4) --> Residual (FF)) layers before downpooling.
-                All else fixed, this slows down inference (and slightly slows training), but generally improves performance.
-                We use this variant when dropping in SaShiMi into diffusion models, and this should generally be preferred
-                for non-autoregressive models. Defaults to False.
-            enc_pool (List[int], optional): Pooling factor at each level. Pooling shrinks the sequence length at lower levels.
-                We experimented with a pooling factor of 4 with 1 to 4 tiers of pooling and found 2 tiers to be best.
-                It's possible that a different combination of pooling factors and number of tiers may perform better. Defaults to [].
-            enc_ff_layers (int, optional): Expansion factor for the FF inverted bottleneck. We generally found 2 to perform best (among 2, 4). Defaults to 2.
-            enc_expand (int, optional): Expansion factor when pooling. Features are expanded (i.e. the model becomes wider) at lower levels of the architecture.
-                We generally found 2 to perform best (among 2, 4). Defaults to 2.
-            enc_s4type (str, optional): S4 network type for encoder. Choose from `['s4', 's4d', 's4d_joint']`. Defaults to "s4".
-            enc_dropout (float, optional): Encoder dropout. Defaults to 0.0.
-            enc_use_latent (bool, optional): Whether to use latent variables. Defaults to True.
-            enc_latent_type (str, optional): If `enc_use_latent=True`, choose from ['none', 'split', 'const_std', 'single', 'joint']. Defaults to "split".
-            enc_lr (float, optional): Encoder learning rate. Defaults to 1e-3.
-            dec_activation (str, optional): Decoder activation type. Choose from `[None, 'id', 'identity', 'linear', 'tanh', 'relu', 'gelu', 'swish', 'silu', 'glu', 'sigmoid', 'modrelu']` Defaults to "identity".
-            dec_hidden_size (int, optional): Decoder hidden size. Defaults to 64.
-            dec_n_layers (int, optional): Decoder layers. Defaults to 4.
-            dec_backbone (str, optional): Decoder backbone. Choose from `['autoreg', 'seq']`. Defaults to "autoreg".
-            dec_use_unet (bool, optional): If `True`, encoder will use a unet-like architecture, adding (Residual (S4) --> Residual (FF)) layers before downpooling.
-                All else fixed, this slows down inference (and slightly slows training), but generally improves performance.
-                We use this variant when dropping in SaShiMi into diffusion models, and this should generally be preferred
-                for non-autoregressive models. Defaults to False.
-            dec_pool (List[int], optional): Pooling factor at each level. Pooling shrinks the sequence length at lower levels.
-                We experimented with a pooling factor of 4 with 1 to 4 tiers of pooling and found 2 tiers to be best.
-                It's possible that a different combination of pooling factors and number of tiers may perform better. Defaults to [].
-            dec_ff_layers (int, optional): Expansion factor for the FF inverted bottleneck. We generally found 2 to perform best (among 2, 4). Defaults to 2.
-            dec_expand (int, optional): Expansion factor when pooling. Features are expanded (i.e. the model becomes wider) at lower levels of the architecture.
-                We generally found 2 to perform best (among 2, 4). Defaults to 2.
-            dec_s4type (str, optional): S4 network type for encoder. Choose from `['s4', 's4d', 's4d_joint']`. Defaults to "s4".
-            dec_dropout (float, optional): Decoder dropout. Defaults to 0.0.
-            dec_use_latent (bool, optional): Whether to use latent variable. Defaults to False.
-            dec_latent_type (str, optional): If `enc_use_latent=True`, choose from ['none', 'split', 'const_std', 'single', 'joint']. Defaults to "none".
-            dec_lr (float, optional): Decoder learning rate. Defaults to 1e-3.
-            prior_hidden_size (int, optional): Prior net hidden size. Defaults to 64.
-            prior_n_layers (int, optional): Prior net layers. Defaults to 4.
-            prior_backbone (str, optional): Prior net backbone. Choose from `['autoreg', 'seq']`. Defaults to "autoreg".
-            prior_use_unet (bool, optional): If `True`, encoder will use a unet-like architecture, adding (Residual (S4) --> Residual (FF)) layers before downpooling.
-                All else fixed, this slows down inference (and slightly slows training), but generally improves performance.
-                We use this variant when dropping in SaShiMi into diffusion models, and this should generally be preferred
-                for non-autoregressive models. Defaults to False.
-            prior_pool (List[int], optional): Pooling factor at each level. Pooling shrinks the sequence length at lower levels.
-                We experimented with a pooling factor of 4 with 1 to 4 tiers of pooling and found 2 tiers to be best.
-                It's possible that a different combination of pooling factors and number of tiers may perform better. Defaults to [].
-            prior_ff_layers (int, optional): Expansion factor for the FF inverted bottleneck. We generally found 2 to perform best (among 2, 4). Defaults to 2.
-            prior_expand (int, optional): Expansion factor when pooling. Features are expanded (i.e. the model becomes wider) at lower levels of the architecture.
-                We generally found 2 to perform best (among 2, 4). Defaults to 2.
-            prior_s4type (str, optional): S4 network type for encoder. Choose from `['s4', 's4d', 's4d_joint']`. Defaults to "s4".
-            prior_dropout (float, optional): Prior net dropout rate. Defaults to 0.0.
-            prior_use_latent (bool, optional): Whether to use latent variable.. Defaults to True.
-            prior_latent_type (str, optional): If `enc_use_latent=True`, choose from ['none', 'split', 'const_std', 'single', 'joint']. Defaults to "split".
-            prior_lr (float, optional): Prior net learning rate. Defaults to 1e-3.
-            lr (float, optional): Learning rate for other parameters. Defaults to 1e-3.
-            weight_decay (float, optional): Weight decay. Defaults to 1e-5.
-            **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
-        """
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
 
