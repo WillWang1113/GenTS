@@ -23,7 +23,6 @@ class TimeVQVAE(BaseModel):
     
     Adapted from the `official codes <https://github.com/ML4ITS/TimeVQVAE>`_
     
-
     Args:
         seq_len (int): Target sequence length
         seq_dim (int): Target sequence dimension, for univariate time series, set as 1

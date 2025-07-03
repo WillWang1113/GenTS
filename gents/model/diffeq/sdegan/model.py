@@ -1,3 +1,4 @@
+from typing import Dict
 import torchcde
 from gents.model.base import BaseModel
 from ._backbones import Generator, Discriminator
@@ -6,24 +7,49 @@ from torch.optim.swa_utils import AveragedModel
 
 
 class SDEGAN(BaseModel):
+    """`Neural SDEs as Infinite-Dimensional GANs <https://arxiv.org/pdf/2102.03657>`
+    
+    Adapted from the `official codes <https://github.com/google-research/torchsde/blob/master/examples/sde_gan.py>`_
+    
+    .. note::
+        SDEGAN allows for irregular data.
+    
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        initial_noise_size (int, optional): Gaussian distribution dimension that used for sampling. Defaults to 5.
+        noise_size (int, optional): Diffusion size for SDE. Defaults to 3.
+        hidden_size (int, optional): latent SDE size. Defaults to 16.
+        d_model (int, optional): MLP size. Defaults to 16.
+        n_layers (int, optional): MLP layers. Defaults to 1.
+        init_mult1 (float, optional): Scale ratio for Generator's encoder initial parameter. Defaults to 3.
+        init_mult2 (float, optional): Scale ratio for Generator's neural SDE initial parameter. Defaults to 0.5.
+        swa_step_start (int, optional): Start step for stochastic weight average (SWA) of model parameters. Defaults to 5000.
+        lr (Dict[str, float], optional): Learning rate for different networks. G: generator, D: discriminator.. Defaults to {"G": 2e-4, "D": 1e-3}.
+        weight_decay (float, optional): Weight decay. Defaults to 0.01.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+        
+    """
+
     # Allow for irregular time series as inputs, but not for imputation.
-    ALLOW_CONDITION = [None, "impute"]
+    ALLOW_CONDITION = [None]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim,
-        condition=None,
-        initial_noise_size=5,
-        noise_size=3,
-        hidden_size=16,
-        d_model=16,
-        n_layers=1,
-        lr: dict = {"G": 2e-4, "D": 1e-3},
-        weight_decay=0.01,
-        init_mult1=3,
-        init_mult2=0.5,
-        swa_step_start=5000,
+        seq_len: int,
+        seq_dim: int,
+        condition: str = None,
+        initial_noise_size: int = 5,
+        noise_size: int = 3,
+        hidden_size: int = 16,
+        d_model: int = 16,
+        n_layers: int = 1,
+        init_mult1: float = 3,
+        init_mult2: float = 0.5,
+        swa_step_start: int = 5000,
+        lr: Dict[str, float] = {"G": 2e-4, "D": 1e-3},
+        weight_decay: float = 0.01,
         **kwargs,
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
@@ -82,7 +108,7 @@ class SDEGAN(BaseModel):
         if self.global_step > self.swa_step_start:
             self.averaged_generator.update_parameters(self.generator)
             self.averaged_discriminator.update_parameters(self.discriminator)
-        
+
         self.log("train_loss", loss)
 
     def validation_step(self, batch, batch_idx):
@@ -91,7 +117,7 @@ class SDEGAN(BaseModel):
             0, self.seq_len - 1, self.seq_len, device=batch["seq"].device
         )
         real_samples = torch.concat([batch["t"].unsqueeze(-1), batch["coeffs"]], dim=-1)
-        
+
         if self.global_step > self.swa_step_start:
             generator = self.generator
             discriminator = self.discriminator

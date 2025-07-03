@@ -4,22 +4,44 @@ import torch
 
 
 class LatentSDE(BaseModel):
+    """`Latent SDE <https://arxiv.org/pdf/2001.01328>`_
+
+    Adapted from the `official codes <https://github.com/google-research/torchsde/blob/master/examples/latent_sde.py>`_
+
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        latent_size (int, optional): Latent variable dimension. Defaults to 4.
+        context_size (int, optional): Embedding size for encoding input data. Defaults to 64.
+        hidden_size (int, optional): Encoder hidden size. Defaults to 128.
+        noise_std (float, optional): Std of Gaussian distribution for observed data. Used for computing likelihood loss. Defaults to 1e-2.
+        solver (str, optional): SDE solver. Choose from `['euler', 'milstein', 'srk', 'midpoint', 'reversible_heun', 'adjoint_reversible_heun', 'heun', 'log_ode', 'euler_heun']` Defaults to "euler".
+        adjoint (bool, optional): If `True`, use adjoint backward to save memory. Defaults to False.
+        kl_anneal_iters (int, optional): Iterations that KL loss weight takes to decay. Defaults to 1000.
+        lr_gamma (float, optional): Learning rate schedule. Defaults to 0.997.
+        lr (float, optional): Learning rate. Defaults to 1e-2.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-6.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+    """
+
     ALLOW_CONDITION = [None]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim,
-        condition=None,
-        latent_size=4,
-        context_size=64,
-        hidden_size=128,
-        lr=1e-2,
-        lr_gamma=0.997,
-        noise_std=1e-2,
-        solver="euler",
-        adjoint=False,
-        kl_anneal_iters=1000,
+        seq_len: int,
+        seq_dim: int,
+        condition: str = None,
+        latent_size: int = 4,
+        context_size: int = 64,
+        hidden_size: int = 128,
+        noise_std: float = 1e-2,
+        solver: str = "euler",
+        adjoint: bool = False,
+        kl_anneal_iters: int = 1000,
+        lr_gamma: float = 0.997,
+        lr: float = 1e-2,
+        weight_decay: float = 1e-6,
         **kwargs,
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
@@ -51,12 +73,11 @@ class LatentSDE(BaseModel):
             self.total_seq_len,
         ).to(batch["seq"].device)
 
-        
         xs = batch["seq"]
         tp_to_predict = t
         xs_target = batch["seq"]
         flip = True
-        
+
         # if self.condition == "predict":
         #     xs = batch["c"]
         #     tp_to_predict = t[self.obs_len :]
@@ -111,8 +132,8 @@ class LatentSDE(BaseModel):
         trajs = self.net.sample(n_sample, t)
         trajs = trajs.permute(1, 0, 2)
         # if self.condition is None:
-            # trajs = self.net.sample(n_sample, t)
-            # trajs = trajs.permute(1, 0, 2)
+        # trajs = self.net.sample(n_sample, t)
+        # trajs = trajs.permute(1, 0, 2)
         # else:
         #     if self.condition == "predict":
         #         xs = condition
@@ -152,7 +173,11 @@ class LatentSDE(BaseModel):
         return trajs
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(params=self.net.parameters(), lr=self.hparams.lr)
+        optimizer = torch.optim.Adam(
+            params=self.net.parameters(),
+            lr=self.hparams.lr,
+            weight_decay=self.hparams.weight_decay,
+        )
         scheduler = torch.torch.optim.lr_scheduler.ExponentialLR(
             optimizer=optimizer, gamma=self.hparams.lr_gamma
         )

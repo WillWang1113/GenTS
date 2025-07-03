@@ -23,22 +23,22 @@ dm = Spiral2D(
     # irregular_dropout=0.2,
     condition="predict",
 )
-model = ImagenTime(
+model = LS4(
     # latent_dim=128,
     # d_model=128,
     # d_ff=1024,
-    delay=3,
-    embedding=16,
+    # delay=3,
+    # embedding=16,
     obs_len=dm.obs_len,
     seq_len=dm.seq_len,
     seq_dim=dm.seq_dim,
-    ch_mult=[1,2],
-    attn_resolution=[4,2],
+    # ch_mult=[1,2],
+    # attn_resolution=[4,2],
     condition="predict",
 )
 
 # training (on CPU for example)
-trainer = Trainer(max_epochs=2)
+trainer = Trainer(max_epochs=100)
 trainer.fit(model, dm)
    
 
@@ -55,11 +55,13 @@ gen_data = model.sample(
     n_sample=10,
     condition=cond_data,
     # condition=real_data.masked_fill(~real_data_mask, float("nan"))[[3]],
-    t=t,
+    t=t[0],
     data_mask=real_data_mask,
-    seq=real_data
+    # seq=real_data
 )  # [N, 64, 2]
 
+print(real_data.shape)
+print(gen_data.shape)
 # visualization with tsne
 # qualitative_visual(real_data, gen_data, analysis="tsne", save_root="tsne.png")
 

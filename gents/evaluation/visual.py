@@ -81,7 +81,7 @@ def tsne_visual(
     prep_data_final = np.concatenate((prep_data, prep_data_hat), axis=0)
 
     # TSNE anlaysis
-    tsne = TSNE(n_components=2,  max_iter=300, random_state=0, init='random')
+    tsne = TSNE(n_components=2, max_iter=300, random_state=0, init="random")
     tsne_results = tsne.fit_transform(prep_data_final)
     real_tsne = tsne_results[:anal_sample_no]
     gen_tsne = tsne_results[anal_sample_no:]
@@ -184,7 +184,7 @@ def imputation_visual(
         handles=[obs_line, target_line, impute_interval, impute_line],
         loc="upper center",
         ncol=4,
-        bbox_to_anchor=(0.5, 1.1)
+        bbox_to_anchor=(0.5, 1.1),
     )
     fig.tight_layout()
     if save_root is not None:
@@ -242,7 +242,7 @@ def predict_visual(
         handles=[obs_line, pred_interval, pred_line],
         loc="upper center",
         ncol=4,
-        bbox_to_anchor=(0.5, 1.1)
+        bbox_to_anchor=(0.5, 1.1),
     )
     if save_root is not None:
         fig.savefig(save_root, bbox_inches="tight")

@@ -17,6 +17,10 @@ class KoVAE(BaseModel):
     
     Adapted from the `official codes <https://github.com/azencot-group/KoVAE>`_
     
+    .. note::
+        KoVAE allows for irregular data.
+    
+    
     Args:
         seq_len (int): Target sequence length
         seq_dim (int): Target sequence dimension, for univariate time series, set as 1

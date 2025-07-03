@@ -7,22 +7,49 @@ import torch
 
 
 class LatentODE(BaseModel):
+    """`Latent ODEs <https://arxiv.org/abs/1907.03907>`_ for Irregularly-Sampled Time Series
+
+    Adapted from the `official codes <https://github.com/YuliaRubanova/latent_ode>`_
+
+    .. note::
+        LatentODE allows for irregular data. Imputation in Latent ODE is only interpolation, 
+        i.e. only impute the missing steps that all channels are missing.
+
+    Args:
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        latent_dim (int, optional): Latent variable dimension. Defaults to 6.
+        z0_encoder (str, optional): Type of encoder. Choose from `['odernn','rnn]` Defaults to "odernn".
+        rec_layers (int, optional): Number of encoding (recognition) layers. Defaults to 1.
+        rec_dim (int, optional): Number of encoding (recognition) layer size. Defaults to 20.
+        gen_layers (int, optional): Number of generation layers. Defaults to 1.
+        d_model (int, optional): Model size. Defaults to 32.
+        obsrv_std (float, optional): Std of Gaussian distribution for observed data. Used for computing likelihood loss. Defaults to 0.01.
+        poisson (bool, optional): Whether to use poisson distribution. Defaults to False.
+        lr (float, optional): Learning rate. Defaults to 1e-3.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
+
+    """
+
     ALLOW_CONDITION = [None, "impute", "predict"]
 
     def __init__(
         self,
-        seq_len,
-        seq_dim,
-        latent_dim=6,
-        z0_encoder="odernn",
-        rec_layers=1,
-        rec_dim=20,
-        gen_layers=1,
-        d_model=32,
-        obsrv_std=0.01,
-        poisson=False,
-        condition=None,
-        lr=1e-3,
+        seq_len: int,
+        seq_dim: int,
+        condition: str = None,
+        latent_dim: int = 6,
+        z0_encoder: str = "odernn",
+        rec_layers: int = 1,
+        rec_dim: int = 20,
+        gen_layers: int = 1,
+        d_model: int = 32,
+        obsrv_std: float = 0.01,
+        poisson: bool = False,
+        lr: float = 1e-3,
+        weight_decay: float = 1e-5,
         **kwargs,
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
@@ -202,7 +229,11 @@ class LatentODE(BaseModel):
         return batch_dict
 
     def configure_optimizers(self):
-        optim = torch.optim.Adamax(self.model.parameters(), lr=self.hparams.lr)
+        optim = torch.optim.Adamax(
+            self.model.parameters(),
+            lr=self.hparams.lr,
+            weight_decay=self.hparams.weight_decay,
+        )
         lr_scheduler = CustomDecayLR(optim)
         return {"optimizer": optim, "lr_scheduler": lr_scheduler}
 
