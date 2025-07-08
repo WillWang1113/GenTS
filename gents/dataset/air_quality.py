@@ -11,7 +11,7 @@ from torchvision.datasets.utils import download_and_extract_archive
 
 # from src.dataset.base import BaseDataModule
 from gents.dataset._monash_utils import convert_tsf_to_dataframe
-from gents.dataset.base_new import BaseDataModule
+from gents.dataset.base import BaseDataModule
 
 
 class AirQuality(BaseDataModule):

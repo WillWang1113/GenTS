@@ -52,10 +52,10 @@ class BaseModel(ABC, LightningModule):
     """Base class for time series generative models in PyTorch Lightning.
 
     Args:
-            seq_len (int): Target sequence length
-            seq_dim (int): Target sequence dimension, for univariate time series, set as 1
-            condition (str): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
-            **kwargs: Additional arguments for the model
+        seq_len (int): Target sequence length
+        seq_dim (int): Target sequence dimension, for univariate time series, set as 1
+        condition (str): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
+        **kwargs: Additional arguments for the model
     """
 
     ALLOW_CONDITION = ...

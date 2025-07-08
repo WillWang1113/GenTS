@@ -7,7 +7,7 @@ import torch
 from tqdm import tqdm
 
 # from src.dataset.base import BaseDataModule
-from gents.dataset.base_new import BaseDataModule
+from gents.dataset.base import BaseDataModule
 from torchvision.datasets.utils import download_url
 import os
 import tarfile

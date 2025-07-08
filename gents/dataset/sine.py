@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from gents.dataset.base_new import BaseDataModule
+from gents.dataset.base import BaseDataModule
 # from src.dataset.base import BaseDataModule
 
 

@@ -4,14 +4,6 @@ gents.dataset package
 Submodules
 ----------
 
-gents.dataset.air\_quality module
----------------------------------
-
-.. automodule:: gents.dataset.air_quality
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 gents.dataset.base module
 -------------------------
 
@@ -20,10 +12,10 @@ gents.dataset.base module
    :undoc-members:
    :show-inheritance:
 
-gents.dataset.base\_new module
-------------------------------
+gents.dataset.air\_quality module
+---------------------------------
 
-.. automodule:: gents.dataset.base_new
+.. automodule:: gents.dataset.air_quality
    :members:
    :undoc-members:
    :show-inheritance:

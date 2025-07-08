@@ -1,5 +1,5 @@
 Installation
-=====
+============
 
 .. note::
     **GenTS** is under development, and we will release it to PyPI soon. For now, you can install it from the source code.
@@ -22,6 +22,6 @@ Then, install the required packages:
    $ pip install -r requirements.txt
 
 From PyPI
-----------------
+---------
 .. note::
     To be updated

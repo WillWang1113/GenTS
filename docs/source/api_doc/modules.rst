@@ -1,4 +1,4 @@
-GenTS API
+gents
 =====
 
 .. toctree::
