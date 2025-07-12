@@ -9,7 +9,6 @@ gents.dataset.base module
 
 .. automodule:: gents.dataset.base
    :members:
-   :undoc-members:
    :show-inheritance:
 
 gents.dataset.air\_quality module
@@ -17,7 +16,6 @@ gents.dataset.air\_quality module
 
 .. automodule:: gents.dataset.air_quality
    :members:
-   :undoc-members:
    :show-inheritance:
 
 gents.dataset.ecg module
@@ -25,7 +23,6 @@ gents.dataset.ecg module
 
 .. automodule:: gents.dataset.ecg
    :members:
-   :undoc-members:
    :show-inheritance:
 
 gents.dataset.electricity module
@@ -33,7 +30,6 @@ gents.dataset.electricity module
 
 .. automodule:: gents.dataset.electricity
    :members:
-   :undoc-members:
    :show-inheritance:
 
 gents.dataset.energy module
@@ -41,7 +37,6 @@ gents.dataset.energy module
 
 .. automodule:: gents.dataset.energy
    :members:
-   :undoc-members:
    :show-inheritance:
 
 gents.dataset.ett module
@@ -49,7 +44,6 @@ gents.dataset.ett module
 
 .. automodule:: gents.dataset.ett
    :members:
-   :undoc-members:
    :show-inheritance:
 
 gents.dataset.exchange module
@@ -57,7 +51,6 @@ gents.dataset.exchange module
 
 .. automodule:: gents.dataset.exchange
    :members:
-   :undoc-members:
    :show-inheritance:
 
 gents.dataset.mujoco module
@@ -65,7 +58,6 @@ gents.dataset.mujoco module
 
 .. automodule:: gents.dataset.mujoco
    :members:
-   :undoc-members:
    :show-inheritance:
 
 gents.dataset.physionet module
@@ -73,13 +65,12 @@ gents.dataset.physionet module
 
 .. automodule:: gents.dataset.physionet
    :members:
-   :undoc-members:
    :show-inheritance:
 
-gents.dataset.sine module
--------------------------
+gents.dataset.simple module
+---------------------------
 
-.. automodule:: gents.dataset.sine
+.. automodule:: gents.dataset.simple
    :members:
    :undoc-members:
    :show-inheritance:
@@ -89,7 +80,6 @@ gents.dataset.stocks module
 
 .. automodule:: gents.dataset.stocks
    :members:
-   :undoc-members:
    :show-inheritance:
 
 gents.dataset.traffic module
@@ -97,7 +87,6 @@ gents.dataset.traffic module
 
 .. automodule:: gents.dataset.traffic
    :members:
-   :undoc-members:
    :show-inheritance:
 
 gents.dataset.weather module
@@ -105,13 +94,12 @@ gents.dataset.weather module
 
 .. automodule:: gents.dataset.weather
    :members:
-   :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
+.. Module contents
+.. ---------------
 
-.. automodule:: gents.dataset
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. .. automodule:: gents.dataset
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:

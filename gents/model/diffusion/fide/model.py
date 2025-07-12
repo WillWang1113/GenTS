@@ -12,9 +12,9 @@ import torch
 
 
 class FIDE(BaseModel):
-    """`FIDE <https://openreview.net/pdf?id=5HQhYiGnYb>`_: Frequency-Inflated Conditional Diffusion Model for Extreme-Aware Time Series Generation
+    """`FIDE <https://openreview.net/pdf?id=5HQhYiGnYb>`__: Frequency-Inflated Conditional Diffusion Model for Extreme-Aware Time Series Generation
 
-    Adapted from the `official codes <https://github.com/galib19/FIDE>`_
+    Adapted from the `official codes <https://github.com/galib19/FIDE>`__
     
     .. note::
         Only support for univariate time series.

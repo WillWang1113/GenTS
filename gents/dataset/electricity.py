@@ -4,6 +4,16 @@ from gents.dataset.base import WebDownloadDataModule
 
 
 class Electricity(WebDownloadDataModule):
+    """`Electricity dataset <https://archive.ics.uci.edu/dataset/321/electricityloaddiagrams20112014>`__.
+    The original data is resampled from 15-min to 1-hour. We download the preprocessed data according to `TSLib <https://github.com/thuml/Time-Series-Library>`__
+
+    Attributes:
+        D (int): Total number of variates, 321.
+        index_col (int | str): Time index column name.
+        urls (str): `download link <https://drive.google.com/file/d/1FHH0S3d6IK_UOpg6taBRavx4MragRLo1/view?usp=share_link>`__
+        csv_dir (str): `.csv` file path in the `.zip` file, fixed to `"electricity/electricity.csv"`.
+        data_source (str): Original data file type, fixed to `'zip'`.
+    """
     D = 321
     index_col = "date"
     url = "https://drive.google.com/file/d/1FHH0S3d6IK_UOpg6taBRavx4MragRLo1/view?usp=share_link"

@@ -19,9 +19,9 @@ from ._vq import VectorQuantize, quantize
 
 
 class TimeVQVAE(BaseModel):
-    """`TimeVQVAE <https://arxiv.org/abs/2111.08095>`_ for time series generation.
+    """`TimeVQVAE <https://arxiv.org/abs/2111.08095>`__ for time series generation.
     
-    Adapted from the `official codes <https://github.com/ML4ITS/TimeVQVAE>`_
+    Adapted from the `official codes <https://github.com/ML4ITS/TimeVQVAE>`__
     
     Args:
         seq_len (int): Target sequence length

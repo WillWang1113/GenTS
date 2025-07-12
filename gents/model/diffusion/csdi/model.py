@@ -5,9 +5,9 @@ from ._backbones import CSDI_Forecasting, CSDI_Physio
 
 
 class CSDI(BaseModel):
-    """`CSDI <https://arxiv.org/pdf/2107.03502>`_: Conditional Score-based Diffusion Models for Probabilistic Time Series Imputation
+    """`CSDI <https://arxiv.org/pdf/2107.03502>`__: Conditional Score-based Diffusion Models for Probabilistic Time Series Imputation
 
-    Adapted from the `official codes <https://github.com/ermongroup/CSDI>`_
+    Adapted from the `official codes <https://github.com/ermongroup/CSDI>`__
 
     Args:
         seq_len (int): Target sequence length

@@ -4,10 +4,19 @@ from gents.dataset.base import WebDownloadDataModule
 
 
 class Energy(WebDownloadDataModule):
+    """`Energy dataset <https://archive.ics.uci.edu/dataset/374/appliances+energy+prediction>`__.
+    We download the preprocessed data from the `TimeGAN repo <https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data>`__
+
+    Attributes:
+        D (int): Total number of variates, 28.
+        index_col (int | str): Time index column name.
+        urls (str): `download link <https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data/energy_data.csv>`__
+        data_source (str): Original data file type, fixed to `'csv'`.
+    """
     D = 28
+    index_col = None
     url = "https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data/energy_data.csv"
     data_source = 'csv'
-    index_col = None
 
     @property
     def dataset_name(self) -> str:

@@ -5,10 +5,30 @@ import numpy as np
 import torch
 
 from gents.dataset.base import BaseDataModule
-# from src.dataset.base import BaseDataModule
 
 
 class MuJoCo(BaseDataModule):
+    """MuJoCo data set with hopper standing task. 
+
+    .. note::
+        Require `Deepmind Control Suite` to run. (`pip install dm_control`)
+
+    Attributes:
+        D (int): Total number of variates, 14.
+        
+    Args:
+        seq_len (int): Target sequence length
+        select_seq_dim (List[int]): Subset of all sequence channels. Could be a `list` of `int` indicating the chosen channel indice. If `None`, use all channels. Defaults to None.
+        num_samples (int, optional): Number of total simulated curves. Defaults to 5000.
+        batch_size (int): Training and validation batch size.
+        data_dir (str, optional): Directory to save the data file (default name: `"data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt"`). Defaults to Path.cwd()/"data".
+        condition (str): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
+        inference_batch_size (int): Testing batch size.
+        max_time (float, optional): Time step index [0, 1, ..., `total_seq_len` - 1] will be automatically generated. If `max_time` is given, then scale the time step index, [0, ..., `max_time`]. Defaults to None.
+        add_coeffs (str, optional): Include interpolation coefficients or not. Needed for `KoVAE`, `GTGAN` and `SDEGAN`. Choose from `[None, 'linear', 'cubic_spline']`. If `None`, don't include. Defaults to None.
+        irregular_dropout (float, optional): Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between `[0.0, 1.0]` Defaults to 0.0.
+        **kwargs: Additional arguments for the model
+    """
     D = 14
     def __init__(
         self,
@@ -16,7 +36,7 @@ class MuJoCo(BaseDataModule):
         select_seq_dim: List[int] = None,
         num_samples: int = 5000,
         batch_size: int = 32,
-        data_dir: Path | str = Path.cwd() / "data",
+        data_dir: str = Path.cwd() / "data",
         condition: str = None,
         inference_batch_size: int = 1024,
         max_time: float = 1.0,

@@ -10,9 +10,9 @@ from ._utils import p_sample_loop, q_sample
 
 
 class TMDM(BaseModel):
-    """Transformer-Modulated Diffusion Models (`TMDM <https://openreview.net/pdf?id=qae04YACHs>`_) for Probabilistic Multivariate Time Series Forecasting
+    """Transformer-Modulated Diffusion Models (`TMDM <https://openreview.net/pdf?id=qae04YACHs>`__) for Probabilistic Multivariate Time Series Forecasting
 
-    Adapted from the `official codes <https://github.com/LiYuxin321/TMDM>`_
+    Adapted from the `official codes <https://github.com/LiYuxin321/TMDM>`__
     
     Args:
         seq_len (int): Target sequence length

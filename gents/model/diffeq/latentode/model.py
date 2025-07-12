@@ -7,9 +7,9 @@ import torch
 
 
 class LatentODE(BaseModel):
-    """`Latent ODEs <https://arxiv.org/abs/1907.03907>`_ for Irregularly-Sampled Time Series
+    """`Latent ODEs <https://arxiv.org/abs/1907.03907>`__ for Irregularly-Sampled Time Series
 
-    Adapted from the `official codes <https://github.com/YuliaRubanova/latent_ode>`_
+    Adapted from the `official codes <https://github.com/YuliaRubanova/latent_ode>`__
 
     .. note::
         LatentODE allows for irregular data. Imputation in Latent ODE is only interpolation, 

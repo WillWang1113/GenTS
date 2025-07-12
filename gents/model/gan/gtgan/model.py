@@ -16,9 +16,9 @@ from ._backbones import (
 
 
 class GTGAN(BaseModel):
-    """`GT-GAN <https://proceedings.neurips.cc/paper_files/paper/2022/file/f03ce573aa8bce26f77b76f1cb9ee979-Paper-Conference.pdf>`_: General Purpose Time Series Synthesis with Generative Adversarial Networks
+    """`GT-GAN <https://proceedings.neurips.cc/paper_files/paper/2022/file/f03ce573aa8bce26f77b76f1cb9ee979-Paper-Conference.pdf>`__: General Purpose Time Series Synthesis with Generative Adversarial Networks
 
-    Adapted from the `official codes <https://github.com/Jinsung-Jeon/GT-GAN>`_
+    Adapted from the `official codes <https://github.com/Jinsung-Jeon/GT-GAN>`__
 
     Args:
         seq_len (int): Target sequence length.

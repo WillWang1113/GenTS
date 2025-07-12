@@ -27,9 +27,9 @@ if not sys.warnoptions:
 
 
 class FourierFlow(BaseModel):
-    """Generative Time-series Modeling with `Fourier Flow <https://openreview.net/pdf?id=PpshD0AXfA>`_ .
+    """Generative Time-series Modeling with `Fourier Flow <https://openreview.net/pdf?id=PpshD0AXfA>`__ .
 
-    Adapted from the `official codes <https://github.com/ahmedmalaa/Fourier-flows>`_
+    Adapted from the `official codes <https://github.com/ahmedmalaa/Fourier-flows>`__
 
     .. note::
         Only support for CPU training and univariate time series

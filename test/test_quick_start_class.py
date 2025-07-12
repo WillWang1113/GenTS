@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import torch
 from gents.dataset.ecg import ECG
-from gents.dataset.sine import Spiral2D
+from gents.dataset.simple import Spiral2D
 from gents.model import VanillaDDPM
 from gents.dataset import SineND
 from gents.evaluation import tsne_visual

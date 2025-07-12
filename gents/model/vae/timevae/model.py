@@ -5,9 +5,9 @@ from ._backbones import ConvDecoder, ConvEncoder, TrendSeasonalDecoder
 
 
 class TimeVAE(VanillaVAE):
-    """`TimeVAE <https://arxiv.org/abs/2111.08095>`_ for time series generation.
+    """`TimeVAE <https://arxiv.org/abs/2111.08095>`__ for time series generation.
     
-    Adapted from the `official codes <https://github.com/abudesai/timeVAE>`_
+    Adapted from the `official codes <https://github.com/abudesai/timeVAE>`__
     
     .. note::
         The orignial codes are based on Tensorflow, we adapt the source codes into pytorch.

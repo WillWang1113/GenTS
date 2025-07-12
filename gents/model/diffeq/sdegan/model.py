@@ -7,9 +7,9 @@ from torch.optim.swa_utils import AveragedModel
 
 
 class SDEGAN(BaseModel):
-    """`Neural SDEs as Infinite-Dimensional GANs <https://arxiv.org/pdf/2102.03657>`
+    """`Neural SDEs as Infinite-Dimensional GANs <https://arxiv.org/pdf/2102.03657>`__
     
-    Adapted from the `official codes <https://github.com/google-research/torchsde/blob/master/examples/sde_gan.py>`_
+    Adapted from the `official codes <https://github.com/google-research/torchsde/blob/master/examples/sde_gan.py>`__
     
     .. note::
         SDEGAN allows for irregular data.

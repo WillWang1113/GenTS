@@ -10,9 +10,9 @@ from ._sampler import DiffusionProcess
 
 
 class ImagenTime(BaseModel):
-    """Utilizing Image Transforms and Diffusion Models for Generative Modeling of Short and Long Time Series (`ImagenTime <https://openreview.net/forum?id=2NfBBpbN9x&noteId=uYWwrwEW6Y>`_)
+    """Utilizing Image Transforms and Diffusion Models for Generative Modeling of Short and Long Time Series (`ImagenTime <https://openreview.net/forum?id=2NfBBpbN9x&noteId=uYWwrwEW6Y>`__)
     
-    Adapted from the `official codes <https://github.com/azencot-group/ImagenTime>`_
+    Adapted from the `official codes <https://github.com/azencot-group/ImagenTime>`__
     
     Args:
         seq_len (int): Target sequence length

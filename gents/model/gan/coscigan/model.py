@@ -8,9 +8,9 @@ from ._backbones import Discriminator, Generator, LSTMDiscriminator, LSTMGenerat
 
 
 class COSCIGAN(BaseModel):
-    """`COmmon Source CoordInated GAN (COSCI-GAN) <https://openreview.net/pdf?id=RP1CtZhEmR>`_
+    """`COmmon Source CoordInated GAN (COSCI-GAN) <https://openreview.net/pdf?id=RP1CtZhEmR>`__
 
-    Adapted from the `official codes <https://github.com/aliseyfi75/COSCI-GAN>`_
+    Adapted from the `official codes <https://github.com/aliseyfi75/COSCI-GAN>`__
 
 
     Args:

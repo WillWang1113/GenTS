@@ -10,9 +10,9 @@ from ._backbones import ProDiscriminator, ProGenerator
 
 
 class PSAGAN(BaseModel):
-    """`PSA-GAN <https://openreview.net/pdf?id=Ix_mh42xq5w>`_: PROGRESSIVE SELF ATTENTION GANS FOR SYNTHETIC TIME SERIES
+    """`PSA-GAN <https://openreview.net/pdf?id=Ix_mh42xq5w>`__: PROGRESSIVE SELF ATTENTION GANS FOR SYNTHETIC TIME SERIES
 
-    Adapted from the `official codes <https://github.com/mbohlkeschneider/psa-gan>`_
+    Adapted from the `official codes <https://github.com/mbohlkeschneider/psa-gan>`__
 
     .. note::
         The orignial codes are based on Gluonts, we adapt the source codes into our framework.

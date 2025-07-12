@@ -3,6 +3,16 @@ from gents.dataset.base import WebDownloadDataModule
 
 
 class Traffic(WebDownloadDataModule):
+    """`Traffic dataset <http://pems.dot.ca.gov>`__
+    We download the preprocessed data according to `TSLib <https://github.com/thuml/Time-Series-Library>`__
+
+    Attributes:
+        D (int): Total number of variates, 862.
+        index_col (int | str): Time index column name.
+        urls (str): `download link <https://drive.google.com/file/d/17t49bEbuhVI5v_q5mEINGRgMEf_kjwLg/view?usp=share_link>`__
+        csv_dir (str): `.csv` file path in the `.zip` file, fixed to `"traffic/traffic.csv"`.
+        data_source (str): Original data file type, fixed to `'zip'`.
+    """
     D = 862
     index_col = "date"
     url = "https://drive.google.com/file/d/17t49bEbuhVI5v_q5mEINGRgMEf_kjwLg/view?usp=share_link"

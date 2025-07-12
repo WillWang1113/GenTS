@@ -6,9 +6,9 @@ from ._backbones import Generator, Discriminator
 
 
 class RCGAN(BaseModel):
-    """`Recurrent conditional GAN <https://arxiv.org/pdf/1706.02633>`_ 
+    """`Recurrent conditional GAN <https://arxiv.org/pdf/1706.02633>`__ 
     
-    Adapted from the `official codes <https://github.com/ratschlab/RGAN/tree/master>`_
+    Adapted from the `official codes <https://github.com/ratschlab/RGAN/tree/master>`__
     
     .. note::
         The orignial codes are based on Tensorflow, we adapt the source codes into pytorch.

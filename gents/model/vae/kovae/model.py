@@ -13,9 +13,9 @@ from ._backbones import VKDecoder, VKEncoder, VKEncoderIrregular
 
 
 class KoVAE(BaseModel):
-    """`KoVAE <https://openreview.net/pdf?id=eY7sLb0dVF>`_: Koopman Variational Autoencoder for both Regular and Irregular Time Series
+    """`KoVAE <https://openreview.net/pdf?id=eY7sLb0dVF>`__: Koopman Variational Autoencoder for both Regular and Irregular Time Series
     
-    Adapted from the `official codes <https://github.com/azencot-group/KoVAE>`_
+    Adapted from the `official codes <https://github.com/azencot-group/KoVAE>`__
     
     .. note::
         KoVAE allows for irregular data.

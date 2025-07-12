@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import List
 
 import numpy as np
@@ -13,11 +12,48 @@ import os
 import tarfile
 import re
 
+FEAT_NAME = [
+    "DiasABP",
+    "HR",
+    "Na",
+    "Lactate",
+    "NIDiasABP",
+    "PaO2",
+    "WBC",
+    "pH",
+    "Albumin",
+    "ALT",
+    "Glucose",
+    "SaO2",
+    "Temp",
+    "AST",
+    "Bilirubin",
+    "HCO3",
+    "BUN",
+    "RespRate",
+    "Mg",
+    "HCT",
+    "SysABP",
+    "FiO2",
+    "K",
+    "GCS",
+    "Cholesterol",
+    "NISysABP",
+    "TroponinT",
+    "MAP",
+    "TroponinI",
+    "PaCO2",
+    "Platelets",
+    "Urine",
+    "NIMAP",
+    "Creatinine",
+    "ALP",
+]
 
 # adapted from CSDI (https://github.com/ermongroup/CSDI/blob/main/dataset_physio.py)
 
 
-def get_idlist(root_dir, patient_set="a"):
+def _get_idlist(root_dir, patient_set="a"):
     read_dir = os.path.join(root_dir, f"set-{patient_set}")
     patient_id = []
     for filename in os.listdir(read_dir):
@@ -29,59 +65,49 @@ def get_idlist(root_dir, patient_set="a"):
 
 
 class Physionet(BaseDataModule):
+    """`Physionet Challenge 2012 Dataset <https://www.physionet.org/content/challenge-2012/1.0.0/>`__
+    
+    For each patient measurement, the original data is irregularly recorded for 48 hours. For each record, the time format is "HH:MM".
+    Therefore, it can be treated as a long sequence at 1-min resolution, and for 48 hours, the total time steps are 48*60.
+    We allow the users to aggreate (resample) to make the sequence shorter by setting `agg_minutes`, e.g. `agg_minutes=60` is resampled at 1-hour level,
+    resulting in sequences with 48 time steps.
+    
+    In this way, this dataset has missing values at the unrecorded time steps.
+    
+    .. note::
+        Originally has missing values. `irregular_dropout` is disabled.
+    
+    Attributes:
+        D (int): Total sequence dimensions in the original data, fixed to 35.
+        L (int): Maximum sequence length, fixed to 2880.
+        url (str | int): download url link.
+        
+    Args:
+        agg_minutes (int, optional): Aggregation minutes. Defaults to 60.
+        select_seq_dim (List[int  |  str], optional): Subset of all sequence channels. Could be a `list` of `int` indicating the chosen channel indice or a `list` of `str` indicating the column names for `pd.Dataframe` object. If `None`, use all channels. Defaults to None.
+        batch_size (int, optional): Training and validation batch size. Defaults to 32.
+        data_dir (str, optional): Directory to save the data file (default name: `"data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt"`). Defaults to "./data".
+        condition (str, optional): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
+        scale (bool, optional): If `True`, `StandardScaler` will be used for z-score normalization. Training data will be used for calculating `mu` and `sigma`, then transform all time steps. Defaults to True.
+        inference_batch_size (int, optional): Testing batch size. Defaults to 1024.
+        max_time (float, optional): Time step index [0, 1, ..., `total_seq_len` - 1] will be automatically generated. If `max_time` is given, then scale the time step index, [0, ..., `max_time`]. Defaults to None.
+        add_coeffs (str, optional): Include interpolation coefficients or not. Needed for `KoVAE`, `GTGAN` and `SDEGAN`. Choose from `[None, 'linear', 'cubic_spline']`. If `None`, don't include. Defaults to None.
+    """
+    D = len(FEAT_NAME)
     L = 48 * 60
-    attributes = [
-        "DiasABP",
-        "HR",
-        "Na",
-        "Lactate",
-        "NIDiasABP",
-        "PaO2",
-        "WBC",
-        "pH",
-        "Albumin",
-        "ALT",
-        "Glucose",
-        "SaO2",
-        "Temp",
-        "AST",
-        "Bilirubin",
-        "HCO3",
-        "BUN",
-        "RespRate",
-        "Mg",
-        "HCT",
-        "SysABP",
-        "FiO2",
-        "K",
-        "GCS",
-        "Cholesterol",
-        "NISysABP",
-        "TroponinT",
-        "MAP",
-        "TroponinI",
-        "PaCO2",
-        "Platelets",
-        "Urine",
-        "NIMAP",
-        "Creatinine",
-        "ALP",
-    ]
-    D = len(attributes)
-
     urls = [
         "https://physionet.org/files/challenge-2012/1.0.0/set-a.tar.gz?download",
         "https://physionet.org/files/challenge-2012/1.0.0/set-b.tar.gz?download",
     ]
 
-    outcome_urls = ["https://physionet.org/files/challenge-2012/1.0.0/Outcomes-a.txt"]
+    _outcome_urls = ["https://physionet.org/files/challenge-2012/1.0.0/Outcomes-a.txt"]
 
     def __init__(
         self,
         agg_minutes: int = 60,
         select_seq_dim: List[int | str] = None,
         batch_size: int = 32,
-        data_dir: Path | str = Path.cwd() / "data",
+        data_dir: str = "./data",
         condition: str = None,
         scale: bool = True,
         inference_batch_size: int = 1024,
@@ -89,7 +115,20 @@ class Physionet(BaseDataModule):
         add_coeffs: str = None,
         **kwargs,
     ):
-        seq_len = self.L // agg_minutes - kwargs.get('obs_len', 0)
+        """_summary_
+
+        Args:
+            agg_minutes (int, optional): Aggregation minutes. Defaults to 60.
+            select_seq_dim (List[int  |  str], optional): Subset of all sequence channels. Could be a `list` of `int` indicating the chosen channel indice or a `list` of `str` indicating the column names for `pd.Dataframe` object. If `None`, use all channels. Defaults to None.
+            batch_size (int, optional): Training and validation batch size. Defaults to 32.
+            data_dir (str, optional): Directory to save the data file (default name: `"data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt"`). Defaults to "./data".
+            condition (str, optional): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
+            scale (bool, optional): If `True`, `StandardScaler` will be used for z-score normalization. Training data will be used for calculating `mu` and `sigma`, then transform all time steps. Defaults to True.
+            inference_batch_size (int, optional): Testing batch size. Defaults to 1024.
+            max_time (float, optional): Time step index [0, 1, ..., `total_seq_len` - 1] will be automatically generated. If `max_time` is given, then scale the time step index, [0, ..., `max_time`]. Defaults to None.
+            add_coeffs (str, optional): Include interpolation coefficients or not. Needed for `KoVAE`, `GTGAN` and `SDEGAN`. Choose from `[None, 'linear', 'cubic_spline']`. If `None`, don't include. Defaults to None.
+        """
+        seq_len = self.L // agg_minutes - kwargs.get("obs_len", 0)
         super().__init__(
             seq_len,
             len(select_seq_dim) if isinstance(select_seq_dim, list) else self.D,
@@ -108,11 +147,10 @@ class Physionet(BaseDataModule):
 
         if select_seq_dim is not None:
             assert max(select_seq_dim) < self.D
-        
 
     def get_data(self):
         raw_folder = self.data_dir
-        for url in self.outcome_urls:
+        for url in self._outcome_urls:
             filename = url.rpartition("/")[2]
             download_url(url, raw_folder, filename, None)
 
@@ -130,7 +168,7 @@ class Physionet(BaseDataModule):
         # gt_masks_list = []
 
         for patient_set in ["a", "b"]:
-            idlist = get_idlist(self.data_dir, patient_set)
+            idlist = _get_idlist(self.data_dir, patient_set)
             for id_ in tqdm(idlist):
                 try:
                     observed_values, observed_masks = self.parse_patient_data(
@@ -139,7 +177,7 @@ class Physionet(BaseDataModule):
                     observed_values_list.append(observed_values)
                     observed_masks_list.append(observed_masks)
                     # gt_masks_list.append(gt_masks)
-                    
+
                 except Exception as e:
                     print(id_, e)
                     continue
@@ -164,16 +202,16 @@ class Physionet(BaseDataModule):
         data_mask = torch.from_numpy(observed_masks).bool()
         # only has class_label for set_a
         class_label = None
-        
+
         # select dimensions
         if self.select_seq_dim is not None:
             if isinstance(self.select_seq_dim[0], str):
-                chnl_select = [self.attributes.index(ssd) for ssd in self.select_seq_dim]
+                chnl_select = [FEAT_NAME.index(ssd) for ssd in self.select_seq_dim]
             elif isinstance(self.select_seq_dim[0], int):
                 chnl_select = self.select_seq_dim
             data = data[..., chnl_select]
             data_mask = data_mask[..., chnl_select]
-        
+
         return data, data_mask, class_label
 
     @property
@@ -192,31 +230,37 @@ class Physionet(BaseDataModule):
         df["month"] = 12  # fake month, doesnt matter
         df["Time"] = pd.to_datetime(df[["year", "month", "day", "h", "m"]])
         df = df[["Time", "Parameter", "Value"]]
-        df = df.pivot_table(index='Time', columns='Parameter', values='Value', aggfunc='mean')
+        df = df.pivot_table(
+            index="Time", columns="Parameter", values="Value", aggfunc="mean"
+        )
 
         # complete table with all attributes and set NaNs
-        col_to_add = set(self.attributes) - set(df.columns.tolist())
+        col_to_add = set(FEAT_NAME) - set(df.columns.tolist())
         col_to_add = list(col_to_add)
         df[col_to_add] = np.NaN
-        df = df[self.attributes]
-        assert self.attributes == df.columns.tolist()
+        df = df[FEAT_NAME]
+        assert FEAT_NAME == df.columns.tolist()
 
         # aggregation
         # data shape: usually [24*N_t, C]
         # mask shape=data shape, 0:missing, 1:observed
         df_agg = df.resample(self.agg_time_interval).mean()
-        
+
         # extend to full 2 days, and limit to 2 days
         df_agg = df_agg.reset_index()
-        full_time = pd.date_range('2001-12-01 00:00:00', "2001-12-03 00:00:00", freq=self.agg_time_interval, inclusive='left')
-        full_time = pd.DataFrame(full_time, columns=['Time'])
-        df_final = full_time.merge(df_agg, how='outer')
-        df_final = df_final.set_index('Time')
-        df_final = df_final[:'2001-12-02']
-        
+        full_time = pd.date_range(
+            "2001-12-01 00:00:00",
+            "2001-12-03 00:00:00",
+            freq=self.agg_time_interval,
+            inclusive="left",
+        )
+        full_time = pd.DataFrame(full_time, columns=["Time"])
+        df_final = full_time.merge(df_agg, how="outer")
+        df_final = df_final.set_index("Time")
+        df_final = df_final[:"2001-12-02"]
+
         observed_values = df_final.values
         observed_masks = ~np.isnan(observed_values)
-        
 
         # # randomly set some percentage as ground-truth
         # masks = observed_masks.reshape(-1).copy()
@@ -228,7 +272,7 @@ class Physionet(BaseDataModule):
         # gt_masks = masks.reshape(observed_masks.shape)
 
         observed_values = np.nan_to_num(observed_values)
-        
+
         # observed_masks = observed_masks.astype("float32")
         # gt_masks = gt_masks.astype("float32")
 

@@ -1,14 +1,26 @@
-import copy
 from pathlib import Path
 
 import numpy as np
 import torch
 
 from gents.dataset.base import BaseDataModule
-# from src.dataset.base import BaseDataModule
 
 
 class Spiral2D(BaseDataModule):
+    """Simulated 2D spiral curves with clock-wise or counter clock-wise direction.
+    For one curve, :math:`x_1(t)=\pm r(t) \cos(t), x_2(t)=r(t) \sin(t)` where :math:`r(t)=a + bt, a \sim \mathcal{U}[0, 0.5), b \sim \mathcal{U}[0, 0.2)`.
+
+    Args:
+        seq_len (int, optional): Target sequence length. Defaults to 200.
+        num_samples (int, optional): Number of total simulated curves. Defaults to 1000.
+        batch_size (int, optional): Training and validation batch size. Defaults to 32.
+        data_dir (Path | str, optional): Directory to save the data file (default name: `"data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt"`). Defaults to Path.cwd()/"data".
+        condition (str, optional): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
+        inference_batch_size (int, optional): Testing batch size. Defaults to 1024.
+        max_time (float, optional): Time step index [0, 1, ..., `total_seq_len` - 1] will be automatically generated. If `max_time` is given, then scale the time step index, [0, ..., `max_time`]. Defaults to None.
+        add_coeffs (str, optional): Include interpolation coefficients or not. Needed for `KoVAE`, `GTGAN` and `SDEGAN`. Choose from `[None, 'linear', 'cubic_spline']`. If `None`, don't include. Defaults to None.
+        irregular_dropout (float, optional): Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between `[0.0, 1.0]` Defaults to 0.0.
+    """
     def __init__(
         self,
         seq_len: int = 200,
@@ -89,6 +101,20 @@ class Spiral2D(BaseDataModule):
 
 
 class SineND(BaseDataModule):
+    """Simulated sine waves with `N` dimensions. For each dimension, :math:`x(t)=\sin(at+b), a \sim \mathcal{U}[0.05, 0.4], b \sim \mathcal{U}[0., 1.5]`.
+
+    Args:
+        seq_len (int, optional): Target sequence length. Defaults to 200.
+        seq_dim (int, optional): Total simulated dimensions. Defaults to 200.
+        num_samples (int, optional): Number of total simulated curves. Defaults to 1000.
+        batch_size (int, optional): Training and validation batch size. Defaults to 32.
+        data_dir (Path | str, optional): Directory to save the data file (default name: `"data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt"`). Defaults to Path.cwd()/"data".
+        condition (str, optional): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
+        inference_batch_size (int, optional): Testing batch size. Defaults to 1024.
+        max_time (float, optional): Time step index [0, 1, ..., `total_seq_len` - 1] will be automatically generated. If `max_time` is given, then scale the time step index, [0, ..., `max_time`]. Defaults to None.
+        add_coeffs (str, optional): Include interpolation coefficients or not. Needed for `KoVAE`, `GTGAN` and `SDEGAN`. Choose from `[None, 'linear', 'cubic_spline']`. If `None`, don't include. Defaults to None.
+        irregular_dropout (float, optional): Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between `[0.0, 1.0]` Defaults to 0.0.
+    """
     def __init__(
         self,
         seq_len: int = 200,

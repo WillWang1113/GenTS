@@ -23,9 +23,9 @@ from ._backbones import (
 
 
 class FourierDiffusion(BaseModel):
-    """`Time Series Diffusion in the Frequency Domain <https://arxiv.org/pdf/2402.05933>`_
+    """`Time Series Diffusion in the Frequency Domain <https://arxiv.org/pdf/2402.05933>`__
 
-    Adapted from the `official codes <https://github.com/JonathanCrabbe/FourierDiffusion>`_
+    Adapted from the `official codes <https://github.com/JonathanCrabbe/FourierDiffusion>`__
 
     Args:
         seq_len (int): Target sequence length

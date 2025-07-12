@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import torch
 from gents.dataset.energy import Energy
-from gents.dataset.sine import Spiral2D
+from gents.dataset.simple import Spiral2D
 from gents.dataset.stocks import Stocks
 from gents.evaluation.visual import predict_visual
 from gents.model import VanillaDDPM

@@ -1,5 +1,5 @@
 from .mujoco import MuJoCo
-from .sine import SineND, Spiral2D
+from .simple import SineND, Spiral2D
 from .stocks import Stocks
 from .energy import Energy
 from .electricity import Electricity

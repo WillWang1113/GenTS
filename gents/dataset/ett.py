@@ -3,6 +3,15 @@ from gents.dataset.base import WebDownloadDataModule
 
 
 class ETTh1(WebDownloadDataModule):
+    """`ETTh1 dataset <https://github.com/zhouhaoyi/ETDataset>`__.
+    We download the preprocessed data according to `TSLib <https://github.com/thuml/Time-Series-Library>`__
+
+    Attributes:
+        D (int): Total number of variates, 7.
+        index_col (int | str): Time index column name.
+        urls (str): `download link <https://raw.githubusercontent.com/zhouhaoyi/ETDataset/refs/heads/main/ETT-small/ETTh1.csv>`__
+        data_source (str): Original data file type, fixed to `'csv'`.
+    """
     D = 7
     index_col = 'date'
     url = "https://raw.githubusercontent.com/zhouhaoyi/ETDataset/refs/heads/main/ETT-small/ETTh1.csv"

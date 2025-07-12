@@ -6,9 +6,9 @@ import torch
 
 
 class LS4(BaseModel):
-    """`Deep Latent State Space Models for Time-Series Generation <https://arxiv.org/abs/2212.12749>`_
+    """`Deep Latent State Space Models for Time-Series Generation <https://arxiv.org/abs/2212.12749>`__
 
-    Adapted from the `official codes <https://github.com/alexzhou907/ls4>`_
+    Adapted from the `official codes <https://github.com/alexzhou907/ls4>`__
 
     .. note::
         LS4 allows for irregular data. Imputation in LS4 is only interpolation, 

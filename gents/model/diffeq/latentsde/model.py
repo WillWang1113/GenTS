@@ -4,9 +4,9 @@ import torch
 
 
 class LatentSDE(BaseModel):
-    """`Latent SDE <https://arxiv.org/pdf/2001.01328>`_
+    """`Latent SDE <https://arxiv.org/pdf/2001.01328>`__
 
-    Adapted from the `official codes <https://github.com/google-research/torchsde/blob/master/examples/latent_sde.py>`_
+    Adapted from the `official codes <https://github.com/google-research/torchsde/blob/master/examples/latent_sde.py>`__
 
     Args:
         seq_len (int): Target sequence length

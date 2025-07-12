@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 import numpy as np
 import torch
@@ -10,6 +9,36 @@ from gents.dataset.base import BaseDataModule
 
 
 class ECG(BaseDataModule):
+    """`ECG5000 dataset <https://www.timeseriesclassification.com/description.php?Dataset=ECG5000>`__.
+    Raw data has already be scaled.
+    
+    .. note::
+        This is a univariate time series dataset, i.e. `seq_dim = 1`. 
+    
+    .. note::
+        This is a fixed-length dataset, i.e. for each time series `total_seq_len=140`, is fixed.
+        For `predict` condition, following the rule that `total_seq_len = obs_len + seq_len <= 140`. 
+    
+    .. note::
+        Class labels of ECG are patient statuses (in total 5 labels).
+    
+    Attributes:
+        L (int): Total sequence length, fixed to 140.
+        D (int): Number of variates, fixed to 140.
+        n_classes (int): Total number of class labels, fixed to 5.
+        urls (str): `download link <https://zenodo.org/records/4656719/files/kdd_cup_2018_dataset_with_missing_values.zip>`__
+    
+    Args:
+        seq_len (int, optional): Target sequence length, fixed to 140.
+        seq_dim (int, optional): Target sequence dimensions, fixed to 1.
+        batch_size (int, optional): Training and validation batch size. Defaults to 32.
+        data_dir (str, optional): Directory to save the data file (default name: `"data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt"`). Defaults to "data".
+        condition (str, optional): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
+        inference_batch_size (int, optional): Testing batch size. Defaults to 1024.
+        max_time (float, optional): Time step index [0, 1, ..., `total_seq_len` - 1] will be automatically generated. If `max_time` is given, then scale the time step index, [0, ..., `max_time`]. Defaults to None.
+        add_coeffs (str, optional): Include interpolation coefficients or not. Needed for `KoVAE`, `GTGAN` and `SDEGAN`. Choose from `[None, 'linear', 'cubic_spline']`. If `None`, don't include. Defaults to None.
+        **kwargs: Additional arguments for the model
+    """
     L = 140
     D = 1
     n_classes = 5
@@ -21,7 +50,7 @@ class ECG(BaseDataModule):
         seq_len: int = 140,
         seq_dim: int = 1,
         batch_size: int = 32,
-        data_dir: Path | str = Path.cwd() / "data",
+        data_dir: str = "./data",
         condition: str = None,
         inference_batch_size: int = 1024,
         max_time: float = 1.0,

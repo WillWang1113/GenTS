@@ -18,7 +18,7 @@ from ._backbones import (
 
 
 class MrDiff(BaseModel):
-    """`MrDiff <https://openreview.net/pdf?id=mmjnr0G8ZY>`_: Multi-resolution Diffusion Models for Time Series Forecasting
+    """`MrDiff <https://openreview.net/pdf?id=mmjnr0G8ZY>`__: Multi-resolution Diffusion Models for Time Series Forecasting
     
     Adapted from the official codes that provided by Lifeng Shen (lshenae@connect.ust.hk)
 

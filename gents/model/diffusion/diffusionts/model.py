@@ -14,9 +14,9 @@ from ._utils import cosine_beta_schedule, linear_beta_schedule
 
 
 class DiffusionTS(BaseModel):
-    """`Diffusion-TS <https://openreview.net/pdf?id=4h1apFjO99>`_: Interpretable Diffusion for General Time Series Generation.
+    """`Diffusion-TS <https://openreview.net/pdf?id=4h1apFjO99>`__: Interpretable Diffusion for General Time Series Generation.
 
-    Adapted from the `official codes <https://github.com/Y-debug-sys/Diffusion-TS>`_
+    Adapted from the `official codes <https://github.com/Y-debug-sys/Diffusion-TS>`__
 
     Args:
         seq_len (int): Target sequence length

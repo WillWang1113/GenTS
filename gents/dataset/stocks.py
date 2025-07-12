@@ -3,6 +3,15 @@ from gents.dataset.base import WebDownloadDataModule
 
 
 class Stocks(WebDownloadDataModule):
+    """`Stocks dataset <https://finance.yahoo.com/quote/GOOG/history/?guccounter=1&guce_referrer=aHR0cHM6Ly93d3cuZ29vZ2xlLmNvbS8&guce_referrer_sig=AQAAAItg_cTf-Qqq-o8JkhX8sFlI5jjnjbuwEtUM9yei8HImkUYslPS6NF8xw-f8TZ0hMpiRXNC-A-KhQmrhLZzeb-75add2NFj8GKZixCElhjzP0Pju6Y3n7nGrQ0bgDTWwWlJ0i0nQSxoOIRGuJOJzW6MTbeHhZnasz_FNCvgAEcY5>`__.
+    We download the preprocessed data from the `TimeGAN repo <https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data>`__
+
+    Attributes:
+        D (int): Total number of variates, 6.
+        index_col (int | str): Time index column name.
+        urls (str): `download link <https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data/stock_data.csv>`__
+        data_source (str): Original data file type, fixed to `'csv'`.
+    """
     D = 6
     url = "https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data/stock_data.csv"
     data_source = 'csv'

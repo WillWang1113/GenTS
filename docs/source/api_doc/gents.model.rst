@@ -24,10 +24,10 @@ gents.model.base module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
+.. Module contents
+.. ---------------
 
-.. automodule:: gents.model
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. .. automodule:: gents.model
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
