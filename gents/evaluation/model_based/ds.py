@@ -4,9 +4,24 @@ import torch.nn as nn
 from sklearn.metrics import accuracy_score
 
 
-def discriminative_score(ori_data, generated_data, device):
+def discriminative_score(ori_data: np.ndarray, generated_data: np.ndarray, device: str):
+    """Discriminative score.
+    
+    Discriminative score is used for evaluating whether the generated time series can be tell from
+    the real time series through a post-hoc trained GRU network.
+    
+    The generated data will be labeled as `fake` while the real one will be labeld as `true`. Then, 
+    a GRU classifier will be trained on 80% of the whole dataset to distinguish them. 
+    
+    The classification accuracy will be reported on the last 20% data.
+
+    Args:
+        ori_data (np.ndarray): Real time series data.
+        generated_data (np.ndarray): Generated time series data.
+        device (str): Computing device.
+    """
     # Basic Parameters
-    ori_data, generated_data = torch.Tensor(ori_data), torch.Tensor(generated_data)
+    ori_data, generated_data = torch.from_numpy(ori_data), torch.from_numpy(generated_data)
     ## Builde a post-hoc RNN discriminator network
     
     input_size=ori_data.shape[-1]

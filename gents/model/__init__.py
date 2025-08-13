@@ -7,7 +7,8 @@ from .diffusion import (
     TMDM,
     DiffusionTS,
     CSDI,
-    ImagenTime,FIDE
+    ImagenTime,
+    FIDE,
 )
 from .vae import VanillaVAE, TimeVAE, TimeVQVAE, KoVAE
 from .gan import TimeGAN, VanillaGAN, GTGAN, COSCIGAN, PSAGAN, RCGAN

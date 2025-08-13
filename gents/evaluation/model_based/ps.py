@@ -38,15 +38,20 @@ class Predictor(nn.Module):
         return out
 
 
-def predictive_score(ori_data, generated_data, device):
-    """Report the performance of Post-hoc RNN one-step ahead prediction.
+def predictive_score(ori_data: np.ndarray, generated_data: np.ndarray, device: str):
+    """Predictive score.
+    
+    Predictive score is used for evaluating the usefulness of the generated time series on forecasting.
+    
+    The generated time series will be used for training a GRU forecasting model. Then, the trained model will be
+    tested on the real data.
+    
+    The test MAE will be reported.
 
     Args:
-      - ori_data: original data
-      - generated_data: generated synthetic data
-
-    Returns:
-      - predictive_score: MAE of the predictions on the original data
+        ori_data (np.ndarray): Real time series data.
+        generated_data (np.ndarray): Generated time series data.
+        device (str): Computing device.
     """
     # Basic Parameters
     no, seq_len, dim = np.asarray(ori_data).shape

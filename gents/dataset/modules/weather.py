@@ -1,4 +1,4 @@
-from gents.dataset.base import WebDownloadDataModule
+from ..base import WebDownloadDataModule
 
 # from src.dataset.base import BaseDataModule
 

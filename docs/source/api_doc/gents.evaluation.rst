@@ -1,21 +1,20 @@
 gents.evaluation package
 ========================
 
-Submodules
-----------
+Subpackages
+-----------
 
-gents.evaluation.visual module
-------------------------------
+.. toctree::
+   :maxdepth: 3
 
-.. automodule:: gents.evaluation.visual
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   gents.evaluation.model_based
+   gents.evaluation.model_free
+   gents.evaluation.visualization
 
-Module contents
----------------
+.. Module contents
+.. ---------------
 
-.. automodule:: gents.evaluation
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. .. automodule:: gents.evaluation
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:

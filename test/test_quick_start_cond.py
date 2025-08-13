@@ -3,7 +3,7 @@ import torch
 from gents.dataset.energy import Energy
 from gents.dataset.simple import Spiral2D
 from gents.dataset.stocks import Stocks
-from gents.evaluation.visual import predict_visual
+from gents.evaluation.visualization.visual import predict_visual
 from gents.model import VanillaDDPM
 from gents.dataset import SineND
 from gents.evaluation import tsne_visual

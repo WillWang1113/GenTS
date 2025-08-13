@@ -1,15 +1,15 @@
-from .mujoco import MuJoCo
-from .simple import SineND, Spiral2D
-from .stocks import Stocks
-from .energy import Energy
-from .electricity import Electricity
-from .weather import Weather
-from .traffic import Traffic
-from .exchange import Exchange
-from .ett import ETTh1, ETTh2, ETTm1, ETTm2
-from .air_quality import AirQuality
-from .ecg import ECG
-from .physionet import Physionet
+from .modules.mujoco import MuJoCo
+from .modules.simple import SineND, Spiral2D
+from .modules.stocks import Stocks
+from .modules.energy import Energy
+from .modules.electricity import Electricity
+from .modules.weather import Weather
+from .modules.traffic import Traffic
+from .modules.exchange import Exchange
+from .modules.ett import ETTh1, ETTh2, ETTm1, ETTm2
+from .modules.air_quality import AirQuality
+from .modules.ecg import ECG
+from .modules.physionet import Physionet
 
 __all__ = [
     "Spiral2D",

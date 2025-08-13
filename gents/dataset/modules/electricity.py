@@ -1,32 +1,32 @@
-from gents.dataset.base import WebDownloadDataModule
+from ..base import WebDownloadDataModule
+
 # from src.dataset.base import BaseDataModule
 
 
-class Exchange(WebDownloadDataModule):
-    """`Exchange dataset <https://github.com/laiguokun/multivariate-time-series-data>`__
-    We download the preprocessed data according to `TSLib <https://github.com/thuml/Time-Series-Library>`__
+class Electricity(WebDownloadDataModule):
+    """`Electricity dataset <https://archive.ics.uci.edu/dataset/321/electricityloaddiagrams20112014>`__.
+    The original data is resampled from 15-min to 1-hour. We download the preprocessed data according to `TSLib <https://github.com/thuml/Time-Series-Library>`__
 
     Attributes:
-        D (int): Total number of variates, 8.
+        D (int): Total number of variates, 321.
         index_col (int | str): Time index column name.
-        urls (str): `download link <https://drive.google.com/file/d/1rN79CxW3Vldp-WDuSoG0bKq9tYQR79UK/view?usp=share_link>`__
-        csv_dir (str): `.csv` file path in the `.zip` file, fixed to `"exchange_rate/exchange_rate.csv"`.
+        urls (str): `download link <https://drive.google.com/file/d/1FHH0S3d6IK_UOpg6taBRavx4MragRLo1/view?usp=share_link>`__
+        csv_dir (str): `.csv` file path in the `.zip` file, fixed to `"electricity/electricity.csv"`.
         data_source (str): Original data file type, fixed to `'zip'`.
     """
-    D = 8
-    index_col = 'date'
-    url = "https://drive.google.com/file/d/1rN79CxW3Vldp-WDuSoG0bKq9tYQR79UK/view?usp=share_link"
-    csv_dir = 'exchange_rate/exchange_rate.csv'
-    data_source = 'zip'
-    
+    D = 321
+    index_col = "date"
+    url = "https://drive.google.com/file/d/1FHH0S3d6IK_UOpg6taBRavx4MragRLo1/view?usp=share_link"
+    csv_dir = "electricity/electricity.csv"
+    data_source = "zip"
+
     @property
     def dataset_name(self) -> str:
-        return "Exchange_rate"
+        return "Electricity"
 
-# class Exchange(BaseDataModule):
-#     D = 8
-#     url = "https://raw.githubusercontent.com/laiguokun/multivariate-time-series-data/master/exchange_rate/exchange_rate.txt.gz"
-    
+
+# class Electricity(BaseDataModule):
+#     D = 321
 #     def __init__(
 #         self,
 #         seq_len: int = 24,
@@ -63,13 +63,15 @@ class Exchange(WebDownloadDataModule):
 #             df = pd.read_csv(pre_download_dir)
 #         else:
 #             # Download stock data
+#             url = "https://raw.githubusercontent.com/laiguokun/multivariate-time-series-data/master/electricity/electricity.txt.gz"
 #             headers = {"Authorization": "Test"}
 
-#             response = requests.get(self.url, headers=headers)
+#             response = requests.get(url, headers=headers)
 #             with gzip.GzipFile(fileobj=BytesIO(response.content)) as gz_file:
 #                 decompressed_content = gz_file.read().decode('utf-8')  # 二进制转字符串
 #                 df = pd.read_csv(StringIO(decompressed_content), header=None)
 #                 df.to_csv(pre_download_dir, index=False)
+#         print(df.shape)
 
 #         # select dimensions
 #         if self.select_seq_dim is not None:
@@ -77,7 +79,7 @@ class Exchange(WebDownloadDataModule):
 #                 df = df[self.select_seq_dim]
 #             elif isinstance(self.select_seq_dim[0], int):
 #                 df = df.iloc[:, self.select_seq_dim]
-                
+
 #         data_raw = df.values.astype(np.float32)
 #         n_window = data_raw.shape[0] - self.total_seq_len + 1
 #         n_trainval_window = int(n_window * 0.7) + int(n_window * 0.2)
@@ -102,4 +104,4 @@ class Exchange(WebDownloadDataModule):
 
 #     @property
 #     def dataset_name(self) -> str:
-#         return "Exchange_rate"
+#         return "Electricity"

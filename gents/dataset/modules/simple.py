@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from gents.dataset.base import BaseDataModule
+from ..base import BaseDataModule
 
 
 class Spiral2D(BaseDataModule):

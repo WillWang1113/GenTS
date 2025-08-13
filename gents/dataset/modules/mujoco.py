@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 import torch
 
-from gents.dataset.base import BaseDataModule
+from ..base import BaseDataModule
 
 
 class MuJoCo(BaseDataModule):

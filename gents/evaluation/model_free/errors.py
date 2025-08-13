@@ -12,12 +12,31 @@ def _check_shape(y_true, y_pred):
         )
 
 
-def mse(y_true, y_pred):
+def mse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Calculating Mean Squared Error (MSE).
+
+    Adapated from `sklearn.metrics.mean_squared_error`.
+
+    Args:
+        y_true (np.ndarray): Ground truth time series, in shape of `[B, T, C]`.
+        y_pred (np.ndarray): Predicted time series scenarios, in shape of `[B, T, C]`.
+    """
     _check_shape(y_true, y_pred)
     return mean_squared_error(y_true, y_pred)
 
 
-def crps(y_true: np.ndarray, y_pred: np.ndarray, quantiles=np.arange(0.1, 1.0, 0.1)):
+def crps(
+    y_true: np.ndarray, y_pred: np.ndarray, quantiles=np.arange(0.1, 1.0, 0.1)
+) -> float:
+    """Calculating continuous ranked probability score (CRPS) through Multi-Quantile loss.
+
+    Adapated from `neuralforecast.losses.numpy`.
+
+    Args:
+        y_true (np.ndarray): Ground truth time series, in shape of `[B, T, C]`
+        y_pred (np.ndarray): Predicted time series scenarios, in shape of `[B, T, C, N]` (`N` is the number of scenarios), or `[B, T, C, Q]` (`Q` is the number of quantiles).
+        quantiles (np.array, optional): Quantile levels. The more levels are, the more accurately CRPS is approximated. Defaults to np.arange(0.1, 1.0, 0.1).
+    """
     if y_pred.shape[:-1] != y_true.shape:
         raise ValueError(
             f"Shape mismatch: {y_true.shape} vs {y_pred.shape}. "
@@ -30,11 +49,11 @@ def crps(y_true: np.ndarray, y_pred: np.ndarray, quantiles=np.arange(0.1, 1.0, 0
     else:
         y_pred_quantiles = y_pred
 
-    return mqloss(y_true, y_pred_quantiles, quantiles)
+    return _mqloss(y_true, y_pred_quantiles, quantiles)
 
 
-# mqloss, mae, mse are from neuralforecast.losses.numpy
-def mqloss(
+# from neuralforecast.losses.numpy
+def _mqloss(
     y: np.ndarray,
     y_hat: np.ndarray,
     quantiles: np.ndarray,

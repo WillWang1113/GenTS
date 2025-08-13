@@ -1,7 +1,3 @@
-""" Calculate Wasserstein distances between two datasets.
-    Code addapted form https://gitlab.developers.cam.ac.uk/maths/cia/covid-19-projects/missing_data_fitting_quality
-"""
-
 from typing import Optional
 
 import numpy as np
@@ -10,21 +6,13 @@ from tqdm import tqdm
 
 
 class WassersteinDistances:
-    """Calculate Wasserstein distance of two datasets in various ways.
+    """Calculate Wasserstein distance of two datasets in various ways. Addapted form https://gitlab.developers.cam.ac.uk/maths/cia/covid-19-projects/missing_data_fitting_quality
 
-    Parameters
-    ----------
-    original_data : np.ndarray
-        Original data set, an (n, d) ndarray.
-    other_data : np.ndarray
-        Other data set, which might be imputed or simulated data, also
-        an (n, d) ndarray.
-    normalisation : Normalisation
-        Method of normalising data.  If 'none', no normalisation will be used.
-        If 'standatdise', then standardise the data by dividing by the
-        standard deviation of the original data.  (There is no need to
-        subtract the mean, as this does not affect the Wasserstein distance.)
-
+    Args:
+        original_data (np.ndarray): Original data set, an (n, d) ndarray.
+        other_data (np.ndarray): Other data set, which might be imputed or simulated data, also an (n, d) ndarray.
+        normalisation (str): Normalisation. Method of normalising data.  If 'none', no normalisation will be used. If 'standatdise', then standardise the data by dividing by the standard deviation of the original data.  (There is no need to subtract the mean, as this does not affect the Wasserstein distance.). Defaults to `None`.
+        seed (int): Random seed. Defaults to `None`
     """
 
     def __init__(

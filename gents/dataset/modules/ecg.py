@@ -5,7 +5,7 @@ import torch
 from torchvision.datasets.utils import download_and_extract_archive
 
 # from src.dataset.base import BaseDataModule
-from gents.dataset.base import BaseDataModule
+from ..base import BaseDataModule
 
 
 class ECG(BaseDataModule):

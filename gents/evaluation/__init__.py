@@ -6,7 +6,8 @@ from .model_based.cfid import context_fid
 from .model_based.ds import discriminative_score
 from .model_based.ps import predictive_score
 from .model_free.errors import crps, mse
-from .visual import tsne_visual, predict_visual, imputation_visual
+from .model_free.distribution_distance import WassersteinDistances
+from .visualization.visual import tsne_visual, predict_visual, imputation_visual
 
 __all__ = [
     "tsne_visual",
@@ -17,4 +18,5 @@ __all__ = [
     "predictive_score",
     "discriminative_score",
     "context_fid",
+    "WassersteinDistances",
 ]

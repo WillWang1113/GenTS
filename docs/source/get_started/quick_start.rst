@@ -1,7 +1,7 @@
 Quick Start
 ===========
 
-A minimal example of (unconditional) time series generation:
+A minimal example of (unconditional) time series synthesis for sine waves.
 
 .. code-block:: python
         

@@ -3,7 +3,7 @@ from ._ts2vec import initialize_ts2vec
 from scipy.linalg import sqrtm
 
 
-def calculate_fid(act1, act2):
+def _calculate_fid(act1, act2):
     # calculate mean and covariance statistics
     mu1, sigma1 = act1.mean(axis=0), np.cov(act1, rowvar=False)
     mu2, sigma2 = act2.mean(axis=0), np.cov(act2, rowvar=False)
@@ -25,6 +25,19 @@ def context_fid(
     gen_data: np.ndarray,
     device: str = "cpu",
 ):
+    """Calculate `context-FID <https://arxiv.org/abs/2108.00981>`__.
+    
+    Context-FID is a FID-like metric for evaluating how realistic the generated time series is (compared to the true time series).
+    It requires to train a representative learning time series model (TS2Vec)
+    on every time series dataset. Then calculate FID using the trained representative learning model.
+
+    Args:
+        train_data (np.ndarray): Time series training dataset. Used for training TS2Vec model.
+        ori_data (np.ndarray): Time series test dataset.
+        gen_data (np.ndarray): Generated time series.
+        device (str, optional): Computing device. Defaults to "cpu".
+
+    """
     fid_model = initialize_ts2vec(np.transpose(train_data, (0, 2, 1)), device)
     ori_repr = fid_model.encode(
         np.transpose(ori_data, (0, 2, 1)), encoding_window="full_series"
@@ -32,5 +45,5 @@ def context_fid(
     gen_repr = fid_model.encode(
         np.transpose(gen_data, (0, 2, 1)), encoding_window="full_series"
     )
-    cfid = calculate_fid(ori_repr, gen_repr)
+    cfid = _calculate_fid(ori_repr, gen_repr)
     return cfid

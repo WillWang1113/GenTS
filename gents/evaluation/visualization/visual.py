@@ -1,24 +1,5 @@
-"""Adapt from TimeGAN Codebase.
-
-Reference: Jinsung Yoon, Daniel Jarrett, Mihaela van der Schaar,
-"Time-series Generative Adversarial Networks,"
-Neural Information Processing Systems (NeurIPS), 2019.
-
-Paper link: https://papers.nips.cc/paper/8789-time-series-generative-adversarial-networks
-
-Last updated Date: May 19th 2025
-Code author: Chenxi Wang
-
------------------------------
-
-visualization_metrics.py
-
-Note: Use PCA or tSNE for generated and original data visualization
-"""
-
 # Necessary packages
 from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -31,16 +12,16 @@ def tsne_visual(
     save_root=None,
     min_viz_samples=1000,
 ):
-    """Using PCA or tSNE for generated and original data visualization.
+    """TSNE visualization of generated time series and real time series.
 
     Args:
-      - real_data: original data
-      - generated_data: generated synthetic data
-      - save_root: figure save root
-      - min_viz_samples: minimal data samples taken from orig_data/generated_data to visualize
+        real_data (ArrayLike): Real time series data, in shape of `[B, T, C]`.
+        generated_data (ArrayLike): Generated time series data, in shape of `[B, T, C]`.
+        class_label_data (ArrayLike, optional): Time series labels. If not `None`, in shape of `[B, ]` Defaults to None.
+        save_root (str, optional): Save root path. The post fix should be `.png`/`.pdf`/etc. If `None`, don't save figure. Defaults to None.
+        min_viz_samples (int, optional): The number of data samples put into visualization. Defaults to 1000.
     """
-    # if save_root is None:
-    #     save_root = "./tsne.png"
+
     # Analysis sample size (for faster computation)
     anal_sample_no = min([min_viz_samples, len(real_data)])
     idx = np.random.permutation(len(real_data))[:anal_sample_no]
@@ -56,24 +37,6 @@ def tsne_visual(
         unique_class = torch.unique(class_label_data)
         cls_idx = [class_label_data == i for i in unique_class]
 
-    no, seq_len, dim = real_data.shape
-
-    # for i in range(anal_sample_no):
-    #     if i == 0:
-    #         prep_data = np.reshape(np.mean(real_data[0, :, :], 1), [1, seq_len])
-    #         prep_data_hat = np.reshape(
-    #             np.mean(generated_data[0, :, :], 1), [1, seq_len]
-    #         )
-    #     else:
-    #         prep_data = np.concatenate(
-    #             (prep_data, np.reshape(np.mean(real_data[i, :, :], 1), [1, seq_len]))
-    #         )
-    #         prep_data_hat = np.concatenate(
-    #             (
-    #                 prep_data_hat,
-    #                 np.reshape(np.mean(generated_data[i, :, :], 1), [1, seq_len]),
-    #             )
-    #         )
     prep_data = real_data.reshape(len(real_data), -1)
     prep_data_hat = generated_data.reshape(len(generated_data), -1)
 
@@ -137,6 +100,16 @@ def imputation_visual(
     max_viz_n_channel=3,
     save_root=None,
 ):
+    """Visualize time series imputation results, including 95% predict interval.
+
+    Args:
+        real_data (torch.Tensor): Ground truth time series, in shape of `[B, seq_len, C]`.
+        gen_data (torch.Tensor): Predicted time series scenarios, in shape of `[B, seq_len, C, N]`, `N` is the number of scenarios.
+        cond_data (torch.Tensor): Observed time series, in shape of `[B, seq_len, C]`, missing values should be set as `NaN`.
+        data_mask (torch.BoolTensor): Ground truth time series data mask, in shape of `[B, seq_len, C]`.
+        max_viz_n_channel (int, optional): The maximum number of channels to be visualized. Defaults to 3.
+        save_root (str, optional): Save root path. The post fix should be `.png`/`.pdf`/etc. If `None`, don't save figure. Defaults to None.
+    """
     real_data = real_data.detach().cpu()
     gen_data = gen_data.detach().cpu()
     cond_mask = ~torch.isnan(cond_data)
@@ -196,9 +169,18 @@ def predict_visual(
     real_data: torch.Tensor,
     gen_data: torch.Tensor,
     data_mask: torch.BoolTensor,
-    max_viz_n_channel=3,
-    save_root=None,
+    max_viz_n_channel: int = 3,
+    save_root: str = None,
 ):
+    """Visualize time series prediction results, including 95% predict interval.
+
+    Args:
+        real_data (torch.Tensor): Ground truth time series, in shape of `[B, obs_len + seq_len, C]`.
+        gen_data (torch.Tensor): Predicted time series scenarios, in shape of `[B, seq_len, C, N]`, `N` is the number of scenarios.
+        data_mask (torch.BoolTensor): Ground truth time series data mask, in shape of `[B, obs_len + seq_len, C]`.
+        max_viz_n_channel (int, optional): The maximum number of channels to be visualized. Defaults to 3.
+        save_root (str, optional): Save root path. The post fix should be `.png`/`.pdf`/etc. If `None`, don't save figure. Defaults to None.
+    """
     real_data = real_data.detach().cpu()
     gen_data = gen_data.detach().cpu()
     data_mask = data_mask.detach().cpu()
