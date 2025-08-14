@@ -1,168 +1,98 @@
-Available Models
-================
+Available Datasets
+==================
 
-``GenTS`` included 25+ state-of-the-art time series generation models, with different capabilities. Our model zoo is updated in a regular basis. Please refer to XXX for developing your own model under our framework!
+``GenTS`` presets 13 widely used time series generation datasets from multiple domains. Some of them come naturally with missing values and class labels, supporting to benchmark different kinds of models.
 
 .. note::
-    Most of the models are implemented based on the original papers, execpt for ``VanillaVAE``, ``VanillaGAN``, ``VanillaMAF``, and ``VanillaDDPM``. They are naive implementations of VAE, GAN, MAF, and DDPM, respectively. Users can use them as a baseline for their own models.
+    ``SineND``, ``Spiral2D``, and ``MoJoCo`` are simulated datasets, so they have arbitrary resolution (and time steps).
 
-.. list-table::
+.. note::
+    ``Physionet`` originally records 48-hour patients status at 1-minute resolution, but it can also be aggregated to other resolutions. We recommend the lowest resolution (1 hour) for benchmarking.
+
+.. list-table:: Data Overview
    :header-rows: 1
 
    * - Name
-     - Model Type
-     - Synthesis
-     - Forecasting
-     - Imputation
+     - Resolution
+     - Dimension
+     - Missing value
      - Class label
-   * - VanillaVAE
-     - VAE
-     - ✅
-     - ✅
-     - ✅
-     - ✅
-   * - TimeVAE
-     - VAE
-     - ✅
+     - Domain
+   * - SineND
+     - continuous
+     - N
      - 
      - 
+     - Physics
+   * - Spiral2D
+     - continuous
+     - 2
      - 
-   * - TimeVQVAE
-     - VAE
-     - ✅
-     - 
-     - 
-     - ✅
-   * - KoVAE
-     - VAE
-     - ✅
-     - 
-     - 
-     - 
-   * - VanillaGAN
-     - GAN
-     - ✅
-     - ✅
-     - ✅
-     - ✅
-   * - TimeGAN
-     - GAN
-     - ✅
+     - 2
+     - Physics
+   * - Stocks
+     - 1 day
+     - 6
      - 
      - 
-     - 
-   * - COSCI-GAN
-     - GAN
-     - ✅
-     - 
-     - 
-     - 
-   * - GT-GAN
-     - GAN
-     - ✅
+     - Financial
+   * - Energy
+     - 10 min
+     - 28
      - 
      - 
-     - 
-   * - PSA-GAN
-     - GAN
-     - ✅
-     - 
-     - 
-     - 
-   * - RCGAN
-     - GAN
-     - ✅
-     - ✅
-     - 
-     - ✅
-   * - VanillaMAF
-     - Flow
-     - ✅
-     - ✅
-     - ✅
-     - ✅
-   * - Fourier Flow
-     - Flow
-     - ✅
+     - Energy
+   * - ETT
+     - 1 hour/15 min
+     - 7
      - 
      - 
+     - Energy
+   * - Electricity
+     - 1 hour
+     - 321
      - 
-   * - VanillaDDPM
-     - Diffusion
-     - ✅
-     - ✅
-     - ✅
-     - ✅
-   * - CSDI
-     - Diffusion
      - 
+     - Energy
+   * - Traffic
+     - 1 hour
+     - 862
+     - 
+     - 
+     - Traffic
+   * - Exchange
+     - 1 day
+     - 8
+     - 
+     - 
+     - Financial
+   * - MoJoCo
+     - continuous
+     - 14
+     - 
+     - 
+     - Physics
+   * - Physionet
+     - 1 min - 1 hour
+     - 35
      - ✅
+     - 2
+     - Healthcare
+   * - ECG
+     - ~700 Hz
+     - 1
+     - 
+     - 5
+     - Healthcare
+   * - Air quality
+     - 1 hour
+     - 6
      - ✅
      - 
-   * - Diffusion-TS
-     - Diffusion
-     - ✅
-     - ✅
-     - ✅
-     - 
-   * - TMDM
-     - Diffusion
-     - 
-     - ✅
+     - Environment
+   * - Weather
+     - 10 min
+     - 6
      - 
      - 
-   * - mr-diff
-     - Diffusion
-     - 
-     - ✅
-     - 
-     - 
-   * - FourierDiffusion
-     - Diffusion
-     - ✅
-     - 
-     - 
-     - 
-   * - ImagenTime
-     - Diffusion
-     - ✅
-     - ✅
-     - ✅
-     - 
-   * - FIDE
-     - Diffusion
-     - ✅
-     - 
-     - 
-     - 
-   * - Latent ODE w. ODE-RNN
-     - Diff. Eq.
-     - ✅
-     - ✅
-     - interpolation
-     - 
-   * - Latent ODE w. RNN
-     - Diff. Eq.
-     - ✅
-     - ✅
-     - interpolation
-     - 
-   * - Latent SDE
-     - Diff. Eq.
-     - ✅
-     - 
-     - 
-     - 
-   * - SDEGAN
-     - Diff. Eq.
-     - ✅
-     - 
-     - 
-     - 
-   * - LS4
-     - Diff. Eq.
-     - ✅
-     - ✅
-     - interpolation
-     - 
-
+     - Environment

@@ -1,13 +1,10 @@
 Available Models
 ================
 
-``GenTS`` included 25+ state-of-the-art time series generation models, with different capabilities. Our model zoo is updated in a regular basis. Please refer to :ref:`customization` for developing your own model under our framework!
+``GenTS`` included 25+ state-of-the-art time series generation models, with different capabilities. Our model zoo is updated in a regular basis. Please refer to :ref:`customization <customization>`  for developing your own model under our framework!
 
 .. note::
     Most of the models are implemented based on the original papers, execpt for ``VanillaVAE``, ``VanillaGAN``, ``VanillaMAF``, and ``VanillaDDPM``. They are naive implementations of VAE, GAN, MAF, and DDPM, respectively. Users can use them as a baseline for their own models.
-
-.. note::
-    Some models are limited, for example, ``FourierFlow`` is originally implemented on CPU and does not support multivariate time series. Please refer to our API documentation for more details.
 
 .. list-table::
    :header-rows: 1
@@ -24,19 +21,19 @@ Available Models
      - ✅
      - ✅
      - ✅
-   * - `TimeVAE <https://arxiv.org/abs/2111.08095>`__
+   * - TimeVAE
      - VAE
      - ✅
      - 
      - 
      - 
-   * - `TimeVQVAE <https://arxiv.org/abs/2111.08095>`__
+   * - TimeVQVAE
      - VAE
      - ✅
      - 
      - 
      - ✅
-   * - `KoVAE <https://openreview.net/pdf?id=eY7sLb0dVF>`__
+   * - KoVAE
      - VAE
      - ✅
      - 
@@ -48,31 +45,31 @@ Available Models
      - ✅
      - ✅
      - ✅
-   * - `TimeGAN <https://proceedings.neurips.cc/paper_files/paper/2019/file/c9efe5f26cd17ba6216bbe2a7d26d490-Paper.pdf>`__
+   * - TimeGAN
      - GAN
      - ✅
      - 
      - 
      - 
-   * - `COSCI-GAN <https://openreview.net/pdf?id=RP1CtZhEmR>`__
+   * - COSCI-GAN
      - GAN
      - ✅
      - 
      - 
      - 
-   * - `GT-GAN <https://proceedings.neurips.cc/paper_files/paper/2022/file/f03ce573aa8bce26f77b76f1cb9ee979-Paper-Conference.pdf>`__
+   * - GT-GAN
      - GAN
      - ✅
      - 
      - 
      - 
-   * - `PSA-GAN <https://openreview.net/pdf?id=Ix_mh42xq5w>`__
+   * - PSA-GAN
      - GAN
      - ✅
      - 
      - 
      - 
-   * - `RCGAN <https://arxiv.org/pdf/1706.02633>`__ 
+   * - RCGAN
      - GAN
      - ✅
      - ✅
@@ -84,7 +81,7 @@ Available Models
      - ✅
      - ✅
      - ✅
-   * - `Fourier Flow <https://openreview.net/pdf?id=PpshD0AXfA>`__
+   * - Fourier Flow
      - Flow
      - ✅
      - 
@@ -96,73 +93,73 @@ Available Models
      - ✅
      - ✅
      - ✅
-   * - `CSDI <https://arxiv.org/pdf/2107.03502>`__
+   * - CSDI
      - Diffusion
      - 
      - ✅
      - ✅
      - 
-   * - `Diffusion-TS <https://openreview.net/pdf?id=4h1apFjO99>`__
+   * - Diffusion-TS
      - Diffusion
      - ✅
      - ✅
      - ✅
      - 
-   * - `TMDM <https://openreview.net/pdf?id=qae04YACHs>`__
+   * - TMDM
      - Diffusion
      - 
      - ✅
      - 
      - 
-   * - `MrDiff <https://openreview.net/pdf?id=mmjnr0G8ZY>`__
+   * - mr-diff
      - Diffusion
      - 
      - ✅
      - 
      - 
-   * - `FourierDiffusion <https://arxiv.org/pdf/2402.05933>`__
+   * - FourierDiffusion
      - Diffusion
      - ✅
      - 
      - 
      - 
-   * - `ImagenTime <https://openreview.net/forum?id=2NfBBpbN9x&noteId=uYWwrwEW6Y>`__
+   * - ImagenTime
      - Diffusion
      - ✅
      - ✅
      - ✅
      - 
-   * - `FIDE <https://openreview.net/pdf?id=5HQhYiGnYb>`__
+   * - FIDE
      - Diffusion
      - ✅
      - 
      - 
      - 
-   * - `Latent ODE <https://arxiv.org/abs/1907.03907>`__ with ODE-RNN
+   * - Latent ODE w. ODE-RNN
      - Diff. Eq.
      - ✅
      - ✅
      - interpolation
      - 
-   * - `Latent ODE <https://arxiv.org/abs/1907.03907>`__ with RNN
+   * - Latent ODE w. RNN
      - Diff. Eq.
      - ✅
      - ✅
      - interpolation
      - 
-   * - `Latent SDE <https://arxiv.org/pdf/2001.01328>`__
+   * - Latent SDE
      - Diff. Eq.
      - ✅
      - 
      - 
      - 
-   * - `SDEGAN <https://arxiv.org/pdf/2102.03657>`__
+   * - SDEGAN
      - Diff. Eq.
      - ✅
      - 
      - 
      - 
-   * - `LS4 <https://arxiv.org/abs/2212.12749>`__
+   * - LS4
      - Diff. Eq.
      - ✅
      - ✅
