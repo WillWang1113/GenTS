@@ -62,7 +62,7 @@ GenTS included 25+ state-of-the-art time series generation models, with differen
 | PSA-GAN       | GAN        | :white_check_mark: |                    |                    |                    |
 | RCGAN                 | GAN        | :white_check_mark: |                    |                    | :white_check_mark: |
 | VanillaMAF            | Flow       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| Fourier Flow $^1$     | Flow       | :white_check_mark: |                    |                    |                    |
+| Fourier Flow     | Flow       | :white_check_mark: |                    |                    |                    |
 | VanillaDDPM           | Diffusion  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | CSDI                  | Diffusion  |                    | :white_check_mark: | :white_check_mark: |                    |
 | Diffusion-TS          | Diffusion  | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    |
