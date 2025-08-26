@@ -1,6 +1,14 @@
 # GenTS: A library for generative time series analysis
 
-(TODO: introduction) This project ...
+`GenTS` is an open-source library for researchers to conduct generative time series analysis, which covers **(class) synthesis**, **forecasting** and **imputation**. 
+
+Based on `lightning`, `GenTS` provides a modular code base to benchmark different models on various datasets in a easy way. Specifically, we feature on:
+
+- **State-of-the-art Models**: Generative time series models from top conferences in 5 recent years, including Diffusions, Flows, GANs, etc.
+- **Multi-domain Datasets**: Various time series datasets from energy, health, and other domains.
+- **Comprehensive Evaluation**: Both quantitative and qualitative methods for fidelity, usefulness, and accuracy.
+
+
 
 ## Installation
 We recommand to first create a virtual environment, and activate the environment. Then you can install the necessary libraries by running the following command.
@@ -36,41 +44,8 @@ gen_data = model.sample(n_sample=len(real_data))  # [N, 64, 2]
 tsne_visual(real_data, gen_data, save_root="tsne.png")
 ```
 
-We also support for conditional time series generation, including forecasting, imputation, and class generation. Please refer to `tutorials/` for detailed examples.
+We also support for conditional time series generation, including forecasting, imputation, and class generation. Please refer to `tutorials/` or our documents for detailed examples.
 
-<!-- 
-- Conditional generation (time series forecasting/imputation)
-The only thing to do is to include ```condition='predict' / 'imputate'``` in the datamodule and models. For inference, the condition tensor should also be provided.
-
-```python
-import ...
-from src.evaluation import predict_visual, imputation_visual
-
-
-# predict
-dm = SineND(seq_len=64, seq_dim=3, batch_size=64, condition='predict', obs_len=64)
-model = VanillaDDPM(seq_len=64, seq_dim=3, condition='predict', obs_len=64, pred_x0=True)
-
-# impute
-# dm = SineND(seq_len=64, seq_dim=3, batch_size=64, condition='impute', missing_rate=0.2)
-# model = VanillaDDPM(seq_len=64, seq_dim=3, condition='impute', missing_rate=0.2, pred_x0=False)
-
-# training (on CPU for example)
-trainer = Trainer(max_epochs=200, accelerator="cpu")
-trainer.fit(model, dm)
-
-# testing
-dm.setup("test")
-real_data = torch.cat([batch["seq"] for batch in dm.test_dataloader()])  
-data_mask = torch.cat([batch["data_mask"] for batch in dm.test_dataloader()])  
-cond_data = torch.cat([batch["c"] for batch in dm.test_dataloader()])
-gen_data = model.sample(n_sample=10, condition=cond_data)  # [N, 64, 2, 10]
-
-# visualization
-predict_visual(real_data, gen_data, data_mask, save_root='predict.png')
-# imputation_visual(real_data, gen_data, cond_data, data_mask, save_root='impute.png')
-
-``` -->
 
 ## Model zoo
 GenTS included 25+ state-of-the-art time series generation models, with different capabilities. Our model zoo is updated in a regular basis. Please refer to XXX for developing your own model under our framework!
@@ -172,7 +147,7 @@ GenTS preset 13 widely used time series generation datasets, from multiple domai
 | Air quality | 1 hour         | 6         | :white_check_mark: | -           | Environment |
 | Weather     | 10 min         | 6         | -                  | -           | Environment |
 
-## Arena (TODO: experiments + webpage?)
+<!-- ## Arena (TODO: experiments + webpage?)
 
 Till XX 2025, the top three models for different tasks are:
 
@@ -181,17 +156,13 @@ Till XX 2025, the top three models for different tasks are:
 |    1st     |     -     |      -      |     -      |
 |    2nd     |     -     |      -      |     -      |
 |    3rd     |     -     |      -      |     -      |
+ -->
 
 
+## Custormization
+Our models and datamodules are based on `lightning`. One can easily join `GenTS` following the `lightning.LightningModule` and `lightning.DataModule`. Please refer to our document's tutorial for details, or [this website](https://lightning.ai/docs/pytorch/stable/common/lightning_module.html).
 
-## Custormization (TODO: writing details)
-
-### How to build a new model?
-Inheret ```BaseModel```, and make sure implement ```training_step```,```configure_optimizers```,```validation_step```, and ```_sample_impl```.
-
-The former three are standard ```lightning``` methods for model training; The last one required for sampling.
-
-
+<!-- 
 
 ## TODO-list
 - [x] Flow-based model (5.15)
@@ -204,4 +175,15 @@ The former three are standard ```lightning``` methods for model training; The la
 - [ ] pypi? optional
 - [ ] Project webpage for benchmarking? [Example](https://huggingface.co/spaces/Salesforce/GIFT-Eval)
 
+ -->
 
+## Citation
+If you enjoy or benefit from using `GenTS`, a citation to this repository will be greatly appreciated.
+```BibTeX
+@misc{wang2025a,
+title={GenTS: a Library for Generative Time Series Analysis},
+author={Chenxi Wang},
+year={2025},
+url={https://github.com/WillWang1113/GenTS}
+}
+```
