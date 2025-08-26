@@ -58,10 +58,8 @@ GenTS included 25+ state-of-the-art time series generation models, with differen
 | KoVAE                 | VAE        | :white_check_mark: |                    |                    |                    |
 | VanillaGAN            | GAN        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | TimeGAN               | GAN        | :white_check_mark: |                    |                    |                    |
-| AST **(-!)**          | GAN        |                    | :white_check_mark: |                    |                    |
-| COSCI-GAN             | GAN        | :white_check_mark: |                    |                    |                    |
 | GT-GAN                | GAN        | :white_check_mark: |                    |                    |                    |
-| PSA-GAN **(-G)**      | GAN        | :white_check_mark: |                    |                    |                    |
+| PSA-GAN       | GAN        | :white_check_mark: |                    |                    |                    |
 | RCGAN                 | GAN        | :white_check_mark: |                    |                    | :white_check_mark: |
 | VanillaMAF            | Flow       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | Fourier Flow $^1$     | Flow       | :white_check_mark: |                    |                    |                    |
@@ -69,15 +67,16 @@ GenTS included 25+ state-of-the-art time series generation models, with differen
 | CSDI                  | Diffusion  |                    | :white_check_mark: | :white_check_mark: |                    |
 | Diffusion-TS          | Diffusion  | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    |
 | TMDM                  | Diffusion  |                    | :white_check_mark: |                    |                    |
-| mr-diff               | Diffusion  |                    | :white_check_mark: |                    |                    |
 | FourierDiffusion      | Diffusion  | :white_check_mark: |                    |                    |                    |
 | ImagenTime            | Diffusion  | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    |
-| FIDE **(-!)**         | Diffusion  | :white_check_mark: |                    |                    |                    |
+| FIDE         | Diffusion  | :white_check_mark: |                    |                    |                    |
 | Latent ODE w. ODE-RNN | Diff. Eq.  | :white_check_mark: | :white_check_mark: | interpolation      |                    |
 | Latent ODE w. RNN     | Diff. Eq.  | :white_check_mark: | :white_check_mark: | interpolation      |                    |
 | Latent SDE            | Diff. Eq.  | :white_check_mark: |                    |                    |                    |
 | SDEGAN                | Diff. Eq.  | :white_check_mark: |                    |                    |                    |
 | LS4                   | Diff. Eq.  | :white_check_mark: | :white_check_mark: | interpolation      |                    |
+
+<!-- | mr-diff               | Diffusion  |                    | :white_check_mark: | -->
 
 <!--          |   Name    |      Model Type       |     Condition     |    Application     | Finish? |
 | :--------------------: | :-------: | :-------------------: | :---------------: | :----------------: |
@@ -123,9 +122,6 @@ GenTS included 25+ state-of-the-art time series generation models, with differen
  <!--          |       <!--        |         GANF          |        Flow        |         -          | AD             | :white_circle: | --> 
 
 
-*Notes*: 
-- **(-G)** = GluonTS style code
-- **(-!)** = Official codes are functionally different from the paper
 
 
 ## Datasets
