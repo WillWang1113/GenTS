@@ -17,6 +17,7 @@
    :name: Tutorials
    :caption: Tutorials
    :maxdepth: 1
+   :hidden:
    
    tutorials/time_series_forecasting
    tutorials/missing_value_imputation
