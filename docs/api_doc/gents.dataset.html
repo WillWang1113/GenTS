@@ -1,0 +1,425 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gents.dataset package &mdash; GenTS 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="gents.dataset.modules package" href="gents.dataset.modules.html" />
+    <link rel="prev" title="gents.common package" href="gents.common.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            GenTS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/quick_start.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/available_models.html">Available Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/available_datasets.html">Available Datasets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/time_series_forecasting.html">Time Series Forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/missing_value_imputation.html">Time Series Imputation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/synthesis_with_irregular_data.html">Time Series Synthesis with Irregular Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/class_label_guidance.html">Time Series Generation with Class Label Guidance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/customization.html">How to build your own time series model/dataset?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API docs</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">gents</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="gents.html">gents package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="gents.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="gents.common.html">gents.common package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">gents.dataset package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gents.evaluation.html">gents.evaluation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gents.model.html">gents.model package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gents.html#module-gents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GenTS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">gents</a></li>
+          <li class="breadcrumb-item"><a href="gents.html">gents package</a></li>
+      <li class="breadcrumb-item active">gents.dataset package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api_doc/gents.dataset.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gents-dataset-package">
+<h1>gents.dataset package<a class="headerlink" href="#gents-dataset-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gents.dataset.modules.html">gents.dataset.modules package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gents.dataset.modules.html#module-gents.dataset.modules">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.AirQuality"><code class="docutils literal notranslate"><span class="pre">AirQuality</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.ECG"><code class="docutils literal notranslate"><span class="pre">ECG</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.ETTh1"><code class="docutils literal notranslate"><span class="pre">ETTh1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.ETTh2"><code class="docutils literal notranslate"><span class="pre">ETTh2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.ETTm1"><code class="docutils literal notranslate"><span class="pre">ETTm1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.ETTm2"><code class="docutils literal notranslate"><span class="pre">ETTm2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.Electricity"><code class="docutils literal notranslate"><span class="pre">Electricity</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.Energy"><code class="docutils literal notranslate"><span class="pre">Energy</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.Exchange"><code class="docutils literal notranslate"><span class="pre">Exchange</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.MuJoCo"><code class="docutils literal notranslate"><span class="pre">MuJoCo</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.Physionet"><code class="docutils literal notranslate"><span class="pre">Physionet</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.SineND"><code class="docutils literal notranslate"><span class="pre">SineND</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.Spiral2D"><code class="docutils literal notranslate"><span class="pre">Spiral2D</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.Stocks"><code class="docutils literal notranslate"><span class="pre">Stocks</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.Traffic"><code class="docutils literal notranslate"><span class="pre">Traffic</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.dataset.modules.html#gents.dataset.modules.Weather"><code class="docutils literal notranslate"><span class="pre">Weather</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-gents.dataset.base">
+<span id="gents-dataset-base-module"></span><h2>gents.dataset.base module<a class="headerlink" href="#module-gents.dataset.base" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.base.BaseDataModule">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.base.</span></span><span class="sig-name descname"><span class="pre">BaseDataModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.base.BaseDataModule" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LightningDataModule</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Base class for time series data module in PyTorch Lightning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seq_len</strong> (<em>int</em>) – Target sequence length</p></li>
+<li><p><strong>seq_dim</strong> (<em>int</em>) – Target sequence dimension, for univariate time series, set as 1</p></li>
+<li><p><strong>condition</strong> (<em>str</em>) – Possible condition type, choose from [None, ‘predict’,’impute’, ‘class’]. None standards for unconditional generation.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – Training and validation batch size.</p></li>
+<li><p><strong>inference_batch_size</strong> (<em>int</em>) – Testing batch size.</p></li>
+<li><p><strong>max_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Time step index [0, 1, …, <cite>total_seq_len</cite> - 1] will be automatically generated. If <cite>max_time</cite> is given, then scale the time step index, [0, …, <cite>max_time</cite>]. Defaults to None.</p></li>
+<li><p><strong>add_coeffs</strong> (<em>str</em><em>, </em><em>optional</em>) – Include interpolation coefficients or not. Needed for <cite>KoVAE</cite>, <cite>GTGAN</cite> and <cite>SDEGAN</cite>. Choose from <cite>[None, ‘linear’, ‘cubic_spline’]</cite>. If <cite>None</cite>, don’t include. Defaults to None.</p></li>
+<li><p><strong>irregular_dropout</strong> (<em>float</em><em>, </em><em>optional</em>) – Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between <cite>[0.0, 1.0]</cite> Defaults to 0.0.</p></li>
+<li><p><strong>data_dir</strong> (<em>str</em><em>, </em><em>optional</em>) – Directory to save the data file (default name: <cite>“data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt”</cite>). Defaults to Path.cwd()/”data”.</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments for the model</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gents.dataset.base.BaseDataModule.prepare_data">
+<span class="sig-name descname"><span class="pre">prepare_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#gents.dataset.base.BaseDataModule.prepare_data" title="Link to this definition"></a></dt>
+<dd><p>Use this to download and save time series files.</p>
+<p>Default path is <cite>data/DATASET_NAME/data_tsl{SEQ_LEN}_tsd{SEQ_DIM}_ir{IRREGULAR_DROPOUT}.pt</cite>,</p>
+<p>First, default data path will be checked, if there is no data file. Then, call <cite>self.get_data()</cite>, and save a tuple <cite>(data, data_mask, class_label)</cite> at the default path.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gents.dataset.base.BaseDataModule.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.base.BaseDataModule.setup" title="Link to this definition"></a></dt>
+<dd><p>Use this to load data file, perform train/val/test splits, and build create datasets.</p>
+<p>Default train/val/test ratio = [0.7, 0.2, 0.1].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gents.dataset.base.BaseDataModule.test_dataloader">
+<span class="sig-name descname"><span class="pre">test_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.base.BaseDataModule.test_dataloader" title="Link to this definition"></a></dt>
+<dd><p>An iterable or collection of iterables specifying test samples.</p>
+<p>For more information about multiple dataloaders, see this <span class="xref std std-ref">section</span>.</p>
+<p>For data processing use the following pattern:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>download in <a class="reference internal" href="#gents.dataset.base.BaseDataModule.prepare_data" title="gents.dataset.base.BaseDataModule.prepare_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">prepare_data()</span></code></a></p></li>
+<li><p>process and split in <a class="reference internal" href="#gents.dataset.base.BaseDataModule.setup" title="gents.dataset.base.BaseDataModule.setup"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setup()</span></code></a></p></li>
+</ul>
+</div></blockquote>
+<p>However, the above are only necessary for distributed processing.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>do not assign state in prepare_data</p>
+</div>
+<ul class="simple">
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">test()</span></code></p></li>
+<li><p><a class="reference internal" href="#gents.dataset.base.BaseDataModule.prepare_data" title="gents.dataset.base.BaseDataModule.prepare_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">prepare_data()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#gents.dataset.base.BaseDataModule.setup" title="gents.dataset.base.BaseDataModule.setup"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setup()</span></code></a></p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Lightning tries to add the correct sampler for distributed and arbitrary hardware.
+There is no need to set it yourself.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you don’t need a test dataset and a <code class="xref py py-meth docutils literal notranslate"><span class="pre">test_step()</span></code>, you don’t need to implement
+this method.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gents.dataset.base.BaseDataModule.train_dataloader">
+<span class="sig-name descname"><span class="pre">train_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.base.BaseDataModule.train_dataloader" title="Link to this definition"></a></dt>
+<dd><p>An iterable or collection of iterables specifying training samples.</p>
+<p>For more information about multiple dataloaders, see this <span class="xref std std-ref">section</span>.</p>
+<p>The dataloader you return will not be reloaded unless you set
+<a href="#id1"><span class="problematic" id="id2">:paramref:`~lightning.pytorch.trainer.trainer.Trainer.reload_dataloaders_every_n_epochs`</span></a> to
+a positive integer.</p>
+<p>For data processing use the following pattern:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>download in <a class="reference internal" href="#gents.dataset.base.BaseDataModule.prepare_data" title="gents.dataset.base.BaseDataModule.prepare_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">prepare_data()</span></code></a></p></li>
+<li><p>process and split in <a class="reference internal" href="#gents.dataset.base.BaseDataModule.setup" title="gents.dataset.base.BaseDataModule.setup"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setup()</span></code></a></p></li>
+</ul>
+</div></blockquote>
+<p>However, the above are only necessary for distributed processing.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>do not assign state in prepare_data</p>
+</div>
+<ul class="simple">
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></p></li>
+<li><p><a class="reference internal" href="#gents.dataset.base.BaseDataModule.prepare_data" title="gents.dataset.base.BaseDataModule.prepare_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">prepare_data()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#gents.dataset.base.BaseDataModule.setup" title="gents.dataset.base.BaseDataModule.setup"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setup()</span></code></a></p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Lightning tries to add the correct sampler for distributed and arbitrary hardware.
+There is no need to set it yourself.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gents.dataset.base.BaseDataModule.val_dataloader">
+<span class="sig-name descname"><span class="pre">val_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.base.BaseDataModule.val_dataloader" title="Link to this definition"></a></dt>
+<dd><p>An iterable or collection of iterables specifying validation samples.</p>
+<p>For more information about multiple dataloaders, see this <span class="xref std std-ref">section</span>.</p>
+<p>The dataloader you return will not be reloaded unless you set
+<a href="#id3"><span class="problematic" id="id4">:paramref:`~lightning.pytorch.trainer.trainer.Trainer.reload_dataloaders_every_n_epochs`</span></a> to
+a positive integer.</p>
+<p>It’s recommended that all data downloads and preparation happen in <a class="reference internal" href="#gents.dataset.base.BaseDataModule.prepare_data" title="gents.dataset.base.BaseDataModule.prepare_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">prepare_data()</span></code></a>.</p>
+<ul class="simple">
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">validate()</span></code></p></li>
+<li><p><a class="reference internal" href="#gents.dataset.base.BaseDataModule.prepare_data" title="gents.dataset.base.BaseDataModule.prepare_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">prepare_data()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#gents.dataset.base.BaseDataModule.setup" title="gents.dataset.base.BaseDataModule.setup"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setup()</span></code></a></p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Lightning tries to add the correct sampler for distributed and arbitrary hardware
+There is no need to set it yourself.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you don’t need a validation dataset and a <code class="xref py py-meth docutils literal notranslate"><span class="pre">validation_step()</span></code>, you don’t need to
+implement this method.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.base.TSDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.base.</span></span><span class="sig-name descname"><span class="pre">TSDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BoolTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IntTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.base.TSDataset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></p>
+<p>Time series dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>torch.Tensor</em>) – Time series data, in shape of <cite>[n_sample, total_seq_len, seq_dim]</cite>. For each sample, it could be a window from a long time series, or a single signal from a object (e.g. a patient measurements, a trajectory)</p></li>
+<li><p><strong>data_mask</strong> (<em>torch.BoolTensor</em><em>, </em><em>optional</em>) – Time series data mask, in shape of <cite>[n_sample, total_seq_len, seq_dim]</cite>. It records whether the <cite>data</cite> has original missing values. <cite>1</cite> for oberved, <cite>0</cite> for missing. If given <cite>None</cite>, assumed non-missing. Defaults to None.</p></li>
+<li><p><strong>class_label</strong> (<em>torch.IntTensor</em><em>, </em><em>optional</em>) – Class labels for time series, in shape of <cite>[n_sample, ]</cite>. Defaults to None.</p></li>
+<li><p><strong>condition</strong> (<em>str</em><em>, </em><em>optional</em>) – Condition type. Choose from <cite>[None, ‘predict’, ‘impute’, ‘class’]</cite> Defaults to None.</p></li>
+<li><p><strong>max_time</strong> (<em>int</em><em>, </em><em>optional</em>) – Time step index [0, 1, …, <cite>total_seq_len</cite> - 1] will be automatically generated. If <cite>max_time</cite> is given, then scale the time step index, [0, …, <cite>max_time</cite>]. Defaults to None.</p></li>
+<li><p><strong>add_coeffs</strong> (<em>str</em><em>, </em><em>optional</em>) – Include interpolation coefficients or not. Needed for <cite>KoVAE</cite>, <cite>GTGAN</cite> and <cite>SDEGAN</cite>. Choose from <cite>[None, ‘linear’, ‘cubic_spline’]</cite>. If <cite>None</cite>, don’t include. Defaults to None.</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments for the model, e.g. obs_len, missing_rate</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>A batch dictionary:</dt><dd><ul class="simple">
+<li><p>“seq”: <cite>[batch_size, total_seq_len, seq_dim]</cite>. Target time series window</p></li>
+<li><p>“t”: <cite>[batch_size, total_seq_len]</cite>. Time step index at each time step in the window.</p></li>
+<li><p>“data_mask”: <cite>[batch_size, total_seq_len, seq_dim]</cite>. Time series data mask</p></li>
+<li><p>“c”: <cite>[batch_size, obs_len / seq_len]</cite>. Condition. Empty if unconditional.</p></li>
+<li><p>“coeffs”: <cite>[batch_size, total_seq_len, seq_dim]</cite>. Coefficients of cubic spline/linear interp. of NCDE-related models. Empty if add_coeffs is False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.base.WebDownloadDataModule">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.base.</span></span><span class="sig-name descname"><span class="pre">WebDownloadDataModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.base.WebDownloadDataModule" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gents.dataset.base.BaseDataModule" title="gents.dataset.base.BaseDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataModule</span></code></a></p>
+<p>Datamodule that directly download data (<cite>.csv</cite> or .zip that contains <cite>.csv</cite>) from url.</p>
+<p>Class attributes:</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.base.WebDownloadDataModule.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.base.WebDownloadDataModule.D" title="Link to this definition"></a></dt>
+<dd><p>Total sequence dimensions in the original data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.base.WebDownloadDataModule.index_col">
+<span class="sig-name descname"><span class="pre">index_col</span></span><a class="headerlink" href="#gents.dataset.base.WebDownloadDataModule.index_col" title="Link to this definition"></a></dt>
+<dd><p>Index column (i.e. time stamp column). For <cite>pd.read_csv</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str | int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.base.WebDownloadDataModule.url">
+<span class="sig-name descname"><span class="pre">url</span></span><a class="headerlink" href="#gents.dataset.base.WebDownloadDataModule.url" title="Link to this definition"></a></dt>
+<dd><p>download url link</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str | int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.base.WebDownloadDataModule.csv_dir">
+<span class="sig-name descname"><span class="pre">csv_dir</span></span><a class="headerlink" href="#gents.dataset.base.WebDownloadDataModule.csv_dir" title="Link to this definition"></a></dt>
+<dd><p>if <cite>data_source=’zip’</cite>, <cite>csv_dir</cite> should be given for locating the <cite>.csv</cite> file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str | int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.base.WebDownloadDataModule.data_source">
+<span class="sig-name descname"><span class="pre">data_source</span></span><a class="headerlink" href="#gents.dataset.base.WebDownloadDataModule.data_source" title="Link to this definition"></a></dt>
+<dd><p>Choose from <cite>[‘zip’, ‘csv]</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seq_len</strong> (<em>int</em>) – Target sequence length</p></li>
+<li><p><strong>select_seq_dim</strong> (<em>List</em><em>[</em><em>int</em><em>  |  </em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Subset of all sequence channels. Could be a <cite>list</cite> of <cite>int</cite> indicating the chosen channel indice or a <cite>list</cite> of <cite>str</cite> indicating the column names for <cite>pd.Dataframe</cite> object. If <cite>None</cite>, use all channels. Defaults to None.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Training and validation batch size. Defaults to 32.</p></li>
+<li><p><strong>data_dir</strong> (<em>str</em><em>, </em><em>optional</em>) – Directory to save the data file (default name: <cite>“data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt”</cite>). Defaults to “./data”.</p></li>
+<li><p><strong>condition</strong> (<em>str</em><em>, </em><em>optional</em>) – Possible condition type, choose from [None, ‘predict’,’impute’, ‘class’]. None standards for unconditional generation.</p></li>
+<li><p><strong>scale</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <cite>True</cite>, <cite>StandardScaler</cite> will be used for z-score normalization. Training data will be used for calculating <cite>mu</cite> and <cite>sigma</cite>, then transform all time steps. Defaults to True.</p></li>
+<li><p><strong>inference_batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Testing batch size. Defaults to 1024.</p></li>
+<li><p><strong>max_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Time step index [0, 1, …, <cite>total_seq_len</cite> - 1] will be automatically generated. If <cite>max_time</cite> is given, then scale the time step index, [0, …, <cite>max_time</cite>]. Defaults to None.</p></li>
+<li><p><strong>add_coeffs</strong> (<em>str</em><em>, </em><em>optional</em>) – Include interpolation coefficients or not. Needed for <cite>KoVAE</cite>, <cite>GTGAN</cite> and <cite>SDEGAN</cite>. Choose from <cite>[None, ‘linear’, ‘cubic_spline’]</cite>. If <cite>None</cite>, don’t include. Defaults to None.</p></li>
+<li><p><strong>irregular_dropout</strong> (<em>float</em><em>, </em><em>optional</em>) – Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between <cite>[0.0, 1.0]</cite> Defaults to 0.0.</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments for the model</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gents.dataset.base.WebDownloadDataModule.get_data">
+<span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.base.WebDownloadDataModule.get_data" title="Link to this definition"></a></dt>
+<dd><p>Use this to download time series, (optionally) scale data and (optionally) simulate irregular time series</p>
+<p>The downloaded file will be saved as <cite>archive.csv</cite> or <cite>archive.zip</cite> depending on the <cite>data_source</cite>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="gents.common.html" class="btn btn-neutral float-left" title="gents.common package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gents.dataset.modules.html" class="btn btn-neutral float-right" title="gents.dataset.modules package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Chenxi Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
