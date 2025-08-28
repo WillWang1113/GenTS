@@ -1,0 +1,176 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GenTS: a Library for Generative Time Series Analysis &mdash; GenTS 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            GenTS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="get_started/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_started/quick_start.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_started/available_models.html">Available Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_started/available_datasets.html">Available Datasets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/time_series_forecasting.html">Time Series Forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/missing_value_imputation.html">Time Series Imputation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/synthesis_with_irregular_data.html">Time Series Synthesis with Irregular Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/class_label_guidance.html">Time Series Generation with Class Label Guidance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/customization.html">How to build your own time series model/dataset?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API docs</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api_doc/modules.html">gents</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GenTS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">GenTS: a Library for Generative Time Series Analysis</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index_intro.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gents-a-library-for-generative-time-series-analysis">
+<h1>GenTS: a Library for Generative Time Series Analysis<a class="headerlink" href="#gents-a-library-for-generative-time-series-analysis" title="Link to this heading"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">GenTS</span></code> is an open-source library for researchers to conduct generative time series analysis, which covers <strong>(class) synthesis</strong>, <strong>forecasting</strong> and <strong>imputation</strong>.</p>
+<p>Based on <code class="docutils literal notranslate"><span class="pre">lightning</span></code>, <code class="docutils literal notranslate"><span class="pre">GenTS</span></code> provides a modular code base to benchmark different models on various datasets in a easy way. Specifically, we feature on:</p>
+<ul class="simple">
+<li><p><strong>State-of-the-art Models</strong>: Generative time series models from top conferences in 5 recent years, including Diffusions, Flows, GANs, etc.</p></li>
+<li><p><strong>Multi-domain Datasets</strong>: Various time series datasets from energy, health, and other domains.</p></li>
+<li><p><strong>Comprehensive Evaluation</strong>: Both quantitative and qualitative methods for fidelity, usefulness, and accuracy.</p></li>
+</ul>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>We recommand to first create a virtual environment, and activate the environment. Then you can install the necessary libraries by running the following command.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>gents<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10
+conda<span class="w"> </span>activate<span class="w"> </span>gents
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</pre></div>
+</div>
+</section>
+<section id="quick-start">
+<h2>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h2>
+<p>A minimal example of (unconditional) time series synthesis:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">VanillaDDPM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">SineND</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.evaluation</span><span class="w"> </span><span class="kn">import</span> <span class="n">tsne_visual</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lightning</span><span class="w"> </span><span class="kn">import</span> <span class="n">Trainer</span>
+
+<span class="c1"># setup dataset and model</span>
+<span class="n">dm</span> <span class="o">=</span> <span class="n">SineND</span><span class="p">(</span><span class="n">seq_len</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">seq_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">VanillaDDPM</span><span class="p">(</span><span class="n">seq_len</span><span class="o">=</span><span class="n">dm</span><span class="o">.</span><span class="n">seq_len</span><span class="p">,</span> <span class="n">seq_dim</span><span class="o">=</span><span class="n">dm</span><span class="o">.</span><span class="n">seq_dim</span><span class="p">)</span>
+
+<span class="c1"># training (on CPU for example)</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">Trainer</span><span class="p">(</span><span class="n">max_epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">accelerator</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dm</span><span class="p">)</span>
+
+<span class="c1"># testing</span>
+<span class="n">dm</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">)</span>
+<span class="n">real_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;seq&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">dm</span><span class="o">.</span><span class="n">test_dataloader</span><span class="p">()])</span>  <span class="c1"># [N, 64, 2]</span>
+<span class="n">gen_data</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n_sample</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">real_data</span><span class="p">))</span>  <span class="c1"># [N, 64, 2]</span>
+
+<span class="c1"># visualization with tsne</span>
+<span class="n">tsne_visual</span><span class="p">(</span><span class="n">real_data</span><span class="p">,</span> <span class="n">gen_data</span><span class="p">,</span> <span class="n">save_root</span><span class="o">=</span><span class="s2">&quot;tsne.png&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We also support for conditional time series generation, including forecasting, imputation, and class generation. Please refer to <code class="docutils literal notranslate"><span class="pre">tutorials/</span></code> for detailed examples.</p>
+</section>
+<section id="citation">
+<h2>Citation<a class="headerlink" href="#citation" title="Link to this heading"></a></h2>
+<p>If you enjoy or benefit from using <code class="docutils literal notranslate"><span class="pre">GenTS</span></code>, a citation to this repository will be greatly appreciated.</p>
+<div class="highlight-BibTeX notranslate"><div class="highlight"><pre><span></span><span class="nc">@misc</span><span class="p">{</span><span class="nl">wang2025a</span><span class="p">,</span>
+<span class="na">title</span><span class="p">=</span><span class="s">{GenTS: a Library for Generative Time Series Analysis}</span><span class="p">,</span>
+<span class="na">author</span><span class="p">=</span><span class="s">{Chenxi Wang}</span><span class="p">,</span>
+<span class="na">year</span><span class="p">=</span><span class="s">{2025}</span><span class="p">,</span>
+<span class="na">url</span><span class="p">=</span><span class="s">{https://github.com/WillWang1113/GenTS}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Chenxi Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
