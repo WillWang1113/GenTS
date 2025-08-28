@@ -169,7 +169,7 @@ notebooks/
 nohup.out
 scripts/context_fid.py
 scripts/kovae_rebuttal.py
-configs/dataset/
+configs/
 gents/model/flow/temporalflow
 gents/model/diffusion/ratd
 gents/model/diffusion/mrdiff
