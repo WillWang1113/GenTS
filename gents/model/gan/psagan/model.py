@@ -1,3 +1,4 @@
+from copy import deepcopy
 from math import log2
 from typing import Dict
 
@@ -5,6 +6,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from gents.evaluation.model_free.distribution_distance import WassersteinDistances
+from gents.evaluation.model_free.errors import crps
 from gents.model.base import BaseModel
 from ._backbones import ProDiscriminator, ProGenerator
 
@@ -48,7 +51,7 @@ class PSAGAN(BaseModel):
         ks_query: int = 1,
         ks_key: int = 1,
         ks_value: int = 1,
-        depth_schedule: list = [5, 10, 15],
+        # depth_schedule: list = [5, 10],
         epoch_fade_in: int = 2,
         n_critic: int = 2,
         lr: Dict[str, float] = {"G": 1e-4, "D": 1e-4},
@@ -57,7 +60,15 @@ class PSAGAN(BaseModel):
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.context_len = self.obs_len if condition == "predict" else 0
-
+        self.orig_seq_len = deepcopy(seq_len)
+        if log2(seq_len) % 1 != 0:
+            self.need_init_interp = True
+            seq_len = 2 ** (int(log2(seq_len)) + 1)
+        else:
+            self.need_init_interp = False
+        self.seq_len = seq_len
+        # print("orig seq len:", self.orig_seq_len)
+        # print("orig seq len:", self.seq_len)
         self.save_hyperparameters()
         self.automatic_optimization = False
         self.generator = ProGenerator(
@@ -83,17 +94,18 @@ class PSAGAN(BaseModel):
             ks_value=ks_value,
             **kwargs,
         )
-        self.seq_len = seq_len
         self.seq_dim = seq_dim
         self.time_feat_dim = time_feat_dim
-        self.depth_schedule = depth_schedule
+        self.depth_schedule = [i * 5 for i in range(1, int(log2(seq_len)) - 2)]
+        # print(self.depth_schedule)
+        # self.depth_schedule = depth_schedule
         self.condition = condition
         self.depth = 0
         self.pretrain_schedule = []
         self.nb_epoch_fade_in_new_layer = epoch_fade_in
-        for k in depth_schedule:
+        for k in self.depth_schedule:
             self.pretrain_schedule.append((k, k + epoch_fade_in))
-        self.nb_stage = len(depth_schedule) if depth_schedule else 0
+        self.nb_stage = len(self.depth_schedule) if self.depth_schedule else 0
         self.loss_fn = nn.MSELoss()
 
     def _residual(self):
@@ -143,14 +155,18 @@ class PSAGAN(BaseModel):
         return momment_loss
 
     def on_train_epoch_start(self):
-        """On each epoch start, check whether to increase model depth. If needed, then increase.
-        """
+        """On each epoch start, check whether to increase model depth. If needed, then increase."""
         self._increase_depth()
         self.residual = self._residual()
 
     def training_step(self, batch, batch_idx):
         x = batch["seq"].permute(0, 2, 1)[..., -self.seq_len :]
         c = batch.get("c", None)
+
+        if self.need_init_interp:
+            new_len = 2 ** (int(log2(x.shape[2])) + 1)
+            x = F.interpolate(x, size=new_len, mode="linear")
+
         # if c is not None:
         #     c = c.permute(0, 2, 1)
         if self.time_feat_dim > 0:
@@ -246,6 +262,25 @@ class PSAGAN(BaseModel):
                 on_step=False,
             )
 
+    def validation_step(self, batch, batch_idx):
+        batch_size = batch["seq"].shape[0]
+
+        if self.condition is None:
+            val_samples = self.sample(batch_size, batch.get("c", None))
+            val_loss = (
+                WassersteinDistances(
+                    batch["seq"].cpu().flatten(1).numpy(),
+                    val_samples.cpu().flatten(1).numpy(),
+                )
+                .marginal_distances()
+                .mean()
+            )
+        elif self.condition == "predict":
+            val_samples = self.sample(50, batch.get("c", None))
+            val_loss = crps(batch["seq"], val_samples)
+
+        self.log_dict({"val_loss": val_loss}, on_epoch=True, prog_bar=True)
+
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
         time_feat = kwargs.get("time_feat", None)
 
@@ -259,9 +294,15 @@ class PSAGAN(BaseModel):
         # Unconditional
         if self.condition is None:
             noise = torch.randn((n_sample, self.seq_dim, self.seq_len)).to(self.device)
-            return self.generator(x=noise, time_feat=time_feat, context=None).permute(
-                0, 2, 1
-            )
+            samples = self.generator(x=noise, time_feat=time_feat, context=None)
+            if self.need_init_interp:
+                return F.interpolate(
+                    samples,
+                    size=self.orig_seq_len,
+                    mode="linear",
+                ).permute(0, 2, 1)
+            else:
+                return samples.permute(0, 2, 1)
         else:
             # Forecasting
             all_samples = []
@@ -269,9 +310,15 @@ class PSAGAN(BaseModel):
                 noise = torch.randn(
                     (condition.shape[0], self.seq_dim, self.seq_len)
                 ).to(self.device)
-                sample = self.generator(
-                    x=noise, time_feat=time_feat, context=condition
-                ).permute(0, 2, 1)
+                sample = self.generator(x=noise, time_feat=time_feat, context=condition)
+                if self.need_init_interp:
+                    sample = F.interpolate(
+                        sample,
+                        size=self.orig_seq_len,
+                        mode="linear",
+                    ).permute(0, 2, 1)
+                else:
+                    sample = sample.permute(0, 2, 1)
                 all_samples.append(sample)
             return torch.stack(all_samples, dim=-1)
 

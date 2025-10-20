@@ -318,7 +318,7 @@ class BaseDataModule(LightningDataModule, ABC):
         exist_data = os.path.exists(data_file_pth)
 
         if not exist_data:
-            logging.info(f"Downloading {self.dataset_name} dataset in {self.data_dir}.")
+            print(f"Downloading {self.dataset_name} dataset in {self.data_dir}.pt")
             os.makedirs(self.data_dir, exist_ok=True)
 
             ###############################################
@@ -406,9 +406,9 @@ class WebDownloadDataModule(BaseDataModule):
             **kwargs,
         )
         self.scale = scale
-        self.select_seq_dim = select_seq_dim
-        if select_seq_dim is not None:
+        if isinstance(select_seq_dim, list) and isinstance(select_seq_dim[0], int):
             assert max(select_seq_dim) < self.D
+        self.select_seq_dim = select_seq_dim
 
     def get_data(self):
         """Use this to download time series, (optionally) scale data and (optionally) simulate irregular time series

@@ -1,19 +1,20 @@
 import torch
 
+from gents.evaluation.model_free.distribution_distance import WassersteinDistances
 from gents.model.base import BaseModel
 from torch.nn import functional as F
 from ._backbones import Generator, Discriminator
 
 
 class RCGAN(BaseModel):
-    """`Recurrent conditional GAN <https://arxiv.org/pdf/1706.02633>`__ 
-    
+    """`Recurrent conditional GAN <https://arxiv.org/pdf/1706.02633>`__
+
     Adapted from the `official codes <https://github.com/ratschlab/RGAN/tree/master>`__
-    
+
     .. note::
         The orignial codes are based on Tensorflow, we adapt the source codes into pytorch.
 
-    
+
     Args:
         seq_len (int): Target sequence length
         seq_dim (int): Target sequence dimension, for univariate time series, set as 1
@@ -27,7 +28,9 @@ class RCGAN(BaseModel):
         weight_decay (float, optional): Weight decay. Defaults to 1e-5.
         **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
     """
+
     ALLOW_CONDITION = [None, "class"]
+
     def __init__(
         self,
         seq_len: int,
@@ -42,11 +45,10 @@ class RCGAN(BaseModel):
         weight_decay: float = 1e-5,
         **kwargs,
     ):
-
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         self.automatic_optimization = False
-        n_classes = self.class_num if self.condition == 'class' else 0
+        n_classes = self.class_num if self.condition == "class" else 0
         self.seq_len = seq_len
         self.seq_dim = seq_dim
 
@@ -113,7 +115,19 @@ class RCGAN(BaseModel):
             loss_dict = {"g_loss": g_loss}
             self.log_dict(loss_dict)
 
-    def validation_step(self, batch, batch_idx): ...
+    def validation_step(self, batch, batch_idx):
+        batch_size = batch["seq"].shape[0]
+        val_samples = self.sample(batch_size, batch.get("c", None))
+
+        val_w_loss = (
+            WassersteinDistances(
+                batch["seq"].cpu().flatten(1).numpy(),
+                val_samples.cpu().flatten(1).numpy(),
+            )
+            .marginal_distances()
+            .mean()
+        )
+        self.log_dict({"val_loss": val_w_loss}, on_epoch=True, prog_bar=True)
 
     def configure_optimizers(self):
         g_optim = torch.optim.Adam(
@@ -129,7 +143,6 @@ class RCGAN(BaseModel):
         return [g_optim, d_optim], []
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
-
         z = torch.randn((n_sample, self.seq_len, self.hparams.latent_dim)).to(
             self.device
         )

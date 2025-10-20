@@ -4,13 +4,14 @@ from torch.nn import functional as F
 
 from gents.model.base import BaseModel
 from gents.common._modules import RNNLayer
+from gents.evaluation.model_free import WassersteinDistances
 
 
 class TimeGAN(BaseModel):
-    """`Time-series Generative Adversarial Networks <https://proceedings.neurips.cc/paper_files/paper/2019/file/c9efe5f26cd17ba6216bbe2a7d26d490-Paper.pdf>`__ 
+    """`Time-series Generative Adversarial Networks <https://proceedings.neurips.cc/paper_files/paper/2019/file/c9efe5f26cd17ba6216bbe2a7d26d490-Paper.pdf>`__
 
     Adapted from the `official codes <https://github.com/jsyoon0823/TimeGAN>`__
-    
+
     .. note::
         The orignial codes are based on Tensorflow, we adapt the source codes into pytorch.
 
@@ -29,7 +30,7 @@ class TimeGAN(BaseModel):
         weight_decay (float, optional): Weight decay. Defaults to 1e-5.
         **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
     """
-    
+
     ALLOW_CONDITION = [None]
 
     def __init__(
@@ -154,7 +155,7 @@ class TimeGAN(BaseModel):
 
         else:
             # 3. Joint Training
-            z = torch.rand_like(x) # ! original code: uniform distrib.
+            z = torch.rand_like(x)  # ! original code: uniform distrib.
 
             for _ in range(self.hparams.n_critic):
                 # Generator loss
@@ -251,7 +252,19 @@ class TimeGAN(BaseModel):
             )
 
     # TODO: ES for GAN?
-    def validation_step(self, batch, batch_idx): ...
+    def validation_step(self, batch, batch_idx):
+        batch_size = batch["seq"].shape[0]
+        val_samples = self.sample(batch_size, batch.get("c", None))
+
+        val_w_loss = (
+            WassersteinDistances(
+                batch["seq"].cpu().flatten(1).numpy(),
+                val_samples.cpu().flatten(1).numpy(),
+            )
+            .marginal_distances()
+            .mean()
+        )
+        self.log_dict({"val_loss": val_w_loss}, on_epoch=True, prog_bar=True)
 
     def _sample_impl(self, n_sample: int, condition: torch.Tensor = None, **kwargs):
         z = torch.rand(
@@ -270,4 +283,3 @@ class TimeGAN(BaseModel):
     #     all_x = torch.concat([batch["seq"] for batch in train_dl])
     #     self.min_x = all_x.min(dim=0).values.min(dim=0).values.to(self.device)
     #     self.max_x = all_x.max(dim=0).values.max(dim=0).values.to(self.device)
-

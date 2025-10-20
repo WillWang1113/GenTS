@@ -1,5 +1,8 @@
 # GenTS: A library for generative time series analysis
 
+[[Doc]](https://willwang1113.github.io/GenTS/)
+
+
 `GenTS` is an open-source library for researchers to conduct generative time series analysis, which covers **(class) synthesis**, **forecasting** and **imputation**. 
 
 Based on `lightning`, `GenTS` provides a modular code base to benchmark different models on various datasets in a easy way. Specifically, we feature on:
@@ -16,6 +19,7 @@ We recommand to first create a virtual environment, and activate the environment
 conda create -n gents python=3.10
 conda activate gents
 pip install -r requirements.txt
+pip install -e .
 ```
 
 ## Quick start

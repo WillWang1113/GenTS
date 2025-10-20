@@ -2,7 +2,7 @@ from typing import Optional
 
 import numpy as np
 import ot
-from tqdm import tqdm
+# from tqdm import tqdm
 
 
 class WassersteinDistances:
@@ -158,13 +158,7 @@ class WassersteinDistances:
         """
         directions = self.get_random_directions(num_directions)
         distances = []
-        for direction in tqdm(
-            directions,
-            desc="Computing sliced Wasserstein",
-            unit="proj",
-            leave=False,
-            colour="blue",
-        ):
+        for direction in directions:
             distances.append(self.directional_distance(direction))
         return np.array(distances)
 
@@ -176,12 +170,6 @@ class WassersteinDistances:
         """
         n_features = self.original_data.shape[1]
         distances = []
-        for feature in tqdm(
-            range(n_features),
-            desc="Computing marginal Wasserstein",
-            unit="feature",
-            leave=False,
-            colour="blue",
-        ):
+        for feature in range(n_features):
             distances.append(self.feature_distance(feature))
         return np.array(distances)

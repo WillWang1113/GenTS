@@ -37,6 +37,7 @@ class AirQuality(BaseDataModule):
         inference_batch_size (int, optional): Testing batch size. Defaults to 1024.
         max_time (float, optional): Time step index [0, 1, ..., `total_seq_len` - 1] will be automatically generated. If `max_time` is given, then scale the time step index, [0, ..., `max_time`]. Defaults to None.
         add_coeffs (str, optional): Include interpolation coefficients or not. Needed for `KoVAE`, `GTGAN` and `SDEGAN`. Choose from `[None, 'linear', 'cubic_spline']`. If `None`, don't include. Defaults to None.
+        irregular_dropout (float, optional): Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between `[0.0, 1.0]` Defaults to 0.0.
         **kwargs: Additional arguments for the model
     """
     feat_name = ["PM2.5", "PM10", "NO2", "CO", "O3", "SO2"]
@@ -55,6 +56,7 @@ class AirQuality(BaseDataModule):
         inference_batch_size: int = 1024,
         max_time: float = 1.0,
         add_coeffs: str = None,
+        irregular_dropout: float = 0.0,
         **kwargs,
     ):
         super().__init__(
@@ -65,6 +67,7 @@ class AirQuality(BaseDataModule):
             inference_batch_size,
             max_time,
             add_coeffs,
+            irregular_dropout,
             data_dir,
             **kwargs,
         )

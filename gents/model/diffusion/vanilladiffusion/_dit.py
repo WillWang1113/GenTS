@@ -370,7 +370,7 @@ class DiT(nn.Module):
     def __init__(
         self,
         seq_length=96,
-        patch_size=16,
+        patch_size=8,
         seq_channels=1,
         d_model=1152,
         n_layers=4,

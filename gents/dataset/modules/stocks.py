@@ -13,9 +13,9 @@ class Stocks(WebDownloadDataModule):
         data_source (str): Original data file type, fixed to `'csv'`.
     """
     D = 6
+    index_col = None
     url = "https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data/stock_data.csv"
     data_source = 'csv'
-    index_col = None
 
     @property
     def dataset_name(self) -> str:

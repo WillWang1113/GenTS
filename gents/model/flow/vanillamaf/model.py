@@ -11,9 +11,9 @@ from gents.model.base import BaseModel
 
 class VanillaMAF(BaseModel):
     """Vanilla Masked Autoregressive Flow (MAF) with MADE.
-    
+
     For conditional generation, an extra MLP is used for embedding conditions.
-    
+
     Args:
         seq_len (int): Target sequence length
         seq_dim (int): Target sequence dimension, for univariate time series, set as 1
@@ -39,14 +39,16 @@ class VanillaMAF(BaseModel):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         modules = []
-        if condition == 'predict':
+        if condition == "predict":
             cond_seq_len = self.obs_len
             cond_input = cond_seq_len * seq_dim
-        elif condition == 'impute':
+        elif condition == "impute":
             cond_seq_len = seq_len
             cond_input = cond_seq_len * seq_dim
-        elif condition == 'class':
+        elif condition == "class":
             cond_input = self.class_num
+        else:
+            cond_input = None
         # if condition:
         #     # if condition == "predict":
         #     #     assert kwargs.get("obs_len") is not None
@@ -79,15 +81,13 @@ class VanillaMAF(BaseModel):
                 c = torch.nan_to_num(c).flatten(1).to(x)
             elif self.condition == "predict":
                 x = x[:, -self.hparams_initial.seq_len :].flatten(1)
-            
 
         x = x.flatten(1)
 
         loss = -self.flow.log_probs(x, c).mean()
         loss_dict = {"train_loss": loss}
-        self.log_dict(
-            loss_dict, on_step=True, on_epoch=False, logger=True, prog_bar=True
-        )
+        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
+
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -98,19 +98,16 @@ class VanillaMAF(BaseModel):
                 c = torch.nan_to_num(c).flatten(1).to(x)
             elif self.condition == "predict":
                 x = x[:, -self.hparams_initial.seq_len :].flatten(1)
-            
+
             # c = c.flatten(1).to(x)
         x = x.flatten(1)
 
         loss = -self.flow.log_probs(x, c).mean()
         loss_dict = {"val_loss": loss}
-        self.log_dict(
-            loss_dict, on_step=True, on_epoch=False, logger=True, prog_bar=True
-        )
-        return loss
+        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
-        if self.condition is None or self.condition == 'class':
+        if self.condition is None or self.condition == "class":
             all_samples = self.flow.sample(n_sample, None).reshape(
                 n_sample, self.hparams.seq_len, self.hparams.seq_dim
             )

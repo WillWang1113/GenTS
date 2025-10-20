@@ -78,7 +78,7 @@ class LatentODE(BaseModel):
         loss_dict = self.model.compute_all_losses(
             batch_dict, n_traj_samples=3, kl_coef=self.kl_coef
         )
-        self.log_dict(loss_dict)
+        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
         return loss_dict["loss"]
 
     def validation_step(self, batch, batch_idx):
@@ -86,7 +86,8 @@ class LatentODE(BaseModel):
         loss_dict = self.model.compute_all_losses(
             batch_dict, n_traj_samples=3, kl_coef=self.kl_coef
         )
-        self.log_dict(loss_dict)
+        loss_dict = {f'val_{k}':v for k, v in loss_dict.items()}
+        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
         total_seq_len = self.seq_len

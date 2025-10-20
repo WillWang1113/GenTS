@@ -11,7 +11,7 @@ from .modules.air_quality import AirQuality
 from .modules.ecg import ECG
 from .modules.physionet import Physionet
 
-__all__ = [
+DATASET_NAMES = [
     "Spiral2D",
     "SineND",
     "Stocks",
@@ -28,4 +28,23 @@ __all__ = [
     "AirQuality",
     "ECG",
     "Physionet",
+]
+
+__all__ = [
+    "Spiral2D",
+    "SineND",
+    "Stocks",
+    "Energy",
+    "MuJoCo",
+    "Electricity",
+    "Weather",
+    "Traffic",
+    "Exchange",
+    "ETTh1",
+    "ETTh2",
+    "ETTm1",
+    "ETTm2",
+    "AirQuality",
+    "ECG",
+    "Physionet"
 ]

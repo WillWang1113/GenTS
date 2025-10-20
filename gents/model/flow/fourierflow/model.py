@@ -35,8 +35,8 @@ class FourierFlow(BaseModel):
         Only support for CPU training and univariate time series
     
     .. note::
-        For odd `seq_len`, `FourierFlow` will manually repeat the first time step to make it even, 
-        since it only handles the even input time series.
+        For even `seq_len`, `FourierFlow` will manually repeat the first time step to make it even, 
+        since it only handles the odd input time series.
 
     Args:
         seq_len (int): Target sequence length
@@ -135,15 +135,17 @@ class FourierFlow(BaseModel):
         X_train = batch["seq"].squeeze(-1)
 
         if X_train.shape[1] % 2 == 0:
-            # If the sequence length is odd, we need to add zero on the first time step
+            # If the sequence length is even, we need to add zero on the first time step
             # to make it compatible with the Fourier Transform
-            warnings.warn("Sequence length is odd, adding zeros to time step.")
+            warnings.warn("Sequence length is even, adding zeros to time step.")
             X_train = torch.cat([X_train[:, [0]], X_train], dim=1)
 
         z, log_pz, log_jacob = self(X_train)
         loss = (-log_pz - log_jacob).mean()
 
-        self.log("train_loss", loss, prog_bar=True)
+        # self.log("train_loss", loss, prog_bar=True)
+        self.log_dict({"train_loss": loss}, on_epoch=True, prog_bar=True)
+        
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -151,15 +153,14 @@ class FourierFlow(BaseModel):
         X_train = batch["seq"].squeeze(-1)
 
         if X_train.shape[1] % 2 == 0:
-            # If the sequence length is odd, we need to add zero on the first time step
+            # If the sequence length is even, we need to add zero on the first time step
             # to make it compatible with the Fourier Transform
-            warnings.warn("Sequence length is odd, adding zeros to time step.")
+            warnings.warn("Sequence length is even, adding zeros to time step.")
             X_train = torch.cat([X_train[:, [0]], X_train], dim=1)
         z, log_pz, log_jacob = self(X_train)
         loss = (-log_pz - log_jacob).mean()
+        self.log_dict({"val_loss": loss}, on_epoch=True, prog_bar=True)
 
-        self.log("val_loss", loss, prog_bar=True)
-        return loss
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
         if self.FFT:
@@ -175,9 +176,9 @@ class FourierFlow(BaseModel):
 
         X_sample = self._inverse(z)
         if self.seq_len % 2 == 0:
-            # If the sequence length is odd, we need to remove the first time step
+            # If the sequence length is even, we need to remove the first time step
             # to make it compatible with the Fourier Transform
-            warnings.warn("Sequence length is odd, removing zeros from time step.")
+            warnings.warn("Sequence length is even, removing zeros from time step.")
             X_sample = X_sample[:, 1:]
         X_sample = X_sample
 
@@ -199,9 +200,9 @@ class FourierFlow(BaseModel):
         seq_data = dl.dataset.data
         assert seq_data.shape[-1] == 1
         if seq_data.shape[1] % 2 == 0:
-            # If the sequence length is odd, we need to add zero on the first time step
+            # If the sequence length is even, we need to add zero on the first time step
             # to make it compatible with the Fourier Transform
-            warnings.warn("Sequence length is odd, adding zeros to time step.")
+            warnings.warn("Sequence length is even, adding zeros to time step.")
             seq_data = torch.cat([seq_data[:, [0]], seq_data], dim=1)
         seq_data = seq_data.squeeze(-1)
 

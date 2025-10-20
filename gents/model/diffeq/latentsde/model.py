@@ -113,13 +113,13 @@ class LatentSDE(BaseModel):
         rec_loss, kl_loss = self._get_loss(batch)
         loss = rec_loss + kl_loss
 
-        self.log_dict({"loss": loss, "rec_loss": rec_loss, "kl_loss": kl_loss})
+        self.log_dict({"loss": loss, "rec_loss": rec_loss, "kl_loss": kl_loss}, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         rec_loss, kl_loss = self._get_loss(batch)
         loss = rec_loss + kl_loss
-        self.log_dict({"val_loss": loss, "rec_loss": rec_loss, "kl_loss": kl_loss})
+        self.log_dict({"val_loss": loss, "rec_loss": rec_loss, "kl_loss": kl_loss}, on_epoch=True, prog_bar=True)
         return loss
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):

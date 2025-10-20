@@ -112,6 +112,7 @@ class Physionet(BaseDataModule):
         inference_batch_size: int = 1024,
         max_time: float = 1.0,
         add_coeffs: str = None,
+        irregular_dropout: float = 0.0,
         **kwargs,
     ):
         """_summary_
@@ -136,6 +137,7 @@ class Physionet(BaseDataModule):
             inference_batch_size,
             max_time,
             add_coeffs,
+            irregular_dropout,
             data_dir,
             **kwargs,
         )

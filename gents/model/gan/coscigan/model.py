@@ -2,6 +2,7 @@ from typing import Dict
 import torch
 from torch import nn
 
+from gents.evaluation.model_free.distribution_distance import WassersteinDistances
 from gents.model.base import BaseModel
 
 from ._backbones import Discriminator, Generator, LSTMDiscriminator, LSTMGenerator
@@ -14,7 +15,16 @@ class COSCIGAN(BaseModel):
 
 
     Args:
-        BaseModel (_type_): _description_
+        seq_len (int): Target sequence length.
+        seq_dim (int): Target sequence dimension.
+        condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
+        latent_dim (int, optional): Latent variable dimension. Defaults to 64.
+        DG_type (str, optional): Network type of discriminator and generator. Choose from `['LSTM', 'MLP']`. Defaults to "LSTM".
+        central_disc_type (str, optional): Network type of central discriminator. Choose from `['LSTM', 'MLP']`. Defaults to "MLP".
+        gamma (float, optional): Loss coefficient of central discriminator. Defaults to 5.0.
+        lr (Dict[str, float], optional): Learning rate of different networks. G: generator, D: discriminator, CD: central discriminator. Defaults to {"G": 1e-3, "D": 1e-3, "CD": 1e-4}.
+        weight_decay (float, optional): Weight decay. Defaults to 1e-5.
+        **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
 
     """
 
@@ -33,20 +43,6 @@ class COSCIGAN(BaseModel):
         weight_decay: float = 1e-5,
         **kwargs,
     ):
-        """_summary_
-
-        Args:
-            seq_len (int): Target sequence length.
-            seq_dim (int): Target sequence dimension.
-            condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
-            latent_dim (int, optional): Latent variable dimension. Defaults to 64.
-            DG_type (str, optional): Network type of discriminator and generator. Choose from `['LSTM', 'MLP']`. Defaults to "LSTM".
-            central_disc_type (str, optional): Network type of central discriminator. Choose from `['LSTM', 'MLP']`. Defaults to "MLP".
-            gamma (float, optional): Loss coefficient of central discriminator. Defaults to 5.0.
-            lr (Dict[str, float], optional): Learning rate of different networks. G: generator, D: discriminator, CD: central discriminator. Defaults to {"G": 1e-3, "D": 1e-3, "CD": 1e-4}.
-            weight_decay (float, optional): Weight decay. Defaults to 1e-5.
-            **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
-        """
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         assert DG_type in ["MLP", "LSTM"]
         assert central_disc_type in ["MLP", "LSTM"]
@@ -206,7 +202,19 @@ class COSCIGAN(BaseModel):
             on_step=False,
         )
 
-    def validation_step(self, batch, batch_idx): ...
+    def validation_step(self, batch, batch_idx):
+        batch_size = batch["seq"].shape[0]
+        val_samples = self.sample(batch_size, batch.get("c", None))
+
+        val_w_loss = (
+            WassersteinDistances(
+                batch["seq"].cpu().flatten(1).numpy(),
+                val_samples.cpu().flatten(1).numpy(),
+            )
+            .marginal_distances()
+            .mean()
+        )
+        self.log_dict({"val_loss": val_w_loss}, on_epoch=True, prog_bar=True)
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
         z = torch.randn((n_sample, self.latent_dim)).to(self.device)

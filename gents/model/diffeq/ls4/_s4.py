@@ -42,7 +42,7 @@ log = get_logger(__name__)
 """ Cauchy and Vandermonde kernels """
 
 try:  # Try CUDA extension
-    from extensions.cauchy.cauchy import cauchy_mult
+    from s4_extensions.cauchy.cauchy import cauchy_mult
 
     has_cauchy_extension = True
 except:

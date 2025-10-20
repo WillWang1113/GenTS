@@ -279,8 +279,9 @@ class TimeVQVAE(BaseModel):
         """
         x = batch["seq"].permute(0, 2, 1)
         y = batch.get("c", None)
-        if y.ndim == 1:
-            y = torch.unsqueeze(y, dim=-1)  # (b 1)
+        if y is not None:
+            if y.ndim == 1:
+                y = torch.unsqueeze(y, dim=-1)  # (b 1)
         # y = batch.get("label", None)
         self.encoder_l.eval()
         self.vq_model_l.eval()
@@ -371,8 +372,8 @@ class TimeVQVAE(BaseModel):
         return recons_loss, vq_losses, perplexities
 
     def configure_optimizers(self):
-        assert self.trainer.max_steps > 0, "Trainer max_steps must be set in TimeVQVAE"
-        self.total_steps = self.trainer.max_steps
+        # assert self.trainer.max_steps > 0, "Trainer max_steps must be set in TimeVQVAE"
+        self.total_steps = self.trainer.max_epochs
         stage1_param = (
             list(self.encoder_h.parameters())
             + list(self.encoder_l.parameters())
@@ -444,7 +445,7 @@ class TimeVQVAE(BaseModel):
             # log
             self.log("global_step", self.global_step)
             for k in loss_hist.keys():
-                self.log(f"train/{k}", loss_hist[k])
+                self.log(f"train_{k}", loss_hist[k])
 
             self.untoggle_optimizer(opt1)
         else:
@@ -471,7 +472,7 @@ class TimeVQVAE(BaseModel):
                 "mask_pred_loss_h": mask_pred_loss_h,
             }
             for k in loss_hist.keys():
-                self.log(f"train/{k}", loss_hist[k])
+                self.log(f"train_{k}", loss_hist[k])
             self.untoggle_optimizer(opt2)
 
     def validation_step(self, batch, batch_idx):
@@ -498,7 +499,7 @@ class TimeVQVAE(BaseModel):
             # log
             self.log("global_step", self.global_step)
             for k in loss_hist.keys():
-                self.log(f"val/{k}", loss_hist[k])
+                self.log(f"val_{k}", loss_hist[k])
 
             # return loss_hist
         else:
@@ -516,7 +517,7 @@ class TimeVQVAE(BaseModel):
                 "mask_pred_loss_h": mask_pred_loss_h,
             }
             for k in loss_hist.keys():
-                self.log(f"val/{k}", loss_hist[k])
+                self.log(f"val_{k}", loss_hist[k])
 
     def _iterative_decoding(self, num=1, mode="cosine", class_index=None, device="cpu"):
         """

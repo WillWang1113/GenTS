@@ -133,7 +133,7 @@ class FourierDiffusion(BaseModel):
         loss = self.training_loss_fn(self, batch)
 
         self.log_dict(
-            {"train/loss": loss},
+            {"train_loss": loss},
             prog_bar=True,
             batch_size=len(batch),
             on_epoch=True,
@@ -147,7 +147,7 @@ class FourierDiffusion(BaseModel):
         batch = DiffusableBatch(X=dft(batch["seq"]))
         loss = self.validation_loss_fn(self, batch)
         self.log_dict(
-            {"val/loss": loss},
+            {"val_loss": loss},
             prog_bar=True,
             batch_size=len(batch),
             on_epoch=True,

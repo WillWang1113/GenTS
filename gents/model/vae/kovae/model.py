@@ -267,8 +267,10 @@ class KoVAE(BaseModel):
             "kl_loss": losses[2],
             "pred_loss": losses[3],
         }
-        for key, value in loss_dict.items():
-            self.log(f"train/{key}", value)
+        # for key, value in loss_dict.items():
+        #     self.log(f"train/{key}", value)
+        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
+        
 
         return losses[0]
 
@@ -295,13 +297,14 @@ class KoVAE(BaseModel):
             )  # x_rec, x_pred_rec, z, z_pred_, Ct
 
         loss_dict = {
-            "loss": losses[0],
-            "recon_loss": losses[1],
-            "kl_loss": losses[2],
-            "pred_loss": losses[3],
+            "val_loss": losses[0],
+            "val_recon_loss": losses[1],
+            "val_kl_loss": losses[2],
+            "val_pred_loss": losses[3],
         }
-        for key, value in loss_dict.items():
-            self.log(f"val/{key}", value)
+        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
+        # for key, value in loss_dict.items():
+        #     self.log(f"val/{key}", value)
         # return losses[0]
 
     def configure_optimizers(self):

@@ -109,7 +109,7 @@ class SDEGAN(BaseModel):
             self.averaged_generator.update_parameters(self.generator)
             self.averaged_discriminator.update_parameters(self.discriminator)
 
-        self.log("train_loss", loss)
+        self.log("train_loss", loss, on_epoch=True, prog_bar=True)
 
     def validation_step(self, batch, batch_idx):
         batch_size = batch["seq"].shape[0]
@@ -131,7 +131,7 @@ class SDEGAN(BaseModel):
         real_score = discriminator(real_samples)
         loss = generated_score - real_score
 
-        self.log("val_loss", loss)
+        self.log("val_loss", loss, on_epoch=True, prog_bar=True)
 
         # total_unaveraged_loss = evaluate_loss(ts, batch_size, train_dataloader, generator, discriminator)
         # if step > swa_step_start:

@@ -221,14 +221,14 @@ class LS4(BaseModel):
     def training_step(self, batch, batch_idx):
         data, tp, mask, labels = self._reform_batch(batch)
         loss, loss_dict = self.model(data, tp, mask, labels)
-        self.log_dict(loss_dict)
+        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         data, tp, mask, labels = self._reform_batch(batch)
         loss, loss_dict = self.model(data, tp, mask, labels)
-        loss_dict = {"val" + key: value for key, value in loss_dict.items()}
-        self.log_dict(loss_dict)
+        loss_dict = {"val_" + key: value for key, value in loss_dict.items()}
+        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
 
     def configure_optimizers(self):
         lr = self.hparams.lr

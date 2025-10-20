@@ -1,4 +1,5 @@
-from math import log2, sqrt
+from copy import deepcopy
+from math import log, log2, sqrt
 from typing import List, Optional
 
 import torch
@@ -346,13 +347,21 @@ class ProGenerator(nn.Module):
         **kwargs,
     ):
         super(ProGenerator, self).__init__()
-
+        # self.orig_seq_len = deepcopy(seq_len)
+        # if log2(seq_len) % 1 != 0:
+        #     self.need_init_interp = True
+        #     seq_len = 2 ** (int(log2(seq_len)) + 1)
+        #     self.seq_len = seq_len
+        # else:
+        #     self.need_init_interp = False
+        
         assert log2(seq_len) % 1 == 0, (
             "target len must be an integer that is a power of 2."
         )
         assert seq_len >= 8, "target len should be at least of value 8."
         assert 0 <= residual_factor <= 1, "residual factor must be included in [0,1]"
         self.target_len = seq_len
+        self.seq_dim = seq_dim
         self.nb_step = int(log2(seq_len)) - 2
         self.time_feat_dim = time_feat_dim
         self.channel_nb = hidden_size
@@ -458,6 +467,11 @@ class ProGenerator(nn.Module):
         if depth is None:
             depth = self.nb_step - 1
         x = torch.concat((time_feat, x), dim=1) if time_feat is not None else x
+        # interpolate x to length 2**k
+        # if self.need_init_interp:
+        #     new_len = 2 ** (int(log2(x.shape[2])) + 1)
+        #     x = F.interpolate(x, size=new_len, mode="linear")
+
         assert x.dim() == 3, "input must be three dimensional"
         assert x.size(2) == self.target_len, (
             "third dimension of input must be equal to target_len"
@@ -469,8 +483,7 @@ class ProGenerator(nn.Module):
                 .permute(0, 2, 1)
                 .expand(x.size(0), self.embedding_dim, x.size(2))
             )
-            x = torch.cat((em, x), dim=1)
-
+            x = torch.cat((em, x), dim=1)       
         reduced_x = F.avg_pool1d(
             x, kernel_size=2 ** (self.nb_step - 1)
         )  # Reduce x to length 8
@@ -519,8 +532,12 @@ class ProGenerator(nn.Module):
 
         else:
             # y = self.last_block[depth](y).squeeze(1)
+            
+            # ! Original
             y = self.last_block(y).squeeze(1)
-
+        if self.seq_dim == 1:
+            y = y.unsqueeze(1)
+        # y = F.interpolate(y, size=self.orig_seq_len, mode="linear")
         return y
 
 
@@ -551,6 +568,15 @@ class ProDiscriminator(nn.Module):
         **kwargs,
     ):
         super(ProDiscriminator, self).__init__()
+        # self.orig_seq_len = deepcopy(seq_len)
+        # self.seq_len = seq_len
+        # if log2(seq_len) % 1 != 0:
+        #     self.need_init_interp = True
+        #     seq_len = 2 ** (int(log2(seq_len)) + 1)
+        #     self.seq_len = seq_len
+        # else:
+        #     self.need_init_interp = False
+        
         assert seq_len >= 8, "target length should be at least of value 8"
         assert log2(seq_len) % 1 == 0, (
             "input length must be an integer that is a power of 2."
@@ -641,6 +667,13 @@ class ProDiscriminator(nn.Module):
         assert log2(x.size(2)) % 1 == 0, (
             "input length must be an integer that is a power of 2."
         )
+        # if self.need_init_interp:
+        #     x = F.interpolate(x, size=self.seq_len, mode="linear")
+        #     if time_feat is not None:
+        #         time_feat = F.interpolate(
+        #             time_feat, size=self.seq_len, mode="linear"
+        #         )  # Interpolate time features
+        
         if time_feat is not None:
             assert time_feat.size(2) == self.seq_len, (
                 "length of features should be equal to target len"

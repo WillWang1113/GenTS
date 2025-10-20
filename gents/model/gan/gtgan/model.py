@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from gents.evaluation.model_free.distribution_distance import WassersteinDistances
 from gents.model.base import BaseModel
 from gents.common._modules import FinalTanh, NeuralCDE, RNNLayer
 from ._backbones import (
@@ -380,6 +381,19 @@ class GTGAN(BaseModel):
             self.log("loss_g", loss_g)
 
         # return super().training_step(*args, **kwargs)
+    def validation_step(self, batch, batch_idx):
+        batch_size = batch["seq"].shape[0]
+        val_samples = self.sample(batch_size, batch.get("c", None))
+
+        val_w_loss = (
+            WassersteinDistances(
+                batch["seq"].cpu().flatten(1).numpy(),
+                val_samples.cpu().flatten(1).numpy(),
+            )
+            .marginal_distances()
+            .mean()
+        )
+        self.log_dict({"val_loss": val_w_loss}, on_epoch=True, prog_bar=True)
 
     def _loss_e_t0(self, x_tilde, x):
         return F.mse_loss(x_tilde, x)
