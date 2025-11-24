@@ -11,9 +11,9 @@ from gents.common._modules import MLPDecoder, MLPEncoder, LabelEmbedder
 
 class VanillaVAE(BaseModel):
     """Vanilla Variational Autoencoder (VAE) model with MLP encoder and decoder.
-    
+
     For conditional generation, an extra MLP is used for embedding conditions.
-    
+
     Args:
         seq_len (int): Target sequence length
         seq_dim (int): Target sequence dimension, for univariate time series, set as 1
@@ -26,7 +26,7 @@ class VanillaVAE(BaseModel):
         **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
     """
 
-    ALLOW_CONDITION = [None, "predict", "impute", 'class']
+    ALLOW_CONDITION = [None, "predict", "impute", "class"]
 
     def __init__(
         self,
@@ -40,7 +40,6 @@ class VanillaVAE(BaseModel):
         weight_decay: float = 1e-5,
         **kwargs,
     ):
-
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         # print(self.hparams)
@@ -60,7 +59,6 @@ class VanillaVAE(BaseModel):
                     seq_len, seq_dim, latent_dim, self.hiddens, **kwargs
                 )
             elif condition == "class":
-                
                 self.cond_net = LabelEmbedder(
                     self.class_num, latent_dim, dropout_prob=0.0
                 )
@@ -148,7 +146,6 @@ class VanillaVAE(BaseModel):
                 x_hat = self._decode(z, condition)
                 all_samples.append(x_hat)
             all_samples = torch.stack(all_samples, dim=-1)
-
 
         return all_samples
 

@@ -68,25 +68,30 @@ class SpectralFilter(nn.Module):
             nn.Sequential(  
                 # RNN(mode="RNN", HIDDEN_UNITS=20, INPUT_SIZE=1,),
                 nn.Linear(self.in_size, hidden),
-                nn.Sigmoid(),  # nn.LeakyReLU(),
+                nn.LeakyReLU(),  # nn.LeakyReLU(),
                 nn.Linear(hidden, hidden),
-                nn.Sigmoid(),  # nn.Tanh(),
-                nn.Linear(hidden, self.out_size),
+                nn.LeakyReLU(),  # nn.Tanh(),
+                nn.Linear(hidden, self.out_size), nn.Tanh()
             )
         )
 
         self.mu_net = nn.Sequential(  
             # RNN(mode="RNN", HIDDEN_UNITS=20, INPUT_SIZE=1,),
             nn.Linear(self.in_size, hidden),
-            nn.Sigmoid(),  # nn.LeakyReLU(),
+            nn.LeakyReLU(),  # nn.LeakyReLU(),
             nn.Linear(hidden, hidden),
-            nn.Sigmoid(),  # nn.Tanh(),
+            nn.LeakyReLU(),  # nn.Tanh(),
             nn.Linear(hidden, self.out_size),
         )
-
-        base_mu, base_cov = torch.zeros(self.pz_size), torch.eye(self.pz_size)
-        self.base_dist = MultivariateNormal(base_mu, base_cov)
-
+        
+        # base_mu, base_cov = torch.zeros(self.pz_size), torch.eye(self.pz_size)
+        # self.base_dist = MultivariateNormal(base_mu, base_cov)
+        # self.base_mu = torch.zeros(self.pz_size)
+        # self.base_cov = torch.eye(self.pz_size)
+        self.register_buffer("base_mu", torch.zeros(self.pz_size))
+        self.register_buffer("base_cov", torch.eye(self.pz_size))
+        self.base_dist = MultivariateNormal(self.base_mu, self.base_cov)
+        
     def forward(self, x, flip=False):
         """forward steps
 
@@ -95,7 +100,7 @@ class SpectralFilter(nn.Module):
         "Density estimation using real nvp." arXiv preprint arXiv:1605.08803 (2016).
 
         """
-
+        
         x1, x2 = x[:, : self.k], x[:, self.k :]
 
         if flip:

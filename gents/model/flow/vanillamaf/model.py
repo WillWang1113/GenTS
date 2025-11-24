@@ -108,7 +108,7 @@ class VanillaMAF(BaseModel):
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
         if self.condition is None or self.condition == "class":
-            all_samples = self.flow.sample(n_sample, None).reshape(
+            all_samples = self.flow.sample(n_sample).reshape(
                 n_sample, self.hparams.seq_len, self.hparams.seq_dim
             )
         else:

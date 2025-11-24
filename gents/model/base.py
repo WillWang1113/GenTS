@@ -113,3 +113,17 @@ class BaseModel(ABC, LightningModule):
     @abstractmethod
     def _sample_impl(self, n_sample: int = 1, condition=None, **kwargs) -> torch.Tensor:
         """Actual implementation of the sampling process"""
+
+    # TODO: implement predict_step
+    # TODO: also the inference setup logic
+    # def predict_step(self, batch, batch_idx):
+    #     if self.condition is None or self.condition == "class":
+    #         return self.sample(
+    #             n_sample=batch["seq"].shape[0], condition=batch.get("c", None), **batch
+    #         )
+    #     else:
+    #         return self.sample(
+    #             self.hparams.get("n_sample", 10), condition=batch["c"], **batch
+    #         )
+
+    

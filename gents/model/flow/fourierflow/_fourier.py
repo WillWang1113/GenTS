@@ -20,6 +20,8 @@ import sys
 
 import warnings
 
+from gents.model import base
+
 warnings.filterwarnings("ignore")
 
 if not sys.warnoptions:
@@ -88,12 +90,16 @@ class DFT(nn.Module):
 
     def __init__(self, N_fft=100):
 
-        super(DFT, self).__init__()
+        super().__init__()
 
         self.N_fft = N_fft
         self.crop_size = int(self.N_fft / 2) + 1
-        base_mu, base_cov = torch.zeros(self.crop_size * 2), torch.eye(self.crop_size * 2)
-        self.base_dist = MultivariateNormal(base_mu, base_cov)
+        # self.base_mu = torch.zeros(self.crop_size * 2)
+        # self.base_cov = torch.eye(self.crop_size * 2)
+        self.register_buffer("base_mu", torch.zeros(self.crop_size * 2))
+        self.register_buffer("base_cov", torch.eye(self.crop_size * 2))
+        self.base_dist = MultivariateNormal(self.base_mu, self.base_cov)
+        # base_mu, base_cov = torch.zeros(self.crop_size * 2), torch.eye(self.crop_size * 2)
 
     def forward(self, x):
 
@@ -112,23 +118,38 @@ class DFT(nn.Module):
         Step 5: Compute the flow likelihood and Jacobean. Because DFT is a Vandermonde linear transform, Log-Jacob-Det = 0
         
         """
-
+       
+        
         if len(x.shape) == 1:
 
             x = x.reshape((1, -1))
 
-        x_numpy = x.detach().float()
-        X_fft = [np.fft.fftshift(np.fft.fft(x_numpy[k, :])) for k in range(x.shape[0])]
-        X_fft_train = np.array(
-            [
-                np.array(
-                    [np.real(X_fft[k])[: self.crop_size] / self.N_fft, np.imag(X_fft[k])[: self.crop_size] / self.N_fft]
-                )
-                for k in range(len(X_fft))
-            ]
-        )
-        x_fft = torch.from_numpy(X_fft_train).float()
+        X_fft = torch.fft.fftshift(torch.fft.fft(x, dim=-1), dim=-1)
+    
+        real_part = torch.real(X_fft)
+        imag_part = torch.imag(X_fft)
 
+        real_part_cropped = real_part[:, :self.crop_size]
+        imag_part_cropped = imag_part[:, :self.crop_size]
+        
+        real_part_normalized = real_part_cropped / self.N_fft
+        imag_part_normalized = imag_part_cropped / self.N_fft
+        
+        x_fft = torch.stack([real_part_normalized, imag_part_normalized], dim=1)
+        # x_numpy = x.detach().float()
+        # X_fft = [np.fft.fftshift(np.fft.fft(x_numpy[k, :])) for k in range(x.shape[0])]
+        # X_fft_train = np.array(
+        #     [
+        #         np.array(
+        #             [np.real(X_fft[k])[: self.crop_size] / self.N_fft, np.imag(X_fft[k])[: self.crop_size] / self.N_fft]
+        #         )
+        #         for k in range(len(X_fft))
+        #     ]
+        # )
+        # x_fft = torch.from_numpy(X_fft_train).float()
+        # print('data device:', x.device)
+        # print('base mu device:', self.base_mu.device)
+        # print("dist device:", base_dist.loc.device)
         log_pz = self.base_dist.log_prob(x_fft.view(-1, x_fft.shape[1] * x_fft.shape[2]))
         log_jacob = 0
 

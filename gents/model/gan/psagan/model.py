@@ -266,7 +266,7 @@ class PSAGAN(BaseModel):
         batch_size = batch["seq"].shape[0]
 
         if self.condition is None:
-            val_samples = self.sample(batch_size, batch.get("c", None))
+            val_samples = self.sample(batch_size)
             val_loss = (
                 WassersteinDistances(
                     batch["seq"].cpu().flatten(1).numpy(),

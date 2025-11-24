@@ -116,10 +116,13 @@ class AirQuality(BaseDataModule):
             station_data, station_data_mask, station_label = self._slide_window(
                 station_df, station_id
             )
+            
+            non_missing_tp = torch.sum(station_data_mask, (1, 2)) != 0.0
+            
             station_id += 1
-            data.append(station_data)
-            data_mask.append(station_data_mask)
-            class_label.append(station_label)
+            data.append(station_data[non_missing_tp])
+            data_mask.append(station_data_mask[non_missing_tp])
+            class_label.append(station_label[non_missing_tp])
 
         data = torch.concat(data)
         data_mask = torch.concat(data_mask)

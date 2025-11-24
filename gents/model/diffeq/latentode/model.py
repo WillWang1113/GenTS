@@ -151,25 +151,6 @@ class LatentODE(BaseModel):
                 "mode": "extrap",
             }
 
-        # elif self.condition == "impute":
-        #     # mask = batch["c"]
-        #     # 1: observed
-        #     # 0: missing
-        #     mask = torch.isnan(batch["c"])
-        #     # observed_data = x.clone()
-        #     # observed_data[mask] = 0.0
-        #     mask = 1 - mask.float()
-
-        #     data_dict = {
-        #         "tp_to_predict": t,
-        #         "observed_tp": t,
-        #         "observed_data": torch.nan_to_num(batch["c"]),
-        #         "data_to_predict": x,
-        #         "observed_mask": mask,
-        #         "mask_predicted_data": batch["data_mask"].float(),
-        #         "labels": None,
-        #         "mode": "interp",
-        #     }
         else:
             # mask = torch.ones_like(x)
             data_dict = {
@@ -198,7 +179,6 @@ class LatentODE(BaseModel):
         non_missing_tp = torch.sum(data_dict["observed_mask"], (0, 2)) != 0.0
         batch_dict["observed_data"] = data_dict["observed_data"][:, non_missing_tp]
         batch_dict["observed_tp"] = data_dict["observed_tp"][non_missing_tp]
-
         # print("observed data")
         # print(batch_dict["observed_data"].size())
 

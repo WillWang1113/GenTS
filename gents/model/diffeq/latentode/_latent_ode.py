@@ -67,6 +67,8 @@ class LatentODEorig(VAE_Baseline):
             first_point_mu, first_point_std = self.encoder_z0(
                 truth_w_mask, truth_time_steps, run_backwards=run_backwards
             )
+            # assume output logvar to stablize
+            first_point_std = torch.exp(0.5 * first_point_std)
 
             means_z0 = first_point_mu.repeat(n_traj_samples, 1, 1)
             sigma_z0 = first_point_std.repeat(n_traj_samples, 1, 1)
@@ -77,7 +79,7 @@ class LatentODEorig(VAE_Baseline):
                 "Unknown encoder type {}".format(type(self.encoder_z0).__name__)
             )
 
-        first_point_std = first_point_std.abs()
+        # first_point_std = first_point_std.abs()
         assert torch.sum(first_point_std < 0) == 0.0
 
         if self.use_poisson_proc:

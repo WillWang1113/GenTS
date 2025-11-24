@@ -186,6 +186,10 @@ class LatentSDENet(nn.Module):
         self.contextualize((ts, ctx))
 
         qz0_mean, qz0_logstd = self.qz0_net(ctx[:, 0]).chunk(chunks=2, dim=1)
+        
+        # Clamp logstd to avoid numerical issues.
+        qz0_logstd = torch.clamp(qz0_logstd, max=20.0)
+        
         z0 = qz0_mean + qz0_logstd.exp() * torch.randn_like(qz0_mean)
         if adjoint:
             # Must use the argument `adjoint_params`, since `ctx` is not part of the input to `f`, `g`, and `h`.

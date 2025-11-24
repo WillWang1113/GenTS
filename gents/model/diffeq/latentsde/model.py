@@ -32,7 +32,7 @@ class LatentSDE(BaseModel):
         seq_len: int,
         seq_dim: int,
         condition: str = None,
-        latent_size: int = 4,
+        latent_size: int = 8,
         context_size: int = 64,
         hidden_size: int = 128,
         noise_std: float = 1e-2,
@@ -40,7 +40,7 @@ class LatentSDE(BaseModel):
         adjoint: bool = False,
         kl_anneal_iters: int = 1000,
         lr_gamma: float = 0.997,
-        lr: float = 1e-2,
+        lr: float = 5e-3,
         weight_decay: float = 1e-6,
         **kwargs,
     ):

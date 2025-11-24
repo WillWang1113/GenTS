@@ -9,23 +9,17 @@ import gents.model
 
 seed_everything(9)
 
-dataset_names = gents.dataset.DATASET_NAMES
-# dataset_names = ['AirQuality']
-model_names = ['LS4', 'LatentODE']
+# dataset_names = gents.dataset.DATASET_NAMES
+dataset_names = ['Energy', "Stocks"]
+model_names = ['VanillaVAE', 'TimeGAN', 'TimeVQVAE']
 # model_names = gents.model.MODEL_NAMES
 print("All available datasets: ", dataset_names)
 print("All available models: ", model_names)
 
 DEFAULT_ROOT_DIR = "/home/user/data2/GenTS_exp"
 try:
-    # too large datasets
     dataset_names.remove("Physionet")
-    dataset_names.remove("ETTm1")
-    dataset_names.remove("ETTm2")
-    
-    # too slow model
-    # model_names.remove("GTGAN")
-    # model_names.remove("LatentSDE")
+    model_names.remove("GTGAN")
 except:
     pass
 
@@ -110,10 +104,10 @@ def main():
                 else:
                     # Limit to seq_dim=32 for multivariate time series,
                     # Limit Electricity and Traffic, which have 321 and 862 dimensions respectively
-                    args["select_seq_dim"] = min(16, data_cls.D)
+                    args["select_seq_dim"] = min(32, data_cls.D)
 
             for model_name in model_names:
-                print("==" * 20)
+                print("--" * 20)
                 print(dataset_name, model_name)
 
                 if model_name == "SDEGAN":
@@ -126,13 +120,13 @@ def main():
                 else:
                     min_epochs = None
 
-                if os.path.exists(
-                    os.path.join(
-                        DEFAULT_ROOT_DIR, f"{model_name}_{dataset_name}_ckptpth.txt"
-                    )
-                ):
+                best_model_path = os.path.join(
+                    DEFAULT_ROOT_DIR, f"{model_name}_{dataset_name}_ckptpth.txt"
+                )
+
+                if not os.path.exists(best_model_path):
                     print(
-                        f"Model {model_name} on dataset {dataset_name} already trained. Skipping."
+                        f"Model {model_name} on dataset {dataset_name} not trained. Skipping."
                     )
                     continue
 
@@ -142,69 +136,36 @@ def main():
                 # filter out invalid condition
                 if args["condition"] in model_cls.ALLOW_CONDITION:
                     print(f"Testing model {model_name} on dataset {dataset_name}")
-                    model_args = dict(
-                        seq_len=dm.seq_len,
-                        seq_dim=dm.seq_dim,
-                        condition=args["condition"],
-                    )
-
-                    model = model_cls(**model_args)
-
-                    trainer = Trainer(
-                        max_epochs=max_epochs,
-                        devices="auto" if model_name == "FourierFlow" else [gpu],
-                        accelerator="cpu" if model_name == "FourierFlow" else "gpu",
-                        callbacks=[
-                            EarlyStopping(monitor="val_loss", patience=10, mode="min")
-                        ],
-                        default_root_dir=DEFAULT_ROOT_DIR,
-                        min_epochs=min_epochs,
-                        # fast_dev_run=True,
-                        enable_progress_bar=False,
-                        enable_model_summary=False
-                    )
-                    try:
-                        trainer.fit(model, dm)
-                    except Exception as e:
-                        print(
-                            f"Error training model {model_name} on dataset {dataset_name}: {e}"
-                        )
-                        log_file.write(
-                            f"Error training model {model_name} on dataset {dataset_name}: {e}\n"
-                        )
-                        continue
-                    with open(
-                        os.path.join(
-                            DEFAULT_ROOT_DIR, f"{model_name}_{dataset_name}_ckptpth.txt"
-                        ),
-                        "w",
-                    ) as text_file:
-                        text_file.write(trainer.checkpoint_callback.best_model_path)
-                        text_file.close()
-                    
-                    
-                    # model = model_cls.load_from_checkpoint(
-                    #     trainer.checkpoint_callback.best_model_path
+                    # model_args = dict(
+                    #     seq_len=dm.seq_len,
+                    #     seq_dim=dm.seq_dim,
+                    #     condition=args["condition"],
                     # )
+                    with open(best_model_path, "r") as f:
+                        best_ckpt_path = f.read().strip()
+                    # print(best_ckpt_path)
+                    model = model_cls.load_from_checkpoint(best_ckpt_path)
 
-                    # # model testing
-                    # model.eval()
-                    # model.to(f"cuda:{gpu}")
-                    # dm.setup("test")
-                    # y_pred = []
-                    # for test_batch in dm.test_dataloader():
-                    #     for k in test_batch:
-                    #         test_batch[k] = test_batch[k].to(f"cuda:{gpu}")
-                    #     samples = model.sample(
-                    #         n_sample=test_batch["seq"].shape[0],
-                    #         condition=test_batch.get("c", None),
-                    #         **test_batch,
-                    #     )
-                    #     y_pred.append(samples.detach())
-                    # y_pred = torch.cat(y_pred, dim=0).cpu()
-                    # print(y_pred.shape)
-                # print("--" * 20)
-                    
+                
+
+                    # model testing
+                    model.eval()
+                    model.to(f"cuda:{gpu}")
+                    dm.setup("test")
+                    y_pred = []
+                    for test_batch in dm.test_dataloader():
+                        for k in test_batch:
+                            test_batch[k] = test_batch[k].to(f"cuda:{gpu}")
+                        samples = model.sample(
+                            n_sample=test_batch["seq"].shape[0],
+                            condition=test_batch.get("c", None),
+                            **test_batch,
+                        )
+                        y_pred.append(samples.detach())
+                    y_pred = torch.cat(y_pred, dim=0).cpu()
+                    print(y_pred.shape)
+                print("--" * 20)
+
                 # break
             if dataset_name == "SineND":
                 args.pop("seq_dim")

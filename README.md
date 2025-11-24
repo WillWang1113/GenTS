@@ -26,9 +26,9 @@ pip install -e .
 A minimal example of (unconditional) time series generation:
 ```python
 import torch
-from src.model import VanillaDDPM
-from src.dataset import SineND
-from src.evaluation import tsne_visual
+from gents.model import VanillaDDPM
+from gents.dataset import SineND
+from gents.evaluation import tsne_visual
 from lightning import Trainer
 
 # setup dataset and model

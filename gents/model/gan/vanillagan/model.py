@@ -43,9 +43,10 @@ class VanillaGAN(BaseModel):
         self.automatic_optimization = False
 
         # networks
-        self.discriminator = Discriminator(**self.hparams)
-        self.hparams.hidden_size_list.reverse()
-        self.generator = Generator(**self.hparams)
+        gen_param = self.hparams_initial.copy()
+        self.discriminator = Discriminator(**self.hparams_initial)
+        gen_param['hidden_size_list'].reverse()
+        self.generator = Generator(**gen_param)
 
     def training_step(self, batch, batch_idx):
         x = batch["seq"][:, -self.hparams_initial.seq_len :]
@@ -71,7 +72,6 @@ class VanillaGAN(BaseModel):
             optimizer_g.step()
             self.untoggle_optimizer(optimizer_g)
             loss_dict = {"g_loss": g_loss}
-            self.log_dict(loss_dict)
 
         # train discriminator
         # Measure discriminator's ability to classify real from generated samples
@@ -92,7 +92,7 @@ class VanillaGAN(BaseModel):
                 p.data.clamp_(-self.hparams.clip_value, self.hparams.clip_value)
 
             loss_dict = {"d_loss": d_loss}
-            self.log_dict(loss_dict)
+            self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
 
     def validation_step(self, batch, batch_idx):
         x = batch["seq"][:, -self.hparams_initial.seq_len :]

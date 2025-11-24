@@ -286,7 +286,7 @@ class BaseDataModule(LightningDataModule, ABC):
                 **self.kwargs,
             )
 
-        if stage == "test":
+        if stage == "test" or stage == "predict":
             test_data = data[starts["test"] : ends["test"]]
             test_data_mask = data_mask[starts["test"] : ends["test"]]
             if class_label is not None:
@@ -339,6 +339,9 @@ class BaseDataModule(LightningDataModule, ABC):
     def test_dataloader(self):
         return DataLoader(self.test_ds, batch_size=self.infer_bs)
 
+    def predict_dataloader(self):
+        return DataLoader(self.test_ds, batch_size=self.infer_bs)
+    
     @abstractmethod
     def get_data(self) -> Tuple[torch.Tensor]: ...
 

@@ -754,7 +754,7 @@ class TimeVQVAE(BaseModel):
     def _sample_impl(self, n_sample: int, condition: torch.Tensor = None, **kwargs):
         batch_size = kwargs.get("batch_size", n_sample)
         return_representations = kwargs.get("return_representations", False)
-        if condition.ndim == 1:
+        if (condition is not None) and condition.ndim == 1:
             condition = torch.unsqueeze(condition, dim=-1)
 
         n_iters = n_sample // batch_size
