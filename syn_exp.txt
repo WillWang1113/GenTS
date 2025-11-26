@@ -131,3 +131,4 @@ tensor([[[8.0008e-03, 5.0772e-03, 7.2962e-03, 2.5843e-02, 1.4405e-02,
 Error training model LatentODE on dataset AirQuality: index -1 is out of bounds for dimension 0 with size 0
 Error training model LS4 on dataset AirQuality: Invalid number of data points (0) specified
 Error training model LatentODE on dataset AirQuality: index -1 is out of bounds for dimension 0 with size 0
+Error training model GTGAN on dataset ETTh1: 'int' object is not subscriptable

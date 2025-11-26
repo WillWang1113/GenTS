@@ -428,11 +428,12 @@ class WebDownloadDataModule(BaseDataModule):
             csv_pth = os.path.join(self.data_dir, "archive.csv")
 
         df = pd.read_csv(csv_pth, index_col=self.index_col)
-
         # select dimensions
         if self.select_seq_dim is not None:
+            # choose by name
             if isinstance(self.select_seq_dim[0], str):
                 df = df[self.select_seq_dim]
+            # choose by index
             elif isinstance(self.select_seq_dim[0], int):
                 df = df.iloc[:, self.select_seq_dim]
 

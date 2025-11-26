@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 
+import numpy as np
 import torch
 from lightning import Trainer, seed_everything
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
@@ -10,13 +11,13 @@ import gents.model
 seed_everything(9)
 
 dataset_names = gents.dataset.DATASET_NAMES
-# dataset_names = ['AirQuality']
-model_names = ['GTGAN', 'LatentSDE']
-# model_names = gents.model.MODEL_NAMES
+# dataset_names = ['SineND']
+# model_names = ['VanillaVAE']
+model_names = gents.model.MODEL_NAMES
 print("All available datasets: ", dataset_names)
 print("All available models: ", model_names)
 
-DEFAULT_ROOT_DIR = "/home/user/data2/GenTS_exp"
+DEFAULT_ROOT_DIR = "/home/user/data2/GenTS_fcst_exp"
 try:
     # too large datasets
     dataset_names.remove("Physionet")
@@ -52,7 +53,7 @@ def parse_args():
     parser.add_argument(
         "--add_coeffs",
         type=str,
-        default="cubic_spline",
+        default=None,
         choices=[None, "linear", "cubic_spline"],
         help="Type of coefficients to add (e.g., 'cubic_spline').",
     )
@@ -84,6 +85,10 @@ def main():
     gpu = args.pop("gpu")
     max_epochs = args.pop("max_epochs")
     univar = args.pop("univar")
+    if args['condition'] == 'predict':
+        args['obs_len'] = args['seq_len']
+    elif args['condition'] == 'impute':
+        args['missing_rate'] = 0.2
     if univar:
         # model_names.remove("FIDE")  # only support univariate time series
         # model_names.remove("FourierFlow")  # only support univariate time series
@@ -110,7 +115,9 @@ def main():
                 else:
                     # Limit to seq_dim=32 for multivariate time series,
                     # Limit Electricity and Traffic, which have 321 and 862 dimensions respectively
-                    args["select_seq_dim"] = min(16, data_cls.D)
+                    total_dim = min(16, data_cls.D)
+                    args["select_seq_dim"] = np.random.permutation(total_dim).tolist()
+                    
 
             for model_name in model_names:
                 print("==" * 20)
@@ -147,8 +154,12 @@ def main():
                     model_args = dict(
                         seq_len=dm.seq_len,
                         seq_dim=dm.seq_dim,
-                        condition=args["condition"],
+                        condition=args["condition"]
                     )
+                    if args['condition'] == 'predict':
+                        model_args['obs_len'] = args['obs_len']
+                    elif args['condition'] == 'impute':
+                        model_args['missing_rate'] = args['missing_rate']
 
                     model = model_cls(**model_args)
 
