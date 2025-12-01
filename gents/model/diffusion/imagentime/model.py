@@ -338,7 +338,7 @@ class ImagenTime(BaseModel):
             x_img = self._ts_to_img(x_ts)
             loss = self._loss_fn(x_img)
         else:
-            x_ts = batch["seq"]
+            x_ts = batch["seq"]            
             if self.condition == "impute":
                 # --- generate random mask and mask x as it time series --- #
                 mask_ts = ~torch.isnan(batch["c"])

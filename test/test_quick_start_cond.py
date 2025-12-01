@@ -1,8 +1,8 @@
 from matplotlib import pyplot as plt
 import torch
-from gents.dataset.energy import Energy
-from gents.dataset.simple import Spiral2D
-from gents.dataset.stocks import Stocks
+# from gents.dataset.energy import Energy
+from gents.dataset import Spiral2D
+# from gents.dataset.stocks import Stocks
 from gents.evaluation.visualization.visual import predict_visual
 from gents.model import VanillaDDPM
 from gents.dataset import SineND
@@ -11,23 +11,38 @@ from lightning import Trainer
 
 from gents.model.diffeq.latentode.model import LatentODE
 from gents.model.diffeq.ls4.model import LS4
+from gents.model.flow.vanillamaf.model import VanillaMAF
+from gents.model.gan.psagan.model import PSAGAN
 from gents.model.vae.kovae.model import KoVAE
 from gents.model import GTGAN, TMDM, ImagenTime
 
 # setup dataset and model
 dm = Spiral2D(
-    obs_len=24,
-    seq_len=24,
+    obs_len=96,
+    seq_len=96,
     # num_samples=100,
     batch_size=64,
     # irregular_dropout=0.2,
     condition="predict",
 )
-model = LS4(
+# model = LS4(
+#     # latent_dim=128,
+#     # d_model=128,
+#     # d_ff=1024,
+#     # delay=3,
+#     # embedding=16,
+#     obs_len=dm.obs_len,
+#     seq_len=dm.seq_len,
+#     seq_dim=dm.seq_dim,
+#     # ch_mult=[1,2],
+#     # attn_resolution=[4,2],
+#     condition="predict",
+# )
+model = PSAGAN(
     # latent_dim=128,
     # d_model=128,
     # d_ff=1024,
-    # delay=3,
+    # delay=12,
     # embedding=16,
     obs_len=dm.obs_len,
     seq_len=dm.seq_len,
@@ -38,7 +53,7 @@ model = LS4(
 )
 
 # training (on CPU for example)
-trainer = Trainer(max_epochs=100)
+trainer = Trainer(max_epochs=50)
 trainer.fit(model, dm)
    
 
@@ -72,4 +87,4 @@ print(gen_data.shape)
 # axs[1].plot(gen_data[0, ..., 2].cpu())
 # fig.savefig("test_pred_x0_false.png")
 
-predict_visual(real_data, gen_data, real_data_mask, save_root='test_TMDM.png')
+predict_visual(real_data, gen_data, real_data_mask, save_root='test_ImagenTime.png')

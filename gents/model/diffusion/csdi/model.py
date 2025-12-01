@@ -129,17 +129,13 @@ class CSDI(BaseModel):
     def training_step(self, batch, batch_idx):
         train_batch = self._rebuild_batch(batch)
         loss = self.model(train_batch)
-        self.log(
-            "train_loss", loss, prog_bar=True, logger=True, on_step=True, on_epoch=False
-        )
+        self.log("train_loss", loss, prog_bar=True, logger=True, on_epoch=True)
         return loss
 
-    def val_dataloader(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx):
         train_batch = self._rebuild_batch(batch)
         loss = self.model(train_batch, is_train=0)
-        self.log(
-            "val_loss", loss, prog_bar=True, logger=True, on_step=True, on_epoch=False
-        )
+        self.log("val_loss", loss, prog_bar=True, logger=True, on_epoch=True)
         return loss
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):

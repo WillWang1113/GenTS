@@ -471,7 +471,8 @@ class ProGenerator(nn.Module):
         # if self.need_init_interp:
         #     new_len = 2 ** (int(log2(x.shape[2])) + 1)
         #     x = F.interpolate(x, size=new_len, mode="linear")
-
+        # print(x.shape)
+        # print(self.target_len)
         assert x.dim() == 3, "input must be three dimensional"
         assert x.size(2) == self.target_len, (
             "third dimension of input must be equal to target_len"

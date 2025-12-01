@@ -125,8 +125,11 @@ def main():
 
                 if model_name == "SDEGAN":
                     args["add_coeffs"] = "linear"
+                elif model_name == 'GTGAN':
+                    args["add_coeffs"] = 'cubic_spline'
                 else:
-                    args["add_coeffs"] = "cubic_spline"
+                    args["add_coeffs"] = None
+                
 
                 if model_name in ["GTGAN", "TimeVQVAE"]:
                     min_epochs = max_epochs // 2 + 15
@@ -160,6 +163,12 @@ def main():
                         model_args['obs_len'] = args['obs_len']
                     elif args['condition'] == 'impute':
                         model_args['missing_rate'] = args['missing_rate']
+                    
+                    if model_name == 'ImagenTime' and args['condition'] == 'predict':
+                        model_args['delay'] = 12
+                        model_args['embedding'] = 16
+                    else:
+                        pass
 
                     model = model_cls(**model_args)
 
@@ -221,6 +230,8 @@ def main():
                 # break
             if dataset_name == "SineND":
                 args.pop("seq_dim")
+                
+            
 
 
 if __name__ == "__main__":

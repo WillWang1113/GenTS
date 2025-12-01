@@ -80,7 +80,9 @@ class VanillaMAF(BaseModel):
             if self.condition == "impute":
                 c = torch.nan_to_num(c).flatten(1).to(x)
             elif self.condition == "predict":
+                # target sequence is the last seq_len points
                 x = x[:, -self.hparams_initial.seq_len :].flatten(1)
+                c = c.flatten(1)
 
         x = x.flatten(1)
 
@@ -97,7 +99,9 @@ class VanillaMAF(BaseModel):
             if self.condition == "impute":
                 c = torch.nan_to_num(c).flatten(1).to(x)
             elif self.condition == "predict":
+                # target sequence is the last seq_len points
                 x = x[:, -self.hparams_initial.seq_len :].flatten(1)
+                c = c.flatten(1)
 
             # c = c.flatten(1).to(x)
         x = x.flatten(1)

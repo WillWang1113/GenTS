@@ -160,7 +160,7 @@ class PSAGAN(BaseModel):
         self.residual = self._residual()
 
     def training_step(self, batch, batch_idx):
-        x = batch["seq"].permute(0, 2, 1)[..., -self.seq_len :]
+        x = batch["seq"].permute(0, 2, 1)[..., -self.orig_seq_len :]
         c = batch.get("c", None)
 
         if self.need_init_interp:
@@ -277,7 +277,7 @@ class PSAGAN(BaseModel):
             )
         elif self.condition == "predict":
             val_samples = self.sample(50, batch.get("c", None))
-            val_loss = crps(batch["seq"], val_samples)
+            val_loss = crps(batch["seq"][:, -self.orig_seq_len :].cpu().numpy(), val_samples.cpu().numpy())
 
         self.log_dict({"val_loss": val_loss}, on_epoch=True, prog_bar=True)
 

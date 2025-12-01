@@ -6,6 +6,7 @@ from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 import os
 import gents.dataset
 import gents.model
+import numpy as np
 
 seed_everything(9)
 
@@ -110,7 +111,8 @@ def main():
                 else:
                     # Limit to seq_dim=32 for multivariate time series,
                     # Limit Electricity and Traffic, which have 321 and 862 dimensions respectively
-                    args["select_seq_dim"] = min(16, data_cls.D)
+                    total_dim = min(16, data_cls.D)
+                    args["select_seq_dim"] = np.random.permutation(total_dim).tolist()
 
             for model_name in model_names:
                 print("==" * 20)
@@ -118,8 +120,10 @@ def main():
 
                 if model_name == "SDEGAN":
                     args["add_coeffs"] = "linear"
+                elif model_name == 'GTGAN':
+                    args["add_coeffs"] = 'cubic_spline'
                 else:
-                    args["add_coeffs"] = "cubic_spline"
+                    args["add_coeffs"] = None
 
                 if model_name in ["GTGAN", "TimeVQVAE"]:
                     min_epochs = max_epochs // 2 + 15
