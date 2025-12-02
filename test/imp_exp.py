@@ -1,23 +1,23 @@
 from argparse import ArgumentParser
 
+import numpy as np
 import torch
 from lightning import Trainer, seed_everything
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 import os
 import gents.dataset
 import gents.model
-import numpy as np
 
 seed_everything(9)
 
 dataset_names = gents.dataset.DATASET_NAMES
-# dataset_names = ['AirQuality']
-# model_names = ['GTGAN', 'LatentSDE']
+# dataset_names = ['SineND']
+# model_names = ['VanillaVAE']
 model_names = gents.model.MODEL_NAMES
 print("All available datasets: ", dataset_names)
 print("All available models: ", model_names)
 
-DEFAULT_ROOT_DIR = "/mnt/ExtraDisk/wcx/research/GenTS_multivar_syn"
+DEFAULT_ROOT_DIR = "/mnt/ExtraDisk/wcx/research/GenTS_imp_0.2"
 try:
     # too large datasets
     dataset_names.remove("Physionet")
@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument(
         "--add_coeffs",
         type=str,
-        default="cubic_spline",
+        default=None,
         choices=[None, "linear", "cubic_spline"],
         help="Type of coefficients to add (e.g., 'cubic_spline').",
     )
@@ -85,6 +85,10 @@ def main():
     gpu = args.pop("gpu")
     max_epochs = args.pop("max_epochs")
     univar = args.pop("univar")
+    if args['condition'] == 'predict':
+        args['obs_len'] = args['seq_len']
+    elif args['condition'] == 'impute':
+        args['missing_rate'] = 0.2
     if univar:
         # model_names.remove("FIDE")  # only support univariate time series
         # model_names.remove("FourierFlow")  # only support univariate time series
@@ -98,7 +102,6 @@ def main():
             model_names.remove("FourierFlow")
         except:
             pass
-
 
     with open("syn_exp.txt", "a") as log_file:
         for dataset_name in dataset_names:
@@ -120,6 +123,7 @@ def main():
                     # Limit Electricity and Traffic, which have 321 and 862 dimensions respectively
                     total_dim = min(16, data_cls.D)
                     args["select_seq_dim"] = np.random.permutation(total_dim).tolist()
+                    
 
             for model_name in model_names:
                 print("==" * 20)
@@ -131,6 +135,7 @@ def main():
                     args["add_coeffs"] = 'cubic_spline'
                 else:
                     args["add_coeffs"] = None
+                
 
                 if model_name in ["GTGAN", "TimeVQVAE"]:
                     min_epochs = max_epochs // 2 + 15
@@ -158,8 +163,18 @@ def main():
                     model_args = dict(
                         seq_len=dm.seq_len,
                         seq_dim=dm.seq_dim,
-                        condition=args["condition"],
+                        condition=args["condition"]
                     )
+                    if args['condition'] == 'predict':
+                        model_args['obs_len'] = args['obs_len']
+                    elif args['condition'] == 'impute':
+                        model_args['missing_rate'] = args['missing_rate']
+                    
+                    if model_name == 'ImagenTime' and args['condition'] == 'predict':
+                        model_args['delay'] = 12
+                        model_args['embedding'] = 16
+                    else:
+                        pass
 
                     model = model_cls(**model_args)
 
@@ -174,8 +189,7 @@ def main():
                         min_epochs=min_epochs,
                         # fast_dev_run=True,
                         enable_progress_bar=False,
-                        enable_model_summary=False,
-                        gradient_clip_val=1.0 if model_name == 'LatentSDE' else None,
+                        enable_model_summary=False
                     )
                     try:
                         trainer.fit(model, dm)
@@ -222,6 +236,8 @@ def main():
                 # break
             if dataset_name == "SineND":
                 args.pop("seq_dim")
+                
+            
 
 
 if __name__ == "__main__":

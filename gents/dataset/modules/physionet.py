@@ -65,22 +65,22 @@ def _get_idlist(root_dir, patient_set="a"):
 
 class Physionet(BaseDataModule):
     """`Physionet Challenge 2012 Dataset <https://www.physionet.org/content/challenge-2012/1.0.0/>`__
-    
+
     For each patient measurement, the original data is irregularly recorded for 48 hours. For each record, the time format is "HH:MM".
     Therefore, it can be treated as a long sequence at 1-min resolution, and for 48 hours, the total time steps are 48*60.
     We allow the users to aggreate (resample) to make the sequence shorter by setting `agg_minutes`, e.g. `agg_minutes=60` is resampled at 1-hour level,
     resulting in sequences with 48 time steps.
-    
+
     In this way, this dataset has missing values at the unrecorded time steps.
-    
+
     .. note::
         Originally has missing values. `irregular_dropout` is disabled.
-    
+
     Attributes:
         D (int): Total sequence dimensions in the original data, fixed to 35.
         L (int): Maximum sequence length, fixed to 2880.
         url (str | int): download url link.
-        
+
     Args:
         agg_minutes (int, optional): Aggregation minutes. Defaults to 60.
         select_seq_dim (List[int  |  str], optional): Subset of all sequence channels. Could be a `list` of `int` indicating the chosen channel indice or a `list` of `str` indicating the column names for `pd.Dataframe` object. If `None`, use all channels. Defaults to None.
@@ -92,8 +92,10 @@ class Physionet(BaseDataModule):
         max_time (float, optional): Time step index [0, 1, ..., `total_seq_len` - 1] will be automatically generated. If `max_time` is given, then scale the time step index, [0, ..., `max_time`]. Defaults to None.
         add_coeffs (str, optional): Include interpolation coefficients or not. Needed for `KoVAE`, `GTGAN` and `SDEGAN`. Choose from `[None, 'linear', 'cubic_spline']`. If `None`, don't include. Defaults to None.
     """
+
     D = len(FEAT_NAME)
     L = 48 * 60
+    n_classes = 2
     urls = [
         "https://physionet.org/files/challenge-2012/1.0.0/set-a.tar.gz?download",
         "https://physionet.org/files/challenge-2012/1.0.0/set-b.tar.gz?download",
@@ -167,8 +169,22 @@ class Physionet(BaseDataModule):
         observed_values_list = []
         observed_masks_list = []
         # gt_masks_list = []
+        if self.condition == "class":
+            text_set = ["a"]
+            collect_label = True
+            outcomes_df = pd.read_csv(os.path.join(self.data_dir, "Outcomes-a.txt"))
+            id_to_label = dict(
+                zip(
+                    outcomes_df["RecordID"].apply(lambda x: f"{x:06d}"),
+                    outcomes_df["In-hospital_death"],
+                )
+            )
+            class_label = []
 
-        for patient_set in ["a", "b"]:
+        else:
+            text_set = ["a", "b"]
+            collect_label = False
+        for patient_set in text_set:
             idlist = _get_idlist(self.data_dir, patient_set)
             for id_ in tqdm(idlist):
                 try:
@@ -177,13 +193,15 @@ class Physionet(BaseDataModule):
                     )
                     observed_values_list.append(observed_values)
                     observed_masks_list.append(observed_masks)
-                    # gt_masks_list.append(gt_masks)
+                    if collect_label:
+                        class_label.append(id_to_label[id_])
 
                 except Exception as e:
                     print(id_, e)
                     continue
         observed_values = np.array(observed_values_list)
         observed_masks = np.array(observed_masks_list)
+        class_label = np.array(class_label)
         # gt_masks = np.array(gt_masks_list)
 
         # calc mean and std and normalize values
@@ -201,8 +219,7 @@ class Physionet(BaseDataModule):
 
         data = torch.from_numpy(observed_values).float()
         data_mask = torch.from_numpy(observed_masks).bool()
-        # only has class_label for set_a
-        class_label = None
+        class_label = torch.from_numpy(class_label).long() if collect_label else None
 
         # select dimensions
         if self.select_seq_dim is not None:
@@ -238,7 +255,7 @@ class Physionet(BaseDataModule):
         # complete table with all attributes and set NaNs
         col_to_add = set(FEAT_NAME) - set(df.columns.tolist())
         col_to_add = list(col_to_add)
-        df[col_to_add] = np.NaN
+        df[col_to_add] = np.nan
         df = df[FEAT_NAME]
         assert FEAT_NAME == df.columns.tolist()
 

@@ -1,26 +1,26 @@
 from argparse import ArgumentParser
 
+import numpy as np
 import torch
 from lightning import Trainer, seed_everything
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 import os
 import gents.dataset
 import gents.model
-import numpy as np
 
 seed_everything(9)
 
-dataset_names = gents.dataset.DATASET_NAMES
-# dataset_names = ['AirQuality']
-# model_names = ['GTGAN', 'LatentSDE']
+dataset_names = ['Physionet', 'ECG', 'Spiral2D']
+# dataset_names = ['SineND']
+# model_names = ['VanillaVAE']
 model_names = gents.model.MODEL_NAMES
 print("All available datasets: ", dataset_names)
 print("All available models: ", model_names)
 
-DEFAULT_ROOT_DIR = "/mnt/ExtraDisk/wcx/research/GenTS_multivar_syn"
+DEFAULT_ROOT_DIR = "/mnt/ExtraDisk/wcx/research/GenTS_cls"
 try:
     # too large datasets
-    dataset_names.remove("Physionet")
+    # dataset_names.remove("Physionet")
     dataset_names.remove("ETTm1")
     dataset_names.remove("ETTm2")
     
@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument(
         "--add_coeffs",
         type=str,
-        default="cubic_spline",
+        default=None,
         choices=[None, "linear", "cubic_spline"],
         help="Type of coefficients to add (e.g., 'cubic_spline').",
     )
@@ -83,8 +83,12 @@ def main():
     args = vars(args)
     args["data_dir"] = os.path.join(DEFAULT_ROOT_DIR, "data")
     gpu = args.pop("gpu")
+    seq_len = args.pop("seq_len")
     max_epochs = args.pop("max_epochs")
     univar = args.pop("univar")
+    
+    
+        
     if univar:
         # model_names.remove("FIDE")  # only support univariate time series
         # model_names.remove("FourierFlow")  # only support univariate time series
@@ -99,45 +103,29 @@ def main():
         except:
             pass
 
-
     with open("syn_exp.txt", "a") as log_file:
         for dataset_name in dataset_names:
             data_cls = getattr(gents.dataset, dataset_name)
 
-            if univar:
-                if dataset_name in ["SineND"]:
-                    args["seq_dim"] = 1
-                else:
-                    args["select_seq_dim"] = [
-                        0
-                    ]  # only use the first dimension for multivariate time series
-            else:
-                if dataset_name in ["SineND"]:
-                    # Default seq_dim=5 for SineND in TimeGAN
-                    args["seq_dim"] = 5
-                else:
-                    # Limit to seq_dim=32 for multivariate time series,
-                    # Limit Electricity and Traffic, which have 321 and 862 dimensions respectively
-                    total_dim = min(16, data_cls.D)
-                    args["select_seq_dim"] = np.random.permutation(total_dim).tolist()
+            
+            args["select_seq_dim"] = None
+            
+            
+            # if dataset_name == 'Physionet':
+            #     args['agg_minutes'] = 120
+            #     args.pop('seq_dim', None)
+            #     class_num = 2
+            # elif dataset_name == 'ECG':
+            #     class_num = 5
+            # elif dataset_name == 'Spiral2D':
+            #     class_num = 2
+                    
 
             for model_name in model_names:
                 print("==" * 20)
                 print(dataset_name, model_name)
 
-                if model_name == "SDEGAN":
-                    args["add_coeffs"] = "linear"
-                elif model_name == 'GTGAN':
-                    args["add_coeffs"] = 'cubic_spline'
-                else:
-                    args["add_coeffs"] = None
-
-                if model_name in ["GTGAN", "TimeVQVAE"]:
-                    min_epochs = max_epochs // 2 + 15
-                elif model_name == 'TimeGAN':
-                    min_epochs = max_epochs // 3 * 2
-                else:
-                    min_epochs = None
+                
 
                 if os.path.exists(
                     os.path.join(
@@ -159,23 +147,23 @@ def main():
                         seq_len=dm.seq_len,
                         seq_dim=dm.seq_dim,
                         condition=args["condition"],
+                        class_num=dm.n_classes
                     )
-
+                    
                     model = model_cls(**model_args)
 
                     trainer = Trainer(
                         max_epochs=max_epochs,
-                        devices="auto" if model_name == "FourierFlow" else [gpu],
-                        accelerator="cpu" if model_name == "FourierFlow" else "gpu",
+                        devices=[gpu],
+                        accelerator="gpu",
                         callbacks=[
                             EarlyStopping(monitor="val_loss", patience=10, mode="min")
                         ],
                         default_root_dir=DEFAULT_ROOT_DIR,
-                        min_epochs=min_epochs,
+                        # min_epochs=min_epochs,
                         # fast_dev_run=True,
                         enable_progress_bar=False,
-                        enable_model_summary=False,
-                        gradient_clip_val=1.0 if model_name == 'LatentSDE' else None,
+                        enable_model_summary=False
                     )
                     try:
                         trainer.fit(model, dm)
@@ -219,9 +207,12 @@ def main():
                     # print(y_pred.shape)
                 # print("--" * 20)
                     
-                # break
             if dataset_name == "SineND":
                 args.pop("seq_dim")
+            if dataset_name == 'Physionet':
+                args['seq_len'] = seq_len
+                
+            
 
 
 if __name__ == "__main__":

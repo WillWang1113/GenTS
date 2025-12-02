@@ -8,6 +8,7 @@ from ..base import BaseDataModule
 
 class Spiral2D(BaseDataModule):
     D = 2
+    n_classes = 2
     """Simulated 2D spiral curves with clock-wise or counter clock-wise direction.
     For one curve, :math:`x_1(t)=\pm r(t) \cos(t), x_2(t)=r(t) \sin(t)` where :math:`r(t)=a + bt, a \sim \mathcal{U}[0, 0.5), b \sim \mathcal{U}[0, 0.2)`.
 
