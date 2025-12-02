@@ -12,12 +12,12 @@ seed_everything(9)
 
 dataset_names = gents.dataset.DATASET_NAMES
 # dataset_names = ['AirQuality']
-model_names = ['GTGAN', 'LatentSDE']
+model_names = ['LatentSDE']
 # model_names = gents.model.MODEL_NAMES
 print("All available datasets: ", dataset_names)
 print("All available models: ", model_names)
 
-DEFAULT_ROOT_DIR = "/home/user/data2/GenTS_exp"
+DEFAULT_ROOT_DIR = "/home/user/data2/GenTS_exp_LatentSDE_modify"
 try:
     # too large datasets
     dataset_names.remove("Physionet")
@@ -93,7 +93,7 @@ def main():
         except:
             pass
 
-    with open("syn_exp.txt", "a") as log_file:
+    with open("syn_exp_sde.txt", "a") as log_file:
         for dataset_name in dataset_names:
             data_cls = getattr(gents.dataset, dataset_name)
 
@@ -167,7 +167,8 @@ def main():
                         min_epochs=min_epochs,
                         # fast_dev_run=True,
                         enable_progress_bar=False,
-                        enable_model_summary=False
+                        enable_model_summary=False,
+                        gradient_clip_val=1.0,
                     )
                     try:
                         trainer.fit(model, dm)

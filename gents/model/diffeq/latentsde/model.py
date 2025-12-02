@@ -40,7 +40,7 @@ class LatentSDE(BaseModel):
         adjoint: bool = False,
         kl_anneal_iters: int = 1000,
         lr_gamma: float = 0.997,
-        lr: float = 5e-3,
+        lr: float = 1e-3,
         weight_decay: float = 1e-6,
         **kwargs,
     ):
@@ -68,8 +68,8 @@ class LatentSDE(BaseModel):
 
     def _get_loss(self, batch):
         t = torch.linspace(
-            10.0 / self.total_seq_len,
-            10.0,
+            1.0 / self.total_seq_len,
+            1.0,
             self.total_seq_len,
         ).to(batch["seq"].device)
 
@@ -124,8 +124,8 @@ class LatentSDE(BaseModel):
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
         t = torch.linspace(
-            10.0 / self.total_seq_len,
-            10.0,
+            1.0 / self.total_seq_len,
+            1.0,
             self.total_seq_len,
         ).to(self.device)
 

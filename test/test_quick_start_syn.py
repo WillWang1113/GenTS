@@ -1,27 +1,29 @@
 from matplotlib import pyplot as plt
 import torch
-from gents.dataset.energy import Energy
-from gents.dataset.stocks import Stocks
+# from gents.dataset.energy import Energy
+from gents.dataset.modules.ecg import ECG
+# from gents.dataset.stocks import Stocks
 from gents.model import VanillaDDPM
 from gents.dataset import SineND
 from gents.evaluation import tsne_visual
 from lightning import Trainer
 
+from gents.model.diffeq.latentsde.model import LatentSDE
 from gents.model.vae.kovae.model import KoVAE
 from gents.model import GTGAN
 
 # setup dataset and model
-dm = Stocks(
+dm = ECG(
     seq_len=24,
-    select_seq_dim=[1, 2, 3],
+    # select_seq_dim=[1, 2, 3],
     batch_size=64,
-    irregular_dropout=0.2,
-    add_coeffs="cubic_spline",
+    # irregular_dropout=0.2,
+    # add_coeffs="cubic_spline",
 )
-model = GTGAN(latent_dim=128, seq_len=dm.seq_len, seq_dim=dm.seq_dim)
+model = LatentSDE(seq_len=dm.seq_len, seq_dim=dm.seq_dim)
 
 # training (on CPU for example)
-trainer = Trainer(max_epochs=20, devices=[0])
+trainer = Trainer(max_epochs=10, accelerator="cpu", gradient_clip_val=1.0)
 trainer.fit(model, dm)
 
 # testing

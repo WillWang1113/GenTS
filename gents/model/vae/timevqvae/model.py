@@ -415,7 +415,7 @@ class TimeVQVAE(BaseModel):
         """
         opt1, opt2 = self.optimizers()
         sch1, sch2 = self.lr_schedulers()
-        if self.global_step < int(self.total_steps * self.hparams_initial.stage_split):
+        if self.current_epoch < int(self.total_steps * self.hparams_initial.stage_split):
             self.toggle_optimizer(opt1)
             recons_loss, vq_losses, perplexities = self._loss_stage1(batch, batch_idx)
             loss = (
@@ -443,9 +443,9 @@ class TimeVQVAE(BaseModel):
             }
 
             # log
-            self.log("global_step", self.global_step)
+            self.log("current_epoch", self.current_epoch, on_epoch=True)
             for k in loss_hist.keys():
-                self.log(f"train_{k}", loss_hist[k])
+                self.log(f"train_{k}", loss_hist[k], on_epoch=True)
 
             self.untoggle_optimizer(opt1)
         else:
@@ -464,7 +464,7 @@ class TimeVQVAE(BaseModel):
             sch2.step()
 
             # log
-            self.log("global_step", self.global_step)
+            self.log("current_epoch", self.current_epoch, on_epoch=True)
             loss_hist = {
                 "loss": mask_pred_loss,
                 "mask_pred_loss": mask_pred_loss,
@@ -472,11 +472,11 @@ class TimeVQVAE(BaseModel):
                 "mask_pred_loss_h": mask_pred_loss_h,
             }
             for k in loss_hist.keys():
-                self.log(f"train_{k}", loss_hist[k])
+                self.log(f"train_{k}", loss_hist[k], on_epoch=True)
             self.untoggle_optimizer(opt2)
 
     def validation_step(self, batch, batch_idx):
-        if self.global_step < int(self.total_steps * self.hparams_initial.stage_split):
+        if self.current_epoch < int(self.total_steps * self.hparams_initial.stage_split):
             recons_loss, vq_losses, perplexities = self._loss_stage1(batch, batch_idx)
             loss = (
                 (recons_loss["LF.time"] + recons_loss["HF.time"])
@@ -497,9 +497,9 @@ class TimeVQVAE(BaseModel):
             }
 
             # log
-            self.log("global_step", self.global_step)
+            self.log("current_epoch", self.current_epoch, on_epoch=True)
             for k in loss_hist.keys():
-                self.log(f"val_{k}", loss_hist[k])
+                self.log(f"val_{k}", loss_hist[k], on_epoch=True)
 
             # return loss_hist
         else:
@@ -509,7 +509,7 @@ class TimeVQVAE(BaseModel):
             )
 
             # log
-            self.log("global_step", self.global_step)
+            self.log("current_epoch", self.current_epoch, on_epoch=True)
             loss_hist = {
                 "loss": mask_pred_loss,
                 "mask_pred_loss": mask_pred_loss,
@@ -517,7 +517,7 @@ class TimeVQVAE(BaseModel):
                 "mask_pred_loss_h": mask_pred_loss_h,
             }
             for k in loss_hist.keys():
-                self.log(f"val_{k}", loss_hist[k])
+                self.log(f"val_{k}", loss_hist[k], on_epoch=True)
 
     def _iterative_decoding(self, num=1, mode="cosine", class_index=None, device="cpu"):
         """
