@@ -133,10 +133,16 @@ class TMDM(BaseModel):
         gen_y_by_batch_list = [[] for _ in range(self.model.num_timesteps + 1)]
 
         batch_x = condition
-        batch_y = kwargs.get("seq")
+        batch_y = kwargs.get("seq")[:, self.args.obs_len - self.args.label_len :]
 
-        batch_x_mark = kwargs.get("obs_mark", torch.zeros_like(batch_x))
-        batch_y_mark = kwargs.get("seq_mark", torch.zeros_like(batch_y))
+        batch_x_mark = kwargs.get("obs_mark", None)
+        batch_y_mark = kwargs.get("seq_mark", None)
+        if self.args.emb_add_temporal:
+            assert batch_x_mark is not None
+            assert batch_y_mark is not None
+            
+        # batch_x_mark = kwargs.get("obs_mark", torch.zeros_like(batch_x))
+        # batch_y_mark = kwargs.get("seq_mark", torch.zeros_like(batch_y))
 
         # decoder input
         dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len :, :])
@@ -152,8 +158,13 @@ class TMDM(BaseModel):
         x_tile = batch_x.repeat(repeat_n, 1, 1, 1)
         x_tile = x_tile.transpose(0, 1).flatten(0, 1).to(self.device)
 
-        x_mark_tile = batch_x_mark.repeat(repeat_n, 1, 1, 1)
-        x_mark_tile = x_mark_tile.transpose(0, 1).flatten(0, 1).to(self.device)
+        if self.args.emb_add_temporal:
+            # assert batch_x_mark is not None
+            # assert batch_y_mark is not None
+            x_mark_tile = batch_x_mark.repeat(repeat_n, 1, 1, 1)
+            x_mark_tile = x_mark_tile.transpose(0, 1).flatten(0, 1).to(self.device)
+        else:
+            x_mark_tile = None
 
         gen_y_box = []
         for _ in range(self.args.n_z_samples_depart):

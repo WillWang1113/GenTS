@@ -78,7 +78,7 @@ class ECG(BaseDataModule):
         if seq_dim != 1:
             raise ValueError("ECG is a univariate time series dataset")
         if self.total_seq_len != self.L:
-            print(f'Original dataset fix seq_len=140, we will interpolate to seq_len={seq_len}')
+            print(f'Original dataset fix seq_len=140, we will interpolate to seq_len={self.total_seq_len}')
             # raise ValueError("ECG has fixed total seq_len = 140")
 
     def get_data(self):
@@ -93,9 +93,9 @@ class ECG(BaseDataModule):
         all_data = all_data[shuffle_idx]
 
         data = all_data[:, 1:].unsqueeze(-1)
-        if self.seq_len != self.L:
+        if self.total_seq_len != self.L:
             data = torch.nn.functional.interpolate(
-                data.permute(0, 2, 1), size=self.seq_len, mode="linear"
+                data.permute(0, 2, 1), size=self.total_seq_len, mode="linear"
             ).permute(0,2,1)
         data_mask = ~torch.isnan(data)
         class_label = all_data[:, 0] - 1.0

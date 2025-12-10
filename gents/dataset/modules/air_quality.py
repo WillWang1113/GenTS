@@ -159,7 +159,7 @@ class AirQuality(BaseDataModule):
         for i in range(len(data_raw) - self.total_seq_len + 1):
             data.append(data_raw[i : i + self.total_seq_len, :])
         data = torch.stack(data, dim=0).float()
-        data_mask = torch.isnan(data)
+        data_mask = ~torch.isnan(data)
         class_label = torch.ones(data.shape[0]).float() * station_id
 
         return torch.nan_to_num(data), data_mask, class_label

@@ -3,6 +3,8 @@ import torch
 # from gents.dataset.energy import Energy
 from gents.dataset import Spiral2D
 # from gents.dataset.stocks import Stocks
+from gents.dataset.modules.air_quality import AirQuality
+from gents.dataset.modules.ecg import ECG
 from gents.evaluation.visualization.visual import predict_visual
 from gents.model import VanillaDDPM
 from gents.dataset import SineND
@@ -14,10 +16,11 @@ from gents.model.diffeq.ls4.model import LS4
 from gents.model.flow.vanillamaf.model import VanillaMAF
 from gents.model.gan.psagan.model import PSAGAN
 from gents.model.vae.kovae.model import KoVAE
-from gents.model import GTGAN, TMDM, ImagenTime
+from gents.model import GTGAN, TMDM, ImagenTime, DiffusionTS
+from gents.model.diffusion import TMDM
 
 # setup dataset and model
-dm = Spiral2D(
+dm = AirQuality(
     obs_len=96,
     seq_len=96,
     # num_samples=100,
@@ -38,7 +41,7 @@ dm = Spiral2D(
 #     # attn_resolution=[4,2],
 #     condition="predict",
 # )
-model = PSAGAN(
+model = LatentODE(
     # latent_dim=128,
     # d_model=128,
     # d_ff=1024,
@@ -53,7 +56,7 @@ model = PSAGAN(
 )
 
 # training (on CPU for example)
-trainer = Trainer(max_epochs=50)
+trainer = Trainer(max_epochs=2)
 trainer.fit(model, dm)
    
 
@@ -70,8 +73,9 @@ gen_data = model.sample(
     n_sample=10,
     condition=cond_data,
     # condition=real_data.masked_fill(~real_data_mask, float("nan"))[[3]],
-    t=t[0],
+    t=t,
     data_mask=real_data_mask,
+    seq=real_data
     # seq=real_data
 )  # [N, 64, 2]
 
