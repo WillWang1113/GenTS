@@ -12,7 +12,7 @@ class LatentODE(BaseModel):
     Adapted from the `official codes <https://github.com/YuliaRubanova/latent_ode>`__
 
     .. note::
-        LatentODE allows for irregular data. Imputation in Latent ODE is only interpolation, 
+        LatentODE allows for irregular data. Imputation in Latent ODE is only interpolation,
         i.e. only impute the missing steps that all channels are missing.
 
     Args:
@@ -75,24 +75,32 @@ class LatentODE(BaseModel):
 
     def training_step(self, batch, batch_idx):
         batch_dict = self._reform_batch(batch)
-        loss_dict = self.model.compute_all_losses(
-            batch_dict, n_traj_samples=3, kl_coef=self.kl_coef
-        )
-        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
-        return loss_dict["loss"]
+        if batch_dict["tp_to_predict"].shape[0] == 0 or batch_dict["observed_tp"].shape[0] == 0:
+            # if either has zero shape, skip this batch
+            return None
+        else:
+            loss_dict = self.model.compute_all_losses(
+                batch_dict, n_traj_samples=3, kl_coef=self.kl_coef
+            )
+            self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
+            return loss_dict["loss"]
 
     def validation_step(self, batch, batch_idx):
         batch_dict = self._reform_batch(batch)
-        loss_dict = self.model.compute_all_losses(
-            batch_dict, n_traj_samples=3, kl_coef=self.kl_coef
-        )
-        loss_dict = {f'val_{k}':v for k, v in loss_dict.items()}
-        self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
+        if batch_dict["tp_to_predict"].shape[0] == 0 or batch_dict["observed_tp"].shape[0] == 0:
+            # if either has zero shape, skip this batch
+            return None
+        else:
+            loss_dict = self.model.compute_all_losses(
+                batch_dict, n_traj_samples=3, kl_coef=self.kl_coef
+            )
+            loss_dict = {f'val_{k}':v for k, v in loss_dict.items()}
+            self.log_dict(loss_dict, on_epoch=True, prog_bar=True)
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
         total_seq_len = self.seq_len
-        if self.condition == "predict":
-            total_seq_len += self.obs_len
+        # if self.condition == "predict":
+        # total_seq_len += self.obs_len
         # t = torch.linspace(
         #     20.0 / total_seq_len,
         #     20.0,
