@@ -11,8 +11,8 @@ import numpy as np
 seed_everything(9)
 
 dataset_names = gents.dataset.DATASET_NAMES
-# dataset_names = ['AirQuality']
-# model_names = ['GTGAN', 'LatentSDE']
+# dataset_names = ['Traffic', 'Exchange']
+# model_names = ['PSAGAN', 'TimeVAE']
 model_names = gents.model.MODEL_NAMES
 print("All available datasets: ", dataset_names)
 print("All available models: ", model_names)

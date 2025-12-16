@@ -20,13 +20,14 @@ def _calculate_fid(act1, act2):
 
 
 def context_fid(
-    train_data: np.ndarray,
     ori_data: np.ndarray,
     gen_data: np.ndarray,
     device: str = "cpu",
+    ts2vec_path: str = None,
+    train_data: np.ndarray = None,
 ):
     """Calculate `context-FID <https://arxiv.org/abs/2108.00981>`__.
-    
+
     Context-FID is a FID-like metric for evaluating how realistic the generated time series is (compared to the true time series).
     It requires to train a representative learning time series model (TS2Vec)
     on every time series dataset. Then calculate FID using the trained representative learning model.
@@ -38,12 +39,23 @@ def context_fid(
         device (str, optional): Computing device. Defaults to "cpu".
 
     """
-    fid_model = initialize_ts2vec(np.transpose(train_data, (0, 2, 1)), device)
-    ori_repr = fid_model.encode(
-        np.transpose(ori_data, (0, 2, 1)), encoding_window="full_series"
-    )
-    gen_repr = fid_model.encode(
-        np.transpose(gen_data, (0, 2, 1)), encoding_window="full_series"
-    )
+    if ts2vec_path is None and train_data is None:
+        raise ValueError("Either ts2vec_path or train_data must be provided.")
+    elif ts2vec_path is None and train_data is not None:
+        fid_model = initialize_ts2vec(
+            ori_data.shape[-1], train_data, device, ts2vec_path
+        )
+    elif ts2vec_path is not None and train_data is None:
+        fid_model = initialize_ts2vec(ori_data.shape[-1], None, device, ts2vec_path)
+    else:
+        # print(
+        #     "both ts2vec_path and train_data are provided, use train_data to train a ts2vec and save it to ts2vec_path."
+        # )
+        fid_model = initialize_ts2vec(
+            ori_data.shape[-1], train_data, device, ts2vec_path
+        )
+
+    ori_repr = fid_model.encode(ori_data, encoding_window="full_series")
+    gen_repr = fid_model.encode(gen_data, encoding_window="full_series")
     cfid = _calculate_fid(ori_repr, gen_repr)
     return cfid

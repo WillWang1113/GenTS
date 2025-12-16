@@ -1,8 +1,10 @@
 from matplotlib import pyplot as plt
+import numpy as np
 import torch
 # from gents.dataset.energy import Energy
 from gents.dataset.modules.ecg import ECG
 # from gents.dataset.stocks import Stocks
+from gents.dataset.modules.weather import Weather
 from gents.model import VanillaDDPM
 from gents.dataset import SineND
 from gents.evaluation import tsne_visual
@@ -13,9 +15,9 @@ from gents.model.vae.kovae.model import KoVAE
 from gents.model import GTGAN
 
 # setup dataset and model
-dm = ECG(
+dm = Weather(
     seq_len=24,
-    # select_seq_dim=[1, 2, 3],
+    select_seq_dim=np.arange(16).tolist(),
     batch_size=64,
     # irregular_dropout=0.2,
     # add_coeffs="cubic_spline",
@@ -23,7 +25,7 @@ dm = ECG(
 model = LatentSDE(seq_len=dm.seq_len, seq_dim=dm.seq_dim)
 
 # training (on CPU for example)
-trainer = Trainer(max_epochs=10, accelerator="cpu", gradient_clip_val=1.0)
+trainer = Trainer(max_epochs=10, gradient_clip_val=1.0, devices=[0])
 trainer.fit(model, dm)
 
 # testing

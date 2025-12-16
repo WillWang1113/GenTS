@@ -3,7 +3,7 @@ from typing import List
 import torch
 from torch import nn
 
-from ._backbones import MADE, Reverse, FlowSequential, BatchNormFlow
+from ._backbones import MADE, MADESplit, Reverse, FlowSequential, BatchNormFlow
 
 # from src.layers.conv import ConvDecoder, ConvEncoder
 from gents.model.base import BaseModel
@@ -62,7 +62,7 @@ class VanillaMAF(BaseModel):
         #     cond_input = None
         for i in range(len(hidden_size_list)):
             modules += [
-                MADE(seq_dim * seq_len, hidden_size_list[i], cond_input, condition),
+                MADESplit(seq_dim * seq_len, hidden_size_list[i], cond_input, condition),
                 BatchNormFlow(seq_dim * seq_len),
                 Reverse(seq_dim * seq_len),
             ]
@@ -112,9 +112,12 @@ class VanillaMAF(BaseModel):
 
     def _sample_impl(self, n_sample, condition=None, **kwargs):
         if self.condition is None or self.condition == "class":
-            all_samples = self.flow.sample(n_sample).reshape(
-                n_sample, self.hparams.seq_len, self.hparams.seq_dim
-            )
+            all_samples = self.flow.sample(
+                n_sample,
+                noise=torch.randn(
+                    n_sample, self.hparams.seq_len * self.hparams.seq_dim
+                ),
+            ).reshape(n_sample, self.hparams.seq_len, self.hparams.seq_dim)
         else:
             all_samples = []
             # if self.condition == "impute":
@@ -126,9 +129,13 @@ class VanillaMAF(BaseModel):
             c = c.flatten(1)
 
             for i in range(n_sample):
-                x_hat = self.flow.sample(c.shape[0], c).reshape(
-                    c.shape[0], self.hparams.seq_len, self.hparams.seq_dim
-                )
+                x_hat = self.flow.sample(
+                    c.shape[0],
+                    c,
+                    noise=torch.randn(
+                        c.shape[0], self.hparams.seq_len * self.hparams.seq_dim
+                    ),
+                ).reshape(c.shape[0], self.hparams.seq_len, self.hparams.seq_dim)
                 all_samples.append(x_hat)
             all_samples = torch.stack(all_samples, dim=-1)
 

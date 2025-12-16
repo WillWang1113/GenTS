@@ -148,7 +148,29 @@ class DelayEmbedder(TsImgEmbedder):
         return x_image
 
     def img_to_ts(self, img):
-        img_non_square = self.unpad(img, self.img_shape)
+        
+        # In the original implementation, the shape is memeorized in self.img_shape during ts_to_img
+        # Here, we recompute the shape based on seq_len, delay, and embedding for better modularity
+        i = 0
+        while (i * self.delay + self.embedding) <= self.seq_len:
+            # start = i * self.delay
+            # end = start + self.embedding
+            # x_image[:, :, :, i] = signal[:, start:end].permute(0, 2, 1)
+            i += 1
+
+        ### SPECIAL CASE
+        if (
+            i * self.delay != self.seq_len
+            and i * self.delay + self.embedding > self.seq_len
+        ):
+            # start = i * self.delay
+            # end = signal[:, start:].permute(0, 2, 1).shape[-1]
+            # end = start + (self.embedding - 1) - missing_vals
+            # x_image[:, :, :end, i] = signal[:, start:].permute(0, 2, 1)
+            i += 1
+            
+            
+        img_non_square = self.unpad(img, (None, None, self.embedding, i))
 
         batch, channels, rows, cols = img_non_square.shape
 

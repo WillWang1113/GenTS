@@ -11,9 +11,9 @@ import gents.model
 seed_everything(9)
 
 dataset_names = gents.dataset.DATASET_NAMES
-# dataset_names = ['SineND']
-# model_names = ['VanillaVAE']
-model_names = gents.model.MODEL_NAMES
+# dataset_names = ['AirQuality']
+model_names = ['VanillaMAF']
+# model_names = gents.model.MODEL_NAMES
 print("All available datasets: ", dataset_names)
 print("All available models: ", model_names)
 
@@ -188,7 +188,7 @@ def main():
                         default_root_dir=DEFAULT_ROOT_DIR,
                         min_epochs=min_epochs,
                         # fast_dev_run=True,
-                        enable_progress_bar=False,
+                        # enable_progress_bar=False,
                         enable_model_summary=False
                     )
                     try:

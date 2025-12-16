@@ -59,6 +59,7 @@ class PSAGAN(BaseModel):
         **kwargs,
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
+        self.save_hyperparameters()
         self.context_len = self.obs_len if condition == "predict" else 0
         self.orig_seq_len = deepcopy(seq_len)
         if log2(seq_len) % 1 != 0:
@@ -69,7 +70,6 @@ class PSAGAN(BaseModel):
         self.seq_len = seq_len
         # print("orig seq len:", self.orig_seq_len)
         # print("orig seq len:", self.seq_len)
-        self.save_hyperparameters()
         self.automatic_optimization = False
         self.generator = ProGenerator(
             seq_len,
@@ -290,7 +290,6 @@ class PSAGAN(BaseModel):
             raise ValueError(
                 "Given time feats but model does not use them or vice versa"
             )
-
         # Unconditional
         if self.condition is None:
             noise = torch.randn((n_sample, self.seq_dim, self.seq_len)).to(self.device)

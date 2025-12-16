@@ -124,7 +124,7 @@ def predictive_score(ori_data: np.ndarray, generated_data: np.ndarray, device: s
     # Compute the performance in terms of MAE
     MAE_temp = 0
     for i in range(no):
-        MAE_temp += mean_absolute_error(Y_mb[i].numpy(), pred_Y_curr[i].numpy())
+        MAE_temp += mean_absolute_error(Y_mb[i].detach().cpu().numpy(), pred_Y_curr[i].detach().cpu().numpy())
 
     predictive_score = MAE_temp / no
 

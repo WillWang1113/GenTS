@@ -69,9 +69,10 @@ class MADESplit(nn.Module):
         num_inputs,
         num_hidden,
         num_cond_inputs=None,
+        condition=None,
         s_act="tanh",
         t_act="relu",
-        pre_exp_tanh=False,
+        pre_exp_tanh=True,
     ):
         super(MADESplit, self).__init__()
 
@@ -85,7 +86,7 @@ class MADESplit(nn.Module):
 
         act_func = activations[s_act]
         self.s_joiner = MaskedLinear(
-            num_inputs, num_hidden, input_mask, num_cond_inputs
+            num_inputs, num_hidden, input_mask, num_cond_inputs, condition
         )
 
         self.s_trunk = nn.Sequential(
@@ -97,7 +98,7 @@ class MADESplit(nn.Module):
 
         act_func = activations[t_act]
         self.t_joiner = MaskedLinear(
-            num_inputs, num_hidden, input_mask, num_cond_inputs
+            num_inputs, num_hidden, input_mask, num_cond_inputs, condition
         )
 
         self.t_trunk = nn.Sequential(

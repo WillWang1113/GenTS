@@ -60,6 +60,8 @@ class FourierDiffusion(BaseModel):
         **kwargs,
     ) -> None:
         super().__init__(seq_len, seq_dim, condition, **kwargs)
+        # Save all hyperparameters for checkpointing
+        self.save_hyperparameters()
         # Hyperparameters
         self.max_len = seq_len
         self.n_channels = seq_dim
@@ -92,8 +94,7 @@ class FourierDiffusion(BaseModel):
             encoder_layer=transformer_layer, num_layers=num_layers
         )
 
-        # Save all hyperparameters for checkpointing
-        self.save_hyperparameters()
+        
 
     def forward(self, batch: DiffusableBatch) -> torch.Tensor:
         X = batch.X
@@ -225,13 +226,15 @@ class FourierDiffusion(BaseModel):
         self,
         n_sample: int,
         condition: Optional[int] = None,
-        sample_batch_size: Optional[int] = 32,
+        sample_batch_size: Optional[int] = None,
         num_diffusion_steps: Optional[int] = None,
         **kwargs,
     ) -> torch.Tensor:
         # Set the score model in eval mode and move it to GPU
         # self.eval()
-
+        if sample_batch_size is None:
+            sample_batch_size = n_sample
+        
         # If the number of diffusion steps is not provided, use the number of training steps
         num_diffusion_steps = (
             self.n_diff_steps if num_diffusion_steps is None else num_diffusion_steps

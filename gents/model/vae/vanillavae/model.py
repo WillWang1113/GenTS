@@ -43,20 +43,20 @@ class VanillaVAE(BaseModel):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
         # print(self.hparams)
-        self.hiddens = hidden_size_list.copy()
-        self.encoder = MLPEncoder(seq_len, seq_dim, latent_dim, self.hiddens, **kwargs)
-        self.hiddens.reverse()
-        self.decoder = MLPDecoder(seq_len, seq_dim, latent_dim, self.hiddens, **kwargs)
+        # self.hiddens = hidden_size_list.copy()
+        self.encoder = MLPEncoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
+        # self.hiddens.reverse()
+        self.decoder = MLPDecoder(seq_len, seq_dim, latent_dim, hidden_size_list[::-1], **kwargs)
         self.cond_net = None
         self.condition = condition
         if condition:
             if condition == "predict":
                 self.cond_net = MLPEncoder(
-                    self.obs_len, seq_dim, latent_dim, self.hiddens, **kwargs
+                    self.obs_len, seq_dim, latent_dim, hidden_size_list[::-1], **kwargs
                 )
             elif condition == "impute":
                 self.cond_net = MLPEncoder(
-                    seq_len, seq_dim, latent_dim, self.hiddens, **kwargs
+                    seq_len, seq_dim, latent_dim, hidden_size_list[::-1], **kwargs
                 )
             elif condition == "class":
                 self.cond_net = LabelEmbedder(
