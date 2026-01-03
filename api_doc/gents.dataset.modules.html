@@ -1,0 +1,873 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gents.dataset.modules package &mdash; GenTS 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="gents.evaluation package" href="gents.evaluation.html" />
+    <link rel="prev" title="gents.dataset package" href="gents.dataset.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            GenTS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/quick_start.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/available_models.html">Available Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/available_datasets.html">Available Datasets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/time_series_forecasting.html">Time Series Forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/missing_value_imputation.html">Time Series Imputation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/synthesis_with_irregular_data.html">Time Series Synthesis with Irregular Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/class_label_guidance.html">Time Series Generation with Class Label Guidance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/customization.html">How to build your own time series model/dataset?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API docs</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">gents</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="gents.html">gents package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="gents.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="gents.common.html">gents.common package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="gents.dataset.html">gents.dataset package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gents.evaluation.html">gents.evaluation package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gents.model.html">gents.model package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gents.html#module-gents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GenTS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">gents</a></li>
+          <li class="breadcrumb-item"><a href="gents.html">gents package</a></li>
+          <li class="breadcrumb-item"><a href="gents.dataset.html">gents.dataset package</a></li>
+      <li class="breadcrumb-item active">gents.dataset.modules package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api_doc/gents.dataset.modules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gents-dataset-modules-package">
+<h1>gents.dataset.modules package<a class="headerlink" href="#gents-dataset-modules-package" title="Link to this heading"></a></h1>
+<section id="module-gents.dataset.modules">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-gents.dataset.modules" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.AirQuality">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">AirQuality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.AirQuality" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.BaseDataModule" title="gents.dataset.base.BaseDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataModule</span></code></a></p>
+<p><a class="reference external" href="https://zenodo.org/records/4656719">AirQuality dataset</a> (only use Beijing stations).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Originally has missing values. <cite>irregular_dropout</cite> is disabled.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.AirQuality.feat_name">
+<span class="sig-name descname"><span class="pre">feat_name</span></span><a class="headerlink" href="#gents.dataset.modules.AirQuality.feat_name" title="Link to this definition"></a></dt>
+<dd><p>Feature names of multivariate time series. <cite>[“PM2.5”, “PM10”, “NO2”, “CO”, “O3”, “SO2”]</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.AirQuality.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.modules.AirQuality.D" title="Link to this definition"></a></dt>
+<dd><p>Number of variates, i.e. <cite>len(feat_name)</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.AirQuality.urls">
+<span class="sig-name descname"><span class="pre">urls</span></span><a class="headerlink" href="#gents.dataset.modules.AirQuality.urls" title="Link to this definition"></a></dt>
+<dd><p><a class="reference external" href="https://zenodo.org/records/4656719/files/kdd_cup_2018_dataset_with_missing_values.zip">download link</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seq_len</strong> (<em>int</em>) – Target sequence length</p></li>
+<li><p><strong>select_seq_dim</strong> (<em>List</em><em>[</em><em>int</em><em>  |  </em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Subset of all sequence channels. Could be a <cite>list</cite> of <cite>int</cite> indicating the chosen channel indice or a <cite>list</cite> of <cite>str</cite> indicating the column names for <cite>pd.Dataframe</cite> object. If <cite>None</cite>, use all channels. Defaults to None.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Training and validation batch size. Defaults to 32.</p></li>
+<li><p><strong>data_dir</strong> (<em>str</em><em>, </em><em>optional</em>) – Directory to save the data file (default name: <cite>“data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt”</cite>). Defaults to “data”.</p></li>
+<li><p><strong>condition</strong> (<em>str</em><em>, </em><em>optional</em>) – Possible condition type, choose from [None, ‘predict’,’impute’, ‘class’]. None standards for unconditional generation.</p></li>
+<li><p><strong>scale</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <cite>True</cite>, <cite>StandardScaler</cite> will be used for z-score normalization. Training data will be used for calculating <cite>mu</cite> and <cite>sigma</cite>, then transform all time steps. Defaults to True.</p></li>
+<li><p><strong>inference_batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Testing batch size. Defaults to 1024.</p></li>
+<li><p><strong>max_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Time step index [0, 1, …, <cite>total_seq_len</cite> - 1] will be automatically generated. If <cite>max_time</cite> is given, then scale the time step index, [0, …, <cite>max_time</cite>]. Defaults to None.</p></li>
+<li><p><strong>add_coeffs</strong> (<em>str</em><em>, </em><em>optional</em>) – Include interpolation coefficients or not. Needed for <cite>KoVAE</cite>, <cite>GTGAN</cite> and <cite>SDEGAN</cite>. Choose from <cite>[None, ‘linear’, ‘cubic_spline’]</cite>. If <cite>None</cite>, don’t include. Defaults to None.</p></li>
+<li><p><strong>irregular_dropout</strong> (<em>float</em><em>, </em><em>optional</em>) – Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between <cite>[0.0, 1.0]</cite> Defaults to 0.0.</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments for the model</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.ECG">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">ECG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">140</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.ECG" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.BaseDataModule" title="gents.dataset.base.BaseDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataModule</span></code></a></p>
+<p><a class="reference external" href="https://www.timeseriesclassification.com/description.php?Dataset=ECG5000">ECG5000 dataset</a>.
+Raw data has already be scaled.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a univariate time series dataset, i.e. <cite>seq_dim = 1</cite>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a fixed-length dataset, i.e. for each time series <cite>total_seq_len=140</cite>, is fixed.
+For <cite>predict</cite> condition, following the rule that <cite>total_seq_len = obs_len + seq_len &lt;= 140</cite>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Class labels of ECG are patient statuses (in total 5 labels).</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.ECG.L">
+<span class="sig-name descname"><span class="pre">L</span></span><a class="headerlink" href="#gents.dataset.modules.ECG.L" title="Link to this definition"></a></dt>
+<dd><p>Total sequence length, fixed to 140.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.ECG.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.modules.ECG.D" title="Link to this definition"></a></dt>
+<dd><p>Number of variates, fixed to 140.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.ECG.n_classes">
+<span class="sig-name descname"><span class="pre">n_classes</span></span><a class="headerlink" href="#gents.dataset.modules.ECG.n_classes" title="Link to this definition"></a></dt>
+<dd><p>Total number of class labels, fixed to 5.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.ECG.urls">
+<span class="sig-name descname"><span class="pre">urls</span></span><a class="headerlink" href="#gents.dataset.modules.ECG.urls" title="Link to this definition"></a></dt>
+<dd><p><a class="reference external" href="https://zenodo.org/records/4656719/files/kdd_cup_2018_dataset_with_missing_values.zip">download link</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seq_len</strong> (<em>int</em><em>, </em><em>optional</em>) – Target sequence length, fixed to 140.</p></li>
+<li><p><strong>seq_dim</strong> (<em>int</em><em>, </em><em>optional</em>) – Target sequence dimensions, fixed to 1.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Training and validation batch size. Defaults to 32.</p></li>
+<li><p><strong>data_dir</strong> (<em>str</em><em>, </em><em>optional</em>) – Directory to save the data file (default name: <cite>“data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt”</cite>). Defaults to “data”.</p></li>
+<li><p><strong>condition</strong> (<em>str</em><em>, </em><em>optional</em>) – Possible condition type, choose from [None, ‘predict’,’impute’, ‘class’]. None standards for unconditional generation.</p></li>
+<li><p><strong>inference_batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Testing batch size. Defaults to 1024.</p></li>
+<li><p><strong>max_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Time step index [0, 1, …, <cite>total_seq_len</cite> - 1] will be automatically generated. If <cite>max_time</cite> is given, then scale the time step index, [0, …, <cite>max_time</cite>]. Defaults to None.</p></li>
+<li><p><strong>add_coeffs</strong> (<em>str</em><em>, </em><em>optional</em>) – Include interpolation coefficients or not. Needed for <cite>KoVAE</cite>, <cite>GTGAN</cite> and <cite>SDEGAN</cite>. Choose from <cite>[None, ‘linear’, ‘cubic_spline’]</cite>. If <cite>None</cite>, don’t include. Defaults to None.</p></li>
+<li><p><strong>irregular_dropout</strong> (<em>float</em><em>, </em><em>optional</em>) – Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between <cite>[0.0, 1.0]</cite> Defaults to 0.0.</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments for the model</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.ETTh1">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">ETTh1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.ETTh1" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.WebDownloadDataModule" title="gents.dataset.base.WebDownloadDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">WebDownloadDataModule</span></code></a></p>
+<p><a class="reference external" href="https://github.com/zhouhaoyi/ETDataset">ETTh1 dataset</a>.
+We download the preprocessed data according to <a class="reference external" href="https://github.com/thuml/Time-Series-Library">TSLib</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.ETTh1.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.modules.ETTh1.D" title="Link to this definition"></a></dt>
+<dd><p>Total number of variates, 7.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.ETTh1.index_col">
+<span class="sig-name descname"><span class="pre">index_col</span></span><a class="headerlink" href="#gents.dataset.modules.ETTh1.index_col" title="Link to this definition"></a></dt>
+<dd><p>Time index column name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int | str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.ETTh1.urls">
+<span class="sig-name descname"><span class="pre">urls</span></span><a class="headerlink" href="#gents.dataset.modules.ETTh1.urls" title="Link to this definition"></a></dt>
+<dd><p><a class="reference external" href="https://raw.githubusercontent.com/zhouhaoyi/ETDataset/refs/heads/main/ETT-small/ETTh1.csv">download link</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.ETTh1.data_source">
+<span class="sig-name descname"><span class="pre">data_source</span></span><a class="headerlink" href="#gents.dataset.modules.ETTh1.data_source" title="Link to this definition"></a></dt>
+<dd><p>Original data file type, fixed to <cite>‘csv’</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.ETTh2">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">ETTh2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.ETTh2" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gents.dataset.modules.ETTh1" title="gents.dataset.modules.ett.ETTh1"><code class="xref py py-class docutils literal notranslate"><span class="pre">ETTh1</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.ETTm1">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">ETTm1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.ETTm1" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gents.dataset.modules.ETTh1" title="gents.dataset.modules.ett.ETTh1"><code class="xref py py-class docutils literal notranslate"><span class="pre">ETTh1</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.ETTm2">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">ETTm2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.ETTm2" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gents.dataset.modules.ETTh1" title="gents.dataset.modules.ett.ETTh1"><code class="xref py py-class docutils literal notranslate"><span class="pre">ETTh1</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.Electricity">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">Electricity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.Electricity" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.WebDownloadDataModule" title="gents.dataset.base.WebDownloadDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">WebDownloadDataModule</span></code></a></p>
+<p><a class="reference external" href="https://archive.ics.uci.edu/dataset/321/electricityloaddiagrams20112014">Electricity dataset</a>.
+The original data is resampled from 15-min to 1-hour. We download the preprocessed data according to <a class="reference external" href="https://github.com/thuml/Time-Series-Library">TSLib</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Electricity.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.modules.Electricity.D" title="Link to this definition"></a></dt>
+<dd><p>Total number of variates, 321.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Electricity.index_col">
+<span class="sig-name descname"><span class="pre">index_col</span></span><a class="headerlink" href="#gents.dataset.modules.Electricity.index_col" title="Link to this definition"></a></dt>
+<dd><p>Time index column name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int | str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Electricity.urls">
+<span class="sig-name descname"><span class="pre">urls</span></span><a class="headerlink" href="#gents.dataset.modules.Electricity.urls" title="Link to this definition"></a></dt>
+<dd><p><a class="reference external" href="https://drive.google.com/file/d/1FHH0S3d6IK_UOpg6taBRavx4MragRLo1/view?usp=share_link">download link</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Electricity.csv_dir">
+<span class="sig-name descname"><span class="pre">csv_dir</span></span><a class="headerlink" href="#gents.dataset.modules.Electricity.csv_dir" title="Link to this definition"></a></dt>
+<dd><p><cite>.csv</cite> file path in the <cite>.zip</cite> file, fixed to <cite>“electricity/electricity.csv”</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Electricity.data_source">
+<span class="sig-name descname"><span class="pre">data_source</span></span><a class="headerlink" href="#gents.dataset.modules.Electricity.data_source" title="Link to this definition"></a></dt>
+<dd><p>Original data file type, fixed to <cite>‘zip’</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.Energy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">Energy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.Energy" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.WebDownloadDataModule" title="gents.dataset.base.WebDownloadDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">WebDownloadDataModule</span></code></a></p>
+<p><a class="reference external" href="https://archive.ics.uci.edu/dataset/374/appliances+energy+prediction">Energy dataset</a>.
+We download the preprocessed data from the <a class="reference external" href="https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data">TimeGAN repo</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Energy.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.modules.Energy.D" title="Link to this definition"></a></dt>
+<dd><p>Total number of variates, 28.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Energy.index_col">
+<span class="sig-name descname"><span class="pre">index_col</span></span><a class="headerlink" href="#gents.dataset.modules.Energy.index_col" title="Link to this definition"></a></dt>
+<dd><p>Time index column name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int | str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Energy.urls">
+<span class="sig-name descname"><span class="pre">urls</span></span><a class="headerlink" href="#gents.dataset.modules.Energy.urls" title="Link to this definition"></a></dt>
+<dd><p><a class="reference external" href="https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data/energy_data.csv">download link</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Energy.data_source">
+<span class="sig-name descname"><span class="pre">data_source</span></span><a class="headerlink" href="#gents.dataset.modules.Energy.data_source" title="Link to this definition"></a></dt>
+<dd><p>Original data file type, fixed to <cite>‘csv’</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.Exchange">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">Exchange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.Exchange" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.WebDownloadDataModule" title="gents.dataset.base.WebDownloadDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">WebDownloadDataModule</span></code></a></p>
+<p><a class="reference external" href="https://github.com/laiguokun/multivariate-time-series-data">Exchange dataset</a>
+We download the preprocessed data according to <a class="reference external" href="https://github.com/thuml/Time-Series-Library">TSLib</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Exchange.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.modules.Exchange.D" title="Link to this definition"></a></dt>
+<dd><p>Total number of variates, 8.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Exchange.index_col">
+<span class="sig-name descname"><span class="pre">index_col</span></span><a class="headerlink" href="#gents.dataset.modules.Exchange.index_col" title="Link to this definition"></a></dt>
+<dd><p>Time index column name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int | str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Exchange.urls">
+<span class="sig-name descname"><span class="pre">urls</span></span><a class="headerlink" href="#gents.dataset.modules.Exchange.urls" title="Link to this definition"></a></dt>
+<dd><p><a class="reference external" href="https://drive.google.com/file/d/1rN79CxW3Vldp-WDuSoG0bKq9tYQR79UK/view?usp=share_link">download link</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Exchange.csv_dir">
+<span class="sig-name descname"><span class="pre">csv_dir</span></span><a class="headerlink" href="#gents.dataset.modules.Exchange.csv_dir" title="Link to this definition"></a></dt>
+<dd><p><cite>.csv</cite> file path in the <cite>.zip</cite> file, fixed to <cite>“exchange_rate/exchange_rate.csv”</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Exchange.data_source">
+<span class="sig-name descname"><span class="pre">data_source</span></span><a class="headerlink" href="#gents.dataset.modules.Exchange.data_source" title="Link to this definition"></a></dt>
+<dd><p>Original data file type, fixed to <cite>‘zip’</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.MuJoCo">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">MuJoCo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.MuJoCo" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.BaseDataModule" title="gents.dataset.base.BaseDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataModule</span></code></a></p>
+<p>MuJoCo data set with hopper standing task.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Require <cite>Deepmind Control Suite</cite> to run. (<cite>pip install dm_control</cite>)</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.MuJoCo.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.modules.MuJoCo.D" title="Link to this definition"></a></dt>
+<dd><p>Total number of variates, 14.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seq_len</strong> (<em>int</em>) – Target sequence length</p></li>
+<li><p><strong>select_seq_dim</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – Subset of all sequence channels. Could be a <cite>list</cite> of <cite>int</cite> indicating the chosen channel indice. If <cite>None</cite>, use all channels. Defaults to None.</p></li>
+<li><p><strong>num_samples</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of total simulated curves. Defaults to 5000.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – Training and validation batch size.</p></li>
+<li><p><strong>data_dir</strong> (<em>str</em><em>, </em><em>optional</em>) – Directory to save the data file (default name: <cite>“data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt”</cite>). Defaults to Path.cwd()/”data”.</p></li>
+<li><p><strong>condition</strong> (<em>str</em>) – Possible condition type, choose from [None, ‘predict’,’impute’, ‘class’]. None standards for unconditional generation.</p></li>
+<li><p><strong>inference_batch_size</strong> (<em>int</em>) – Testing batch size.</p></li>
+<li><p><strong>max_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Time step index [0, 1, …, <cite>total_seq_len</cite> - 1] will be automatically generated. If <cite>max_time</cite> is given, then scale the time step index, [0, …, <cite>max_time</cite>]. Defaults to None.</p></li>
+<li><p><strong>add_coeffs</strong> (<em>str</em><em>, </em><em>optional</em>) – Include interpolation coefficients or not. Needed for <cite>KoVAE</cite>, <cite>GTGAN</cite> and <cite>SDEGAN</cite>. Choose from <cite>[None, ‘linear’, ‘cubic_spline’]</cite>. If <cite>None</cite>, don’t include. Defaults to None.</p></li>
+<li><p><strong>irregular_dropout</strong> (<em>float</em><em>, </em><em>optional</em>) – Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between <cite>[0.0, 1.0]</cite> Defaults to 0.0.</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments for the model</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.Physionet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">Physionet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agg_minutes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.Physionet" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.BaseDataModule" title="gents.dataset.base.BaseDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataModule</span></code></a></p>
+<p><a class="reference external" href="https://www.physionet.org/content/challenge-2012/1.0.0/">Physionet Challenge 2012 Dataset</a></p>
+<p>There are two sets: set-a, and set-b, and we concat them together to have the final datasets.
+For each patient measurement, the original data is irregularly recorded for 48 hours. For each record, the time format is “HH:MM”.
+Therefore, it can be treated as a long sequence at 1-min resolution, and for 48 hours, the total time steps are 48*60.
+We allow the users to aggreate (resample) to make the sequence shorter by setting <cite>agg_minutes</cite>, e.g. <cite>agg_minutes=60</cite> is resampled at 1-hour level,
+resulting in sequences with 48 time steps.</p>
+<p>In this way, this dataset has missing values at the unrecorded time steps.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Originally has missing values. <cite>irregular_dropout</cite> is disabled.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If set <cite>condition=’class’</cite>, then only set-a data is used since set-b data has no class labels.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Physionet.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.modules.Physionet.D" title="Link to this definition"></a></dt>
+<dd><p>Total sequence dimensions in the original data, fixed to 35.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Physionet.L">
+<span class="sig-name descname"><span class="pre">L</span></span><a class="headerlink" href="#gents.dataset.modules.Physionet.L" title="Link to this definition"></a></dt>
+<dd><p>Maximum sequence length, fixed to 2880.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Physionet.url">
+<span class="sig-name descname"><span class="pre">url</span></span><a class="headerlink" href="#gents.dataset.modules.Physionet.url" title="Link to this definition"></a></dt>
+<dd><p>download url link.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str | int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>agg_minutes</strong> (<em>int</em><em>, </em><em>optional</em>) – Aggregation minutes. Defaults to 60.</p></li>
+<li><p><strong>select_seq_dim</strong> (<em>List</em><em>[</em><em>int</em><em>  |  </em><em>str</em><em>]</em><em>, </em><em>optional</em>) – Subset of all sequence channels. Could be a <cite>list</cite> of <cite>int</cite> indicating the chosen channel indice or a <cite>list</cite> of <cite>str</cite> indicating the column names for <cite>pd.Dataframe</cite> object. If <cite>None</cite>, use all channels. Defaults to None.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Training and validation batch size. Defaults to 32.</p></li>
+<li><p><strong>data_dir</strong> (<em>str</em><em>, </em><em>optional</em>) – Directory to save the data file (default name: <cite>“data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt”</cite>). Defaults to “./data”.</p></li>
+<li><p><strong>condition</strong> (<em>str</em><em>, </em><em>optional</em>) – Possible condition type, choose from [None, ‘predict’,’impute’, ‘class’]. None standards for unconditional generation.</p></li>
+<li><p><strong>scale</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <cite>True</cite>, <cite>StandardScaler</cite> will be used for z-score normalization. Training data will be used for calculating <cite>mu</cite> and <cite>sigma</cite>, then transform all time steps. Defaults to True.</p></li>
+<li><p><strong>inference_batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Testing batch size. Defaults to 1024.</p></li>
+<li><p><strong>max_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Time step index [0, 1, …, <cite>total_seq_len</cite> - 1] will be automatically generated. If <cite>max_time</cite> is given, then scale the time step index, [0, …, <cite>max_time</cite>]. Defaults to None.</p></li>
+<li><p><strong>add_coeffs</strong> (<em>str</em><em>, </em><em>optional</em>) – Include interpolation coefficients or not. Needed for <cite>KoVAE</cite>, <cite>GTGAN</cite> and <cite>SDEGAN</cite>. Choose from <cite>[None, ‘linear’, ‘cubic_spline’]</cite>. If <cite>None</cite>, don’t include. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.SineND">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">SineND</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">PosixPath('/home/user/workspaces/GenTS/docs/data')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.SineND" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.BaseDataModule" title="gents.dataset.base.BaseDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataModule</span></code></a></p>
+<p>Simulated sine waves with <cite>N</cite> dimensions. For each dimension, <span class="math notranslate nohighlight">\(x(t)=\sin(at+b), a \sim \mathcal{U}[0.05, 0.4], b \sim \mathcal{U}[0., 1.5]\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seq_len</strong> (<em>int</em><em>, </em><em>optional</em>) – Target sequence length. Defaults to 200.</p></li>
+<li><p><strong>seq_dim</strong> (<em>int</em><em>, </em><em>optional</em>) – Total simulated dimensions. Defaults to 200.</p></li>
+<li><p><strong>num_samples</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of total simulated curves. Defaults to 1000.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Training and validation batch size. Defaults to 32.</p></li>
+<li><p><strong>data_dir</strong> (<em>Path</em><em> | </em><em>str</em><em>, </em><em>optional</em>) – Directory to save the data file (default name: <cite>“data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt”</cite>). Defaults to Path.cwd()/”data”.</p></li>
+<li><p><strong>condition</strong> (<em>str</em><em>, </em><em>optional</em>) – Possible condition type, choose from [None, ‘predict’,’impute’, ‘class’]. None standards for unconditional generation.</p></li>
+<li><p><strong>inference_batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Testing batch size. Defaults to 1024.</p></li>
+<li><p><strong>max_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Time step index [0, 1, …, <cite>total_seq_len</cite> - 1] will be automatically generated. If <cite>max_time</cite> is given, then scale the time step index, [0, …, <cite>max_time</cite>]. Defaults to None.</p></li>
+<li><p><strong>add_coeffs</strong> (<em>str</em><em>, </em><em>optional</em>) – Include interpolation coefficients or not. Needed for <cite>KoVAE</cite>, <cite>GTGAN</cite> and <cite>SDEGAN</cite>. Choose from <cite>[None, ‘linear’, ‘cubic_spline’]</cite>. If <cite>None</cite>, don’t include. Defaults to None.</p></li>
+<li><p><strong>irregular_dropout</strong> (<em>float</em><em>, </em><em>optional</em>) – Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between <cite>[0.0, 1.0]</cite> Defaults to 0.0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.Spiral2D">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">Spiral2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">PosixPath('/home/user/workspaces/GenTS/docs/data')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.Spiral2D" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.BaseDataModule" title="gents.dataset.base.BaseDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDataModule</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Spiral2D.n_classes">
+<span class="sig-name descname"><span class="pre">n_classes</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#gents.dataset.modules.Spiral2D.n_classes" title="Link to this definition"></a></dt>
+<dd><p>Simulated 2D spiral curves with clock-wise or counter clock-wise direction.
+For one curve, <span class="math notranslate nohighlight">\(x_1(t)=\pm r(t) \cos(t), x_2(t)=r(t) \sin(t)\)</span> where <span class="math notranslate nohighlight">\(r(t)=a + bt, a \sim \mathcal{U}[0, 0.5), b \sim \mathcal{U}[0, 0.2)\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seq_len</strong> (<em>int</em><em>, </em><em>optional</em>) – Target sequence length. Defaults to 200.</p></li>
+<li><p><strong>num_samples</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of total simulated curves. Defaults to 1000.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Training and validation batch size. Defaults to 32.</p></li>
+<li><p><strong>data_dir</strong> (<em>Path</em><em> | </em><em>str</em><em>, </em><em>optional</em>) – Directory to save the data file (default name: <cite>“data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt”</cite>). Defaults to Path.cwd()/”data”.</p></li>
+<li><p><strong>condition</strong> (<em>str</em><em>, </em><em>optional</em>) – Possible condition type, choose from [None, ‘predict’,’impute’, ‘class’]. None standards for unconditional generation.</p></li>
+<li><p><strong>inference_batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Testing batch size. Defaults to 1024.</p></li>
+<li><p><strong>max_time</strong> (<em>float</em><em>, </em><em>optional</em>) – Time step index [0, 1, …, <cite>total_seq_len</cite> - 1] will be automatically generated. If <cite>max_time</cite> is given, then scale the time step index, [0, …, <cite>max_time</cite>]. Defaults to None.</p></li>
+<li><p><strong>add_coeffs</strong> (<em>str</em><em>, </em><em>optional</em>) – Include interpolation coefficients or not. Needed for <cite>KoVAE</cite>, <cite>GTGAN</cite> and <cite>SDEGAN</cite>. Choose from <cite>[None, ‘linear’, ‘cubic_spline’]</cite>. If <cite>None</cite>, don’t include. Defaults to None.</p></li>
+<li><p><strong>irregular_dropout</strong> (<em>float</em><em>, </em><em>optional</em>) – Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between <cite>[0.0, 1.0]</cite> Defaults to 0.0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.Stocks">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">Stocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.Stocks" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.WebDownloadDataModule" title="gents.dataset.base.WebDownloadDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">WebDownloadDataModule</span></code></a></p>
+<p><a class="reference external" href="https://finance.yahoo.com/quote/GOOG/history/?guccounter=1&amp;guce_referrer=aHR0cHM6Ly93d3cuZ29vZ2xlLmNvbS8&amp;guce_referrer_sig=AQAAAItg_cTf-Qqq-o8JkhX8sFlI5jjnjbuwEtUM9yei8HImkUYslPS6NF8xw-f8TZ0hMpiRXNC-A-KhQmrhLZzeb-75add2NFj8GKZixCElhjzP0Pju6Y3n7nGrQ0bgDTWwWlJ0i0nQSxoOIRGuJOJzW6MTbeHhZnasz_FNCvgAEcY5">Stocks dataset</a>.
+We download the preprocessed data from the <a class="reference external" href="https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data">TimeGAN repo</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Stocks.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.modules.Stocks.D" title="Link to this definition"></a></dt>
+<dd><p>Total number of variates, 6.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Stocks.index_col">
+<span class="sig-name descname"><span class="pre">index_col</span></span><a class="headerlink" href="#gents.dataset.modules.Stocks.index_col" title="Link to this definition"></a></dt>
+<dd><p>Time index column name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int | str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Stocks.urls">
+<span class="sig-name descname"><span class="pre">urls</span></span><a class="headerlink" href="#gents.dataset.modules.Stocks.urls" title="Link to this definition"></a></dt>
+<dd><p><a class="reference external" href="https://raw.githubusercontent.com/jsyoon0823/TimeGAN/refs/heads/master/data/stock_data.csv">download link</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Stocks.data_source">
+<span class="sig-name descname"><span class="pre">data_source</span></span><a class="headerlink" href="#gents.dataset.modules.Stocks.data_source" title="Link to this definition"></a></dt>
+<dd><p>Original data file type, fixed to <cite>‘csv’</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.Traffic">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">Traffic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.Traffic" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.WebDownloadDataModule" title="gents.dataset.base.WebDownloadDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">WebDownloadDataModule</span></code></a></p>
+<p><a class="reference external" href="http://pems.dot.ca.gov">Traffic dataset</a>
+We download the preprocessed data according to <a class="reference external" href="https://github.com/thuml/Time-Series-Library">TSLib</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Traffic.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.modules.Traffic.D" title="Link to this definition"></a></dt>
+<dd><p>Total number of variates, 862.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Traffic.index_col">
+<span class="sig-name descname"><span class="pre">index_col</span></span><a class="headerlink" href="#gents.dataset.modules.Traffic.index_col" title="Link to this definition"></a></dt>
+<dd><p>Time index column name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int | str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Traffic.urls">
+<span class="sig-name descname"><span class="pre">urls</span></span><a class="headerlink" href="#gents.dataset.modules.Traffic.urls" title="Link to this definition"></a></dt>
+<dd><p><a class="reference external" href="https://drive.google.com/file/d/17t49bEbuhVI5v_q5mEINGRgMEf_kjwLg/view?usp=share_link">download link</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Traffic.csv_dir">
+<span class="sig-name descname"><span class="pre">csv_dir</span></span><a class="headerlink" href="#gents.dataset.modules.Traffic.csv_dir" title="Link to this definition"></a></dt>
+<dd><p><cite>.csv</cite> file path in the <cite>.zip</cite> file, fixed to <cite>“traffic/traffic.csv”</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Traffic.data_source">
+<span class="sig-name descname"><span class="pre">data_source</span></span><a class="headerlink" href="#gents.dataset.modules.Traffic.data_source" title="Link to this definition"></a></dt>
+<dd><p>Original data file type, fixed to <cite>‘zip’</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.dataset.modules.Weather">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.dataset.modules.</span></span><span class="sig-name descname"><span class="pre">Weather</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inference_batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_coeffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">irregular_dropout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.dataset.modules.Weather" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="gents.dataset.html#gents.dataset.base.WebDownloadDataModule" title="gents.dataset.base.WebDownloadDataModule"><code class="xref py py-class docutils literal notranslate"><span class="pre">WebDownloadDataModule</span></code></a></p>
+<p><a class="reference external" href="https://www.bgc-jena.mpg.de/wetter/">Weather dataset</a>.
+We download the preprocessed data according to <a class="reference external" href="https://github.com/thuml/Time-Series-Library">TSLib</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Weather.D">
+<span class="sig-name descname"><span class="pre">D</span></span><a class="headerlink" href="#gents.dataset.modules.Weather.D" title="Link to this definition"></a></dt>
+<dd><p>Total number of variates, 21.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Weather.index_col">
+<span class="sig-name descname"><span class="pre">index_col</span></span><a class="headerlink" href="#gents.dataset.modules.Weather.index_col" title="Link to this definition"></a></dt>
+<dd><p>Time index column name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int | str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Weather.urls">
+<span class="sig-name descname"><span class="pre">urls</span></span><a class="headerlink" href="#gents.dataset.modules.Weather.urls" title="Link to this definition"></a></dt>
+<dd><p><a class="reference external" href="https://drive.google.com/file/d/1nXdMIJ7K201Bx3IBGNiaNFQ6FzeDEzIr/view?usp=share_link">download link</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Weather.csv_dir">
+<span class="sig-name descname"><span class="pre">csv_dir</span></span><a class="headerlink" href="#gents.dataset.modules.Weather.csv_dir" title="Link to this definition"></a></dt>
+<dd><p><cite>.csv</cite> file path in the <cite>.zip</cite> file, fixed to <cite>“weather/weather.csv”</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.dataset.modules.Weather.data_source">
+<span class="sig-name descname"><span class="pre">data_source</span></span><a class="headerlink" href="#gents.dataset.modules.Weather.data_source" title="Link to this definition"></a></dt>
+<dd><p>Original data file type, fixed to <cite>‘zip’</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="gents.dataset.html" class="btn btn-neutral float-left" title="gents.dataset package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gents.evaluation.html" class="btn btn-neutral float-right" title="gents.evaluation package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Chenxi Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

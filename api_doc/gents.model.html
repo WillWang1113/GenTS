@@ -1,0 +1,251 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gents.model package &mdash; GenTS 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="gents.model.diffeq package" href="gents.model.diffeq.html" />
+    <link rel="prev" title="gents.evaluation.visualization package" href="gents.evaluation.visualization.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            GenTS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/quick_start.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/available_models.html">Available Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../get_started/available_datasets.html">Available Datasets</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/time_series_forecasting.html">Time Series Forecasting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/missing_value_imputation.html">Time Series Imputation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/synthesis_with_irregular_data.html">Time Series Synthesis with Irregular Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/class_label_guidance.html">Time Series Generation with Class Label Guidance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/customization.html">How to build your own time series model/dataset?</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API docs</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">gents</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="gents.html">gents package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="gents.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="gents.common.html">gents.common package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gents.dataset.html">gents.dataset package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gents.evaluation.html">gents.evaluation package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">gents.model package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gents.html#module-gents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">GenTS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">gents</a></li>
+          <li class="breadcrumb-item"><a href="gents.html">gents package</a></li>
+      <li class="breadcrumb-item active">gents.model package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api_doc/gents.model.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gents-model-package">
+<h1>gents.model package<a class="headerlink" href="#gents-model-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gents.model.diffeq.html">gents.model.diffeq package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gents.model.diffeq.html#module-gents.model.diffeq">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffeq.html#gents.model.diffeq.LS4"><code class="docutils literal notranslate"><span class="pre">LS4</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffeq.html#gents.model.diffeq.LatentODE"><code class="docutils literal notranslate"><span class="pre">LatentODE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffeq.html#gents.model.diffeq.LatentSDE"><code class="docutils literal notranslate"><span class="pre">LatentSDE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffeq.html#gents.model.diffeq.SDEGAN"><code class="docutils literal notranslate"><span class="pre">SDEGAN</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gents.model.diffusion.html">gents.model.diffusion package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gents.model.diffusion.html#module-gents.model.diffusion">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffusion.html#gents.model.diffusion.CSDI"><code class="docutils literal notranslate"><span class="pre">CSDI</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffusion.html#gents.model.diffusion.DiffusionTS"><code class="docutils literal notranslate"><span class="pre">DiffusionTS</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffusion.html#gents.model.diffusion.FIDE"><code class="docutils literal notranslate"><span class="pre">FIDE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffusion.html#gents.model.diffusion.FourierDiffusion"><code class="docutils literal notranslate"><span class="pre">FourierDiffusion</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffusion.html#gents.model.diffusion.FourierDiffusionLSTM"><code class="docutils literal notranslate"><span class="pre">FourierDiffusionLSTM</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffusion.html#gents.model.diffusion.FourierDiffusionMLP"><code class="docutils literal notranslate"><span class="pre">FourierDiffusionMLP</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffusion.html#gents.model.diffusion.ImagenTime"><code class="docutils literal notranslate"><span class="pre">ImagenTime</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffusion.html#gents.model.diffusion.TMDM"><code class="docutils literal notranslate"><span class="pre">TMDM</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.diffusion.html#gents.model.diffusion.VanillaDDPM"><code class="docutils literal notranslate"><span class="pre">VanillaDDPM</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gents.model.flow.html">gents.model.flow package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gents.model.flow.html#module-gents.model.flow">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.flow.html#gents.model.flow.FourierFlow"><code class="docutils literal notranslate"><span class="pre">FourierFlow</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.flow.html#gents.model.flow.VanillaMAF"><code class="docutils literal notranslate"><span class="pre">VanillaMAF</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gents.model.gan.html">gents.model.gan package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gents.model.gan.html#module-gents.model.gan">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.gan.html#gents.model.gan.COSCIGAN"><code class="docutils literal notranslate"><span class="pre">COSCIGAN</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.gan.html#gents.model.gan.GTGAN"><code class="docutils literal notranslate"><span class="pre">GTGAN</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.gan.html#gents.model.gan.PSAGAN"><code class="docutils literal notranslate"><span class="pre">PSAGAN</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.gan.html#gents.model.gan.RCGAN"><code class="docutils literal notranslate"><span class="pre">RCGAN</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.gan.html#gents.model.gan.TimeGAN"><code class="docutils literal notranslate"><span class="pre">TimeGAN</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.gan.html#gents.model.gan.VanillaGAN"><code class="docutils literal notranslate"><span class="pre">VanillaGAN</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gents.model.vae.html">gents.model.vae package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gents.model.vae.html#module-gents.model.vae">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.vae.html#gents.model.vae.KoVAE"><code class="docutils literal notranslate"><span class="pre">KoVAE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.vae.html#gents.model.vae.TimeVAE"><code class="docutils literal notranslate"><span class="pre">TimeVAE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.vae.html#gents.model.vae.TimeVQVAE"><code class="docutils literal notranslate"><span class="pre">TimeVQVAE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gents.model.vae.html#gents.model.vae.VanillaVAE"><code class="docutils literal notranslate"><span class="pre">VanillaVAE</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-gents.model.base">
+<span id="gents-model-base-module"></span><h2>gents.model.base module<a class="headerlink" href="#module-gents.model.base" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gents.model.base.BaseModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gents.model.base.</span></span><span class="sig-name descname"><span class="pre">BaseModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gents.model.base.BaseModel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">LightningModule</span></code></p>
+<p>Base class for time series generative models in PyTorch Lightning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seq_len</strong> (<em>int</em>) – Target sequence length</p></li>
+<li><p><strong>seq_dim</strong> (<em>int</em>) – Target sequence dimension, for univariate time series, set as 1</p></li>
+<li><p><strong>condition</strong> (<em>str</em>) – Possible condition type, choose from [None, ‘predict’,’impute’, ‘class’]. None standards for unconditional generation.</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments for the model</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gents.model.base.BaseModel.ALLOW_CONDITION">
+<span class="sig-name descname"><span class="pre">ALLOW_CONDITION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Ellipsis</span></em><a class="headerlink" href="#gents.model.base.BaseModel.ALLOW_CONDITION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gents.model.base.BaseModel.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#gents.model.base.BaseModel.sample" title="Link to this definition"></a></dt>
+<dd><p>Sample time series from trained model in evaluation mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_sample</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of samples. Defaults to 1.</p></li>
+<li><p><strong>condition</strong> (<em>torch.Tensor</em><em> | </em><em>int</em><em>, </em><em>optional</em>) – Condition tensor in shape (batch_size, seq_len or obs_len, seq_dim). If the model is class label, then could be int.  Defaults to None.</p></li>
+<li><p><strong>kwargs</strong> – Additional arguments for the sampling process. E.g. data_mask, t, etc.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>sampled time series of shape (n_sample, seq_len, seq_dim) for unconditional generation, or (batch_size, seq_len, seq_dim, n_sample) for conditional generation.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="gents.evaluation.visualization.html" class="btn btn-neutral float-left" title="gents.evaluation.visualization package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gents.model.diffeq.html" class="btn btn-neutral float-right" title="gents.model.diffeq package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Chenxi Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
