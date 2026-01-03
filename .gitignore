@@ -177,3 +177,4 @@ gents/model/diffeq/tfm
 gents/utils
 data/
 syn_*.txt
+*_exp.txt
