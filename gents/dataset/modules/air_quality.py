@@ -17,9 +17,6 @@ class AirQuality(BaseDataModule):
     """`AirQuality dataset <https://zenodo.org/records/4656719>`__ (only use Beijing stations).
     
     .. note::
-        Class labels of AirQuality are station ids (in total 6 labels).
-    
-    .. note::
         Originally has missing values. `irregular_dropout` is disabled.
     
     Attributes:

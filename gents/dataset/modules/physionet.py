@@ -66,6 +66,7 @@ def _get_idlist(root_dir, patient_set="a"):
 class Physionet(BaseDataModule):
     """`Physionet Challenge 2012 Dataset <https://www.physionet.org/content/challenge-2012/1.0.0/>`__
 
+    There are two sets: set-a, and set-b, and we concat them together to have the final datasets.
     For each patient measurement, the original data is irregularly recorded for 48 hours. For each record, the time format is "HH:MM".
     Therefore, it can be treated as a long sequence at 1-min resolution, and for 48 hours, the total time steps are 48*60.
     We allow the users to aggreate (resample) to make the sequence shorter by setting `agg_minutes`, e.g. `agg_minutes=60` is resampled at 1-hour level,
@@ -75,6 +76,9 @@ class Physionet(BaseDataModule):
 
     .. note::
         Originally has missing values. `irregular_dropout` is disabled.
+
+    .. note::
+        If set `condition='class'`, then only set-a data is used since set-b data has no class labels.
 
     Attributes:
         D (int): Total sequence dimensions in the original data, fixed to 35.
