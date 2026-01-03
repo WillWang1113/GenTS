@@ -20,7 +20,6 @@ print("All available models: ", model_names)
 DEFAULT_ROOT_DIR = "/mnt/ExtraDisk/wcx/research/GenTS_cls_new"
 try:
     # too large datasets
-    # dataset_names.remove("Physionet")
     dataset_names.remove("ETTm1")
     dataset_names.remove("ETTm2")
     
