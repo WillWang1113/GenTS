@@ -179,4 +179,4 @@ data/
 syn_*.txt
 *_exp.txt
 test/test*.py
-test/syn_sample_exp.py
+test/syn_continue_train.py 
