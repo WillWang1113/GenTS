@@ -16,10 +16,10 @@ from gents.evaluation.model_free.distribution_distance import WassersteinDistanc
 
 seed_everything(9)
 
-# dataset_names = gents.dataset.DATASET_NAMES[7:]
-dataset_names = ["Stocks"]
-model_names = ["VanillaVAE"]
-# model_names = gents.model.MODEL_NAMES 
+dataset_names = gents.dataset.DATASET_NAMES[7:]
+# dataset_names = ["Stocks"]
+# model_names = ["VanillaVAE"]
+model_names = gents.model.MODEL_NAMES 
 
 
 DEFAULT_ROOT_DIR = "/mnt/ExtraDisk/wcx/research/GenTS_multivar_syn"
