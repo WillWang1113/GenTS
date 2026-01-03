@@ -276,10 +276,14 @@ class LS4(BaseModel):
     # ! TODO : device inaligment somewhere
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
         self.model.setup_rnn()
-
+        
         if self.condition == "predict":
-            total_seq_len = self.seq_len + self.obs_len
-            t = kwargs.get("t", torch.arange(total_seq_len).float().to(self.device))
+            if kwargs.get('t') is None:
+                total_seq_len = self.seq_len + self.obs_len
+                t = torch.arange(total_seq_len).float().to(self.device)
+            else:
+            # t = kwargs.get("t", torch.arange(total_seq_len).float().to(self.device))
+                t = kwargs["t"][0]
 
             tp_to_predict = t[self.obs_len :]
             observed_tp = t[: self.obs_len]
@@ -306,7 +310,13 @@ class LS4(BaseModel):
             # condition = torch.isnan(condition)
             # data[condition] = 0.0
             # total_seq_len = self.seq_len
-            t = kwargs["t"][0]
+            # t = kwargs["t"][0]
+            if kwargs.get('t') is None:
+                total_seq_len = self.seq_len
+                t = torch.arange(total_seq_len).float().to(self.device)
+            else:
+            # t = kwargs.get("t", torch.arange(total_seq_len).float().to(self.device))
+                t = kwargs["t"][0]
 
             mask = ~torch.isnan(condition)
             mask = mask.float()

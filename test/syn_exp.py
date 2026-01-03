@@ -10,14 +10,14 @@ import numpy as np
 
 seed_everything(9)
 
-dataset_names = gents.dataset.DATASET_NAMES
-# dataset_names = ['Traffic', 'Exchange']
-# model_names = ['PSAGAN', 'TimeVAE']
-model_names = gents.model.MODEL_NAMES
+# dataset_names = gents.dataset.DATASET_NAMES
+dataset_names = ['AirQuality']
+model_names = ['LS4']
+# model_names = gents.model.MODEL_NAMES
 print("All available datasets: ", dataset_names)
 print("All available models: ", model_names)
 
-DEFAULT_ROOT_DIR = "/mnt/ExtraDisk/wcx/research/GenTS_multivar_syn"
+DEFAULT_ROOT_DIR = "/mnt/ExtraDisk/wcx/research/GenTS_multivar_syn_new"
 try:
     # too large datasets
     dataset_names.remove("Physionet")

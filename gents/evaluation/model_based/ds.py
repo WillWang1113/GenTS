@@ -26,9 +26,9 @@ def discriminative_score(ori_data: np.ndarray, generated_data: np.ndarray, devic
     
     input_size=ori_data.shape[-1]
     # Network parameters
-    hidden_dim = int(input_size / 2) if input_size >=1 else 16
+    hidden_dim = int(input_size / 2) if input_size > 1 else 16
     iterations = 2000
-    batch_size = 32
+    batch_size = 128
 
 
     class Discriminator(nn.Module):

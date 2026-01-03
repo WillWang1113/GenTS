@@ -12,12 +12,12 @@ seed_everything(9)
 
 dataset_names = ['Physionet', 'ECG', 'Spiral2D']
 # dataset_names = ['SineND']
-# model_names = ['VanillaVAE']
-model_names = gents.model.MODEL_NAMES
+model_names = ['TimeVQVAE']
+# model_names = gents.model.MODEL_NAMES
 print("All available datasets: ", dataset_names)
 print("All available models: ", model_names)
 
-DEFAULT_ROOT_DIR = "/mnt/ExtraDisk/wcx/research/GenTS_cls"
+DEFAULT_ROOT_DIR = "/mnt/ExtraDisk/wcx/research/GenTS_cls_new"
 try:
     # too large datasets
     # dataset_names.remove("Physionet")
@@ -46,7 +46,7 @@ def parse_args():
     parser.add_argument(
         "--condition",
         type=str,
-        default=None,
+        default='class',
         choices=[None, "predict", "impute", "class"],
         help="Condition type (e.g., [None, 'predict', 'impute', 'class']).",
     )
@@ -60,7 +60,7 @@ def parse_args():
     parser.add_argument(
         "--max_epochs",
         type=int,
-        default=300,
+        default=100,
         help="Maximum number of epochs to train the model.",
     )
     parser.add_argument(
@@ -114,11 +114,13 @@ def main():
             # if dataset_name == 'Physionet':
             #     args['agg_minutes'] = 120
             #     args.pop('seq_dim', None)
-            #     class_num = 2
+            #     # class_num = 2
             # elif dataset_name == 'ECG':
-            #     class_num = 5
+            #     # class_num = 5
+            #     pass
             # elif dataset_name == 'Spiral2D':
-            #     class_num = 2
+            #     # class_num = 2
+            #     pass
                     
 
             for model_name in model_names:
@@ -149,7 +151,15 @@ def main():
                         condition=args["condition"],
                         class_num=dm.n_classes
                     )
+                    if model_name == "VanillaDDPM":
+                        # model_args['d_model'] = 32
+                        # model_args['n_layers'] = 1
+                        model_args['patch_size'] = 24
                     
+                    if model_name == "TimeVQVAE":
+                        model_args['cfg_scale'] = 1.0
+                        
+                        
                     model = model_cls(**model_args)
 
                     trainer = Trainer(
@@ -160,7 +170,8 @@ def main():
                             EarlyStopping(monitor="val_loss", patience=10, mode="min")
                         ],
                         default_root_dir=DEFAULT_ROOT_DIR,
-                        # min_epochs=min_epochs,
+                        min_epochs=max_epochs,
+                        # min_epochs=max_epochs if model_name == 'TimeVQVAE' else None,
                         # fast_dev_run=True,
                         enable_progress_bar=False,
                         enable_model_summary=False

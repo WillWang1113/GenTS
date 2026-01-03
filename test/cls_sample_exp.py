@@ -1,19 +1,27 @@
 from argparse import ArgumentParser
 
 import numpy as np
+import pandas as pd
 import torch
 from lightning import Trainer, seed_everything
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 import os
 import gents.dataset
+from gents.evaluation.model_based import cfid
+from gents.evaluation.model_based._ts2vec import initialize_ts2vec
+from gents.evaluation.model_based.ds import discriminative_score
+from gents.evaluation.model_based.ps import predictive_score
+from gents.evaluation.model_free.distribution_distance import WassersteinDistances
 import gents.model
 
 seed_everything(9)
 
-dataset_names = ["Physionet", "ECG", "Spiral2D"]
+# dataset_names = ["Physionet"]
+dataset_names = ["ECG"]
+# dataset_names = ["Physionet", "Spiral2D", "ECG"]
 # dataset_names = ['SineND']
-model_names = ['VanillaVAE']
-# model_names = gents.model.MODEL_NAMES
+# model_names = ["TimeVQVAE"]
+model_names = gents.model.MODEL_NAMES
 print("All available datasets: ", dataset_names)
 print("All available models: ", model_names)
 
@@ -46,7 +54,7 @@ def parse_args():
     parser.add_argument(
         "--condition",
         type=str,
-        default=None,
+        default="class",
         choices=[None, "predict", "impute", "class"],
         help="Condition type (e.g., [None, 'predict', 'impute', 'class']).",
     )
@@ -86,6 +94,7 @@ def main():
     seq_len = args.pop("seq_len")
     max_epochs = args.pop("max_epochs")
     univar = args.pop("univar")
+    print(args)
 
     if univar:
         # model_names.remove("FIDE")  # only support univariate time series
@@ -124,14 +133,30 @@ def main():
                 )
                 print("Checkpoint path:", ckpt_path)
 
-                
                 if not os.path.exists(ckpt_path):
                     print(
                         f"Model {model_name} on dataset {dataset_name} didn't trained. Skipping."
                     )
                     continue
-
+                args["seq_len"] = seq_len
                 dm = data_cls(**args)
+                print(args)
+
+                # pretrain ts2vec
+                dm.setup("fit")
+                train_data = []
+                for train_batch in dm.train_dataloader():
+                    train_data.append(train_batch["seq"])
+                train_data = torch.cat(train_data, dim=0)
+
+                initialize_ts2vec(
+                    train_data.shape[-1],
+                    train_data.numpy(),
+                    device=f"cuda:{gpu}",
+                    ts2vec_path=os.path.join(
+                        DEFAULT_ROOT_DIR, "ts2vec", f"{dataset_name}.pt"
+                    ),
+                )
 
                 model_cls = getattr(gents.model, model_name)
                 # filter out invalid condition
@@ -149,58 +174,113 @@ def main():
                     # model = model_cls(**model_args)
                     model = model_cls.load_from_checkpoint(model_ckpt)
 
-                    # trainer = Trainer(
-                    #     max_epochs=max_epochs,
-                    #     devices=[gpu],
-                    #     accelerator="gpu",
-                    #     callbacks=[
-                    #         EarlyStopping(monitor="val_loss", patience=10, mode="min")
-                    #     ],
-                    #     default_root_dir=DEFAULT_ROOT_DIR,
-                    #     # min_epochs=min_epochs,
-                    #     # fast_dev_run=True,
-                    #     enable_progress_bar=False,
-                    #     enable_model_summary=False,
-                    # )
-                    # try:
-                    #     trainer.fit(model, dm)
-                    # except Exception as e:
-                    #     print(
-                    #         f"Error training model {model_name} on dataset {dataset_name}: {e}"
-                    #     )
-                    #     log_file.write(
-                    #         f"Error training model {model_name} on dataset {dataset_name}: {e}\n"
-                    #     )
-                    #     continue
-                    # with open(
-                    #     os.path.join(
-                    #         DEFAULT_ROOT_DIR, f"{model_name}_{dataset_name}_ckptpth.txt"
-                    #     ),
-                    #     "w",
-                    # ) as text_file:
-                    #     text_file.write(trainer.checkpoint_callback.best_model_path)
-                    #     text_file.close()
-
-                    # model = model_cls.load_from_checkpoint(
-                    #     trainer.checkpoint_callback.best_model_path
-                    # )
 
                     # model testing
                     model.eval()
                     model.to(f"cuda:{gpu}")
-                    dm.setup("test")
-                    y_pred = []
-                    for test_batch in dm.test_dataloader():
-                        for k in test_batch:
-                            test_batch[k] = test_batch[k].to(f"cuda:{gpu}")
-                        samples = model.sample(
-                            n_sample=test_batch["seq"].shape[0],
-                            condition=test_batch.get("c", None),
-                            **test_batch,
-                        )
-                        y_pred.append(samples.detach())
-                    y_pred = torch.cat(y_pred, dim=0).cpu()
+                    dm.setup("fit")
+                    # y_pred = []
+                    y_pred, y_real, y_real_label = [], [], []
+                    y_real = dm.train_ds.data.to(f"cuda:{gpu}")
+                    y_real_label = dm.train_ds.class_labels.to(f"cuda:{gpu}")
+
+                    y_pred = model.sample(
+                        n_sample=y_real.shape[0],
+                        condition=y_real_label.int(),
+                    )
+                    # test_batch = torch.concat([batch] for batch in dm.train_dataloader())
+                    # for test_batch in dm.train_dataloader():
+                    #     y_real.append(test_batch["seq"])
+                    #     y_real_label.append(test_batch.get("c", None))
+
+                    #     for k in test_batch:
+                    #         test_batch[k] = test_batch[k].to(f"cuda:{gpu}")
+                    #     samples = model.sample(
+                    #         n_sample=test_batch["seq"].shape[0],
+                    #         condition=test_batch.get("c", None),
+                    #         **test_batch,
+                    #     )
+                    #     y_pred.append(samples.detach())
+
+                    # y_pred = torch.cat(y_pred, dim=0).cpu()
+                    # y_real = torch.cat(y_real, dim=0).cpu()
+                    # y_real_label = torch.cat(y_real_label).cpu()
                     print(y_pred.shape)
+                    print(y_real.shape)
+                    print(y_real_label.shape)
+
+                    torch.save(
+                        y_pred.cpu(),
+                        os.path.join(
+                            DEFAULT_ROOT_DIR,
+                            f"{model_name}_{dataset_name}_y_pred.pt",
+                        ),
+                    )
+                    # if not os.path.exists(
+                    #     os.path.join(
+                    #         DEFAULT_ROOT_DIR,
+                    #         f"{dataset_name}_y_real.pt",
+                    #     )
+                    # ):
+                    torch.save(
+                        y_real.cpu(),
+                        os.path.join(
+                            DEFAULT_ROOT_DIR,
+                            f"{dataset_name}_y_real.pt",
+                        ),
+                    )
+
+                    
+                    torch.save(
+                        y_real_label.cpu(),
+                        os.path.join(
+                            DEFAULT_ROOT_DIR,
+                            f"{dataset_name}_y_real_label.pt",
+                        ),
+                    )
+
+                    cfid_score = cfid.context_fid(
+                        # train_data=train_data.numpy(),
+                        ori_data=y_real.cpu().numpy(),
+                        gen_data=y_pred.cpu().numpy(),
+                        device=f"cuda:{gpu}",
+                        ts2vec_path=os.path.join(
+                            DEFAULT_ROOT_DIR, "ts2vec", f"{dataset_name}.pt"
+                        ),
+                    )
+                    print("Done cfid")
+                    w_dist = WassersteinDistances(
+                        y_real.cpu().flatten(1).numpy(), y_pred.cpu().flatten(1).numpy()
+                    )
+                    wd_score = w_dist.sliced_distances(500).mean()
+                    print("Done WD")
+
+                    p_score = predictive_score(
+                        y_real.cpu().numpy(),
+                        y_pred.cpu().numpy(),
+                        device=f"cuda:{gpu}",
+                    )
+                    print("Done ps")
+                    d_score = discriminative_score(
+                        y_real.cpu().numpy(),
+                        y_pred.cpu().numpy(),
+                        device=f"cuda:{gpu}",
+                    )
+                    print("Done ds")
+                    avg_metrics = {
+                        "cfid": cfid_score,
+                        "wd": wd_score,
+                        "ps": p_score,
+                        "ds": d_score,
+                    }
+                    print(avg_metrics)
+                    pd.DataFrame(avg_metrics, index=[0]).to_csv(
+                        os.path.join(
+                            DEFAULT_ROOT_DIR,
+                            f"{model_name}_{dataset_name}_metrics_insample_new.csv",
+                        ),
+                        index=False,
+                    )
                 # print("--" * 20)
 
             if dataset_name == "SineND":

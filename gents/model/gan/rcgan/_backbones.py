@@ -26,6 +26,8 @@ class Generator(nn.Module):
         if c is None:
             c = torch.ones((z.shape[0], 1)) * self.n_classes
             c = c.to(z).long()
+        else:
+            c = c.unsqueeze(-1)
 
         emb_cond = self.emb(c)
         cond = emb_cond.expand(-1, z.shape[1], -1)
@@ -55,6 +57,9 @@ class Discriminator(nn.Module):
         if c is None:
             c = torch.ones((x.shape[0], 1)) * self.n_classes
             c = c.to(x).long()
+        else:
+            c = c.unsqueeze(-1)
+            
         emb_cond = self.emb(c)
         cond = emb_cond.expand(-1, x.shape[1], -1)
         z = torch.concat([x, cond], dim=-1)

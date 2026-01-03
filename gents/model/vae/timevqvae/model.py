@@ -373,7 +373,8 @@ class TimeVQVAE(BaseModel):
 
     def configure_optimizers(self):
         # assert self.trainer.max_steps > 0, "Trainer max_steps must be set in TimeVQVAE"
-        self.total_steps = self.trainer.max_epochs
+        self.total_steps = self.trainer.estimated_stepping_batches
+        # print(self.total_steps)
         stage1_param = (
             list(self.encoder_h.parameters())
             + list(self.encoder_l.parameters())
@@ -415,7 +416,7 @@ class TimeVQVAE(BaseModel):
         """
         opt1, opt2 = self.optimizers()
         sch1, sch2 = self.lr_schedulers()
-        if self.current_epoch < int(self.total_steps * self.hparams_initial.stage_split):
+        if self.global_step < int(self.total_steps * self.hparams_initial.stage_split):
             self.toggle_optimizer(opt1)
             recons_loss, vq_losses, perplexities = self._loss_stage1(batch, batch_idx)
             loss = (
