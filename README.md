@@ -181,6 +181,16 @@ One can easily join `GenTS` following the `lightning.LightningModule` and `light
 
  -->
 
+
+
+
+## 🙏 All Thanks To Our Contributors
+
+<a href="https://github.com/WillWang1113/GenTS/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=WillWang1113/GenTS" />
+</a>
+
+
 ## 📎 Citation
 If you enjoy or benefit from using `GenTS`, a citation to this repository will be greatly appreciated！
 ```BibTeX
