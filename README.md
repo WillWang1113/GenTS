@@ -1,7 +1,7 @@
 # GenTS: A library for generative time series analysis
 
 
-`GenTS` is an open-source library for researchers to conduct generative time series analysis, which covers **(class) synthesis**, **forecasting** and **imputation**. 
+`GenTS` is an open-source library for researchers to conduct generative time series analysis, which covers **(class label-guided) synthesis**, **forecasting** and **imputation**. 
 
 ## ✨ Highlights
 Based on `lightning`, `GenTS` provides a modular code base to benchmark different models on various datasets in a easy way. Specifically, we feature on:
@@ -10,8 +10,8 @@ Based on `lightning`, `GenTS` provides a modular code base to benchmark differen
 - **Multi-domain Datasets**: Various time series datasets from energy, health, and other domains.
 - **Comprehensive Evaluation**: Both quantitative and qualitative methods for fidelity, usefulness, and accuracy.
 
-## 📖 Tutorials
-For detailed instructions, please refer to the [[Doc]](https://willwang1113.github.io/GenTS/).
+## 📖 Documents
+For detailed tutorial of our library and API information, please refer to the [our documents](https://willwang1113.github.io/GenTS/).
 
 ## ⚙️ Installation
 We recommand to first create a virtual environment, and activate the environment. Then you can install the necessary libraries by running the following command.
