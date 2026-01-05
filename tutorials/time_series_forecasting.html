@@ -129,8 +129,8 @@
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-/home/user/workspaces/GenTS/gents/model/vae/timevqvae/_vq.py:182: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast(&#39;cuda&#39;, args...)` instead.
-  @autocast(enabled=False)
+/home/wcx/anaconda3/envs/gents/lib/python3.10/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
+  from .autonotebook import tqdm as notebook_tqdm
 CUDA extension for cauchy multiplication not found. Install by going to extensions/cauchy/ and running `python setup.py install`. This should speed up end-to-end training by 10-50%
 Falling back on slow Cauchy kernel. Install at least one of pykeops or the CUDA extension for efficiency.
 Falling back on slow Vandermonde kernel. Install pykeops for improved memory efficiency.
@@ -176,7 +176,7 @@ Falling back on slow Vandermonde kernel. Install pykeops for improved memory eff
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
+<div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area stderr docutils container">
@@ -184,19 +184,34 @@ Falling back on slow Vandermonde kernel. Install pykeops for improved memory eff
 GPU available: True (cuda), used: True
 TPU available: False, using: 0 TPU cores
 HPU available: False, using: 0 HPUs
-You are using a CUDA device (&#39;NVIDIA GeForce RTX 4090&#39;) that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision(&#39;medium&#39; | &#39;high&#39;)` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+You are using a CUDA device (&#39;NVIDIA GeForce RTX 3080 Ti&#39;) that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision(&#39;medium&#39; | &#39;high&#39;)` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
 
   | Name     | Type | Params | Mode
 ------------------------------------------
-0 | backbone | DiT  | 1.5 M  | train
+0 | backbone | DiT  | 1.2 M  | train
 ------------------------------------------
-1.5 M     Trainable params
-256       Non-trainable params
-1.5 M     Total params
-5.937     Total estimated model params size (MB)
-105       Modules in train mode
+1.2 M     Trainable params
+512       Non-trainable params
+1.2 M     Total params
+4.734     Total estimated model params size (MB)
+85        Modules in train mode
 0         Modules in eval mode
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Downloading 2DSpiral dataset in ../data/2DSpiral.pt
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
 `Trainer.fit` stopped: `max_epochs=10` reached.
 </pre></div></div>
 </div>
@@ -245,7 +260,7 @@ LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-0.012620506909852208
+np.float64(0.011574582569024659)
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
