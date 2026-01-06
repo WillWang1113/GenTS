@@ -74,8 +74,7 @@ GenTS included 25+ state-of-the-art generative time series models (and their var
 | FourierDiffusion      | Diffusion  | :white_check_mark: |                    |                    |                    |
 | ImagenTime            | Diffusion  | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    |
 | FIDE         | Diffusion  | :white_check_mark: |                    |                    |                    |
-| Latent ODE w. ODE-RNN | Diff. Eq.  | :white_check_mark: | :white_check_mark: | :white_check_mark:      |                    |
-| Latent ODE w. RNN     | Diff. Eq.  | :white_check_mark: | :white_check_mark: | :white_check_mark:      |                    |
+| Latent ODE | Diff. Eq.  | :white_check_mark: | :white_check_mark: | :white_check_mark:      |                    |                   |
 | Latent SDE            | Diff. Eq.  | :white_check_mark: |                    |                    |                    |
 | SDEGAN                | Diff. Eq.  | :white_check_mark: |                    |                    |                    |
 | LS4                   | Diff. Eq.  | :white_check_mark: | :white_check_mark: | :white_check_mark:      |                    |
