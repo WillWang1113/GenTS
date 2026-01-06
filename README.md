@@ -50,6 +50,8 @@ tsne_visual(real_data, gen_data, save_root="tsne.png")
 
 We also provide tutorials for different use case of generative time series models, including common conditional generation tasks (forecasting, imputation, class label-guided synthesis) and others. Please refer to tutorials/ or our documents for detailed examples.
 
+The scripts for running benchmark experiments are located in the test/ folder , incluing training and sampling for synthesis, imputation, and forecasting.
+
 
 ##  🏰 Model zoo
 GenTS included 25+ state-of-the-art generative time series models (and their variants), with different capabilities. Our model zoo will be updated in a regular basis.
