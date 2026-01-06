@@ -200,6 +200,7 @@ class BaseDataModule(LightningDataModule, ABC):
         add_coeffs: str = None,
         irregular_dropout: float = 0.0,
         data_dir: str = "./data",
+        train_val_test: List[float] = [0.7, 0.2, 0.1],
         **kwargs,
     ):
         super().__init__()
@@ -217,6 +218,8 @@ class BaseDataModule(LightningDataModule, ABC):
         self.root_dir = data_dir
         self.data_dir = os.path.join(data_dir, self.dataset_name)
         self.irregular_dropout = irregular_dropout
+        self.split = train_val_test
+        assert sum(self.split) == 1.0
         self.kwargs = kwargs
 
         assert condition in [None, "predict", "impute", "class"]
@@ -246,8 +249,8 @@ class BaseDataModule(LightningDataModule, ABC):
         )
 
         # train/val/test
-        num_train = int(len(data) * 0.7)
-        num_vali = int(len(data) * 0.2)
+        num_train = int(len(data) * self.split[0])
+        num_vali = int(len(data) * self.split[1])
         num_test = len(data) - num_train - num_vali
 
         starts = dict(
@@ -439,7 +442,7 @@ class WebDownloadDataModule(BaseDataModule):
 
         data_raw = df.values.astype(np.float32)
         n_window = data_raw.shape[0] - self.total_seq_len + 1
-        n_trainval_window = int(n_window * 0.7) + int(n_window * 0.2)
+        n_trainval_window = int(n_window * self.split[0]) + int(n_window * self.split[1])
         n_trainval_timesteps = n_trainval_window + self.total_seq_len - 1
 
         # scale
