@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 import numpy as np
 import torch
@@ -58,6 +59,7 @@ class ECG(BaseDataModule):
         max_time: float = 1.0,
         add_coeffs: str = None,
         irregular_dropout: float = 0.0,
+        train_val_test: List[float] = [0.7, 0.2, 0.1],
         **kwargs,
     ):
         # seq_len = self.L - kwargs.get('obs_len', 0)
@@ -73,6 +75,7 @@ class ECG(BaseDataModule):
             add_coeffs,
             irregular_dropout,
             data_dir,
+            train_val_test,
             **kwargs,
         )
         if seq_dim != 1:

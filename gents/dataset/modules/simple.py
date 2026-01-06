@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import torch
@@ -29,6 +30,7 @@ class Spiral2D(BaseDataModule):
         num_samples: int = 1000,
         batch_size: int = 32,
         data_dir: Path | str = Path.cwd() / "data",
+        train_val_test: List[float] = [0.7, 0.2, 0.1],
         condition: str = None,
         inference_batch_size: int = 1024,
         max_time: float = None,
@@ -46,6 +48,7 @@ class Spiral2D(BaseDataModule):
             add_coeffs,
             irregular_dropout,
             data_dir,
+            train_val_test,
             **kwargs,
         )
         self.num_samples = num_samples
@@ -124,6 +127,7 @@ class SineND(BaseDataModule):
         num_samples: int = 1000,
         batch_size: int = 32,
         data_dir: Path | str = Path.cwd() / "data",
+        train_val_test: List[float] = [0.7, 0.2, 0.1],
         condition: str = None,
         inference_batch_size: int = 1024,
         max_time: float = None,
@@ -141,6 +145,7 @@ class SineND(BaseDataModule):
             add_coeffs,
             irregular_dropout,
             data_dir,
+            train_val_test,
             **kwargs,
         )
         self.num_samples = num_samples

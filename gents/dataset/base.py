@@ -186,7 +186,8 @@ class BaseDataModule(LightningDataModule, ABC):
         add_coeffs (str, optional): Include interpolation coefficients or not. Needed for `KoVAE`, `GTGAN` and `SDEGAN`. Choose from `[None, 'linear', 'cubic_spline']`. If `None`, don't include. Defaults to None.
         irregular_dropout (float, optional): Dropout rate to similate irregular time series data by randomly dropout some time steps in the original data. Set between `[0.0, 1.0]` Defaults to 0.0.
         data_dir (str, optional): Directory to save the data file (default name: `"data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt"`). Defaults to Path.cwd()/"data".
-        **kwargs: Additional arguments for the model
+        train_val_test (List[float], optional): Ratios of training, validation and testing dataset. Should be sum as 1.0. Defaults to [0.7, 0.2, 0.1].
+        **kwargs: Additional arguments for the dataset
     """
 
     def __init__(
@@ -219,7 +220,7 @@ class BaseDataModule(LightningDataModule, ABC):
         self.data_dir = os.path.join(data_dir, self.dataset_name)
         self.irregular_dropout = irregular_dropout
         self.split = train_val_test
-        assert sum(self.split) == 1.0
+        assert np.allclose(sum(self.split), 1.0)
         self.kwargs = kwargs
 
         assert condition in [None, "predict", "impute", "class"]
@@ -370,6 +371,7 @@ class WebDownloadDataModule(BaseDataModule):
         select_seq_dim (List[int  |  str], optional): Subset of all sequence channels. Could be a `list` of `int` indicating the chosen channel indice or a `list` of `str` indicating the column names for `pd.Dataframe` object. If `None`, use all channels. Defaults to None.
         batch_size (int, optional): Training and validation batch size. Defaults to 32.
         data_dir (str, optional): Directory to save the data file (default name: `"data_tsl{total_seq_len}_tsd{seq_dim}_ir{irregular_dropout}.pt"`). Defaults to "./data".
+        train_val_test (List[float], optional): Ratios of training, validation and testing dataset. Should be sum as 1.0. Defaults to [0.7, 0.2, 0.1].
         condition (str, optional): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
         scale (bool, optional): If `True`, `StandardScaler` will be used for z-score normalization. Training data will be used for calculating `mu` and `sigma`, then transform all time steps. Defaults to True.
         inference_batch_size (int, optional): Testing batch size. Defaults to 1024.
@@ -391,6 +393,7 @@ class WebDownloadDataModule(BaseDataModule):
         select_seq_dim: List[int | str] = None,
         batch_size: int = 32,
         data_dir: str = "./data",
+        train_val_test: List[float] = [0.7, 0.2, 0.1],
         condition: str = None,
         scale: bool = True,
         inference_batch_size: int = 1024,
@@ -409,6 +412,7 @@ class WebDownloadDataModule(BaseDataModule):
             add_coeffs,
             irregular_dropout,
             data_dir,
+            train_val_test,
             **kwargs,
         )
         self.scale = scale
