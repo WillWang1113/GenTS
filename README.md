@@ -1,4 +1,4 @@
-# GenTS: A library for generative time series analysis
+# GenTS: A Comprehensive Benchmark Library for Generative Time Series Models
 
 
 `GenTS` is an open-source library for researchers to conduct generative time series analysis, which covers **(class label-guided) synthesis**, **forecasting** and **imputation**. 
@@ -194,8 +194,8 @@ One can easily join `GenTS` following the `lightning.LightningModule` and `light
 If you enjoy or benefit from using `GenTS`, a citation to this repository will be greatly appreciated！
 ```BibTeX
 @misc{wang2025a,
-title={GenTS: a Library for Generative Time Series Analysis},
-author={Chenxi Wang},
+title={GenTS: A Comprehensive Benchmark Library for Generative Time Series Models},
+author={Chenxi Wang, Xiaorong Wang, Peiyang Li, Yi Wang},
 year={2025},
 url={https://github.com/WillWang1113/GenTS}
 }
