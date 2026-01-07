@@ -50,7 +50,7 @@ tsne_visual(real_data, gen_data, save_root="tsne.png")
 
 We also provide tutorials for different use case of generative time series models, including common conditional generation tasks (forecasting, imputation, class label-guided synthesis) and others. Please refer to tutorials/ or our documents for detailed examples.
 
-The scripts for running benchmark experiments are located in the test/ folder , incluing training and sampling for synthesis, imputation, and forecasting.
+The scripts for running benchmark experiments are located in the `test/` folder, incluing training and sampling for (class label-guided) synthesis, imputation, and forecasting. Please feel free to start with our scripts.
 
 
 ##  🏰 Model zoo
@@ -187,9 +187,12 @@ One can easily join `GenTS` following the `lightning.LightningModule` and `light
 
 ## 🙏 All Thanks To Our Contributors
 
-<a href="https://github.com/WillWang1113/GenTS/graphs/contributors">
+<!-- <a href="https://github.com/WillWang1113/GenTS/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=WillWang1113/GenTS" />
-</a>
+</a> -->
+
+<a href="https://github.com/WillWang1113/GenTS/graphs/contributors"><img src="https://contributors-img.web.app/image?repo=WillWang1113/GenTS" /></a>
+
 
 
 ## 📎 Citation
