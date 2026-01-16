@@ -18,7 +18,10 @@ class FIDE(BaseModel):
     
     .. note::
         Only support for univariate time series.
-    
+        
+    .. note::
+        During inference, a GEV model is needed. If you are separate training and inference into two stages, then a GEV model is needed to be fitted again on training dataset.
+        
     .. warning::
         The original paper claimed an innovation on regularization on loss function. 
         However, in the original codes, the regularization term is detached from the computation graph, which may cause no gradients.
@@ -103,7 +106,13 @@ class FIDE(BaseModel):
         return loss
 
     def _sample_impl(self, n_sample=1, condition=None, **kwargs):
-        bm_samples_gev = self.gev_model.rvs(size=n_sample)
+        if hasattr(self, 'gev_model'):
+            bm_samples_gev = self.gev_model.rvs(size=n_sample)
+        elif kwargs.get('gev_model') is not None:
+            bm_samples_gev = kwargs.get('gev_model').rvs(size=n_sample)
+        else:
+            raise ValueError('Need GEV model as prior')
+            
         bm_samples_conditional = torch.tensor(bm_samples_gev, dtype=torch.float32).to(
             self.device
         )

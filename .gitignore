@@ -167,8 +167,6 @@ lightning_logs/
 misc/
 notebooks/
 nohup.out
-scripts/context_fid.py
-scripts/kovae_rebuttal.py
 configs/
 gents/model/flow/temporalflow
 gents/model/diffusion/ratd
@@ -179,4 +177,6 @@ data/
 syn_*.txt
 *_exp.txt
 test/test*.py
-test/syn_continue_train.py 
+test/syn_continue_train.py
+*.csv
+test/time*.py

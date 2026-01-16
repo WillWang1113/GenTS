@@ -180,11 +180,8 @@ class FourierFlow(BaseModel):
             # to make it compatible with the Fourier Transform
             warnings.warn("Sequence length is even, removing zeros from time step.")
             X_sample = X_sample[:, 1:]
-        # X_sample = X_sample
-
-        return X_sample
-
-        # return super()._sample_impl(n_sample, condition, **kwargs)
+            
+        return X_sample.unsqueeze(-1)
 
     def configure_optimizers(self):
         optim = torch.optim.Adam(

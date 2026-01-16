@@ -113,7 +113,6 @@ class GTGAN(BaseModel):
         lr: Dict[str, float] = {"ER": 1e-3, "G": 1e-3, "D": 1e-3},
         **kwargs,
     ):
-
         super().__init__(seq_len, seq_dim, condition, **kwargs)
 
         self.save_hyperparameters()
@@ -229,7 +228,12 @@ class GTGAN(BaseModel):
 
         optimizer_er, optimizer_gs, optimizer_d = self.optimizers()
 
-        if (self.current_epoch >= 0) and (self.current_epoch < int(1 / 2 * max_steps)):
+        if (
+            (self.current_epoch >= 0) and (self.current_epoch < int(1 / 2 * max_steps))
+        ) or (
+            (self.global_step >= 0)
+            and (self.global_step < int(1 / 2 * self.trainer.max_steps))
+        ):
             # self.toggle_optimizer(optimizer_er)
             # x = batch['data'].to(device)
             train_coeffs = batch["coeffs"]
@@ -381,6 +385,7 @@ class GTGAN(BaseModel):
             self.log("loss_g", loss_g)
 
         # return super().training_step(*args, **kwargs)
+
     def validation_step(self, batch, batch_idx):
         batch_size = batch["seq"].shape[0]
         val_samples = self.sample(batch_size, batch.get("c", None))

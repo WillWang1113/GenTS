@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 import numpy as np
 import pandas as pd
 import torch
+from gents.model.diffusion.fide._utils import fitting_gev_and_sampling
 from lightning import seed_everything
 
 import gents.dataset
@@ -18,10 +19,12 @@ seed_everything(9)
 
 dataset_names = gents.dataset.DATASET_NAMES[7:]
 # dataset_names = ["Stocks"]
-# model_names = ["VanillaVAE"]
-model_names = gents.model.MODEL_NAMES 
+# model_names = ["FIDE"]
+model_names = gents.model.MODEL_NAMES
 
 
+# DEFAULT_ROOT_DIR = "/home/user/data2/GenTS_exp"
+# DEFAULT_ROOT_DIR = "/home/user/data2/GenTS_exp"
 DEFAULT_ROOT_DIR = "/mnt/ExtraDisk/wcx/research/GenTS_multivar_syn"
 try:
     # too large datasets
@@ -30,6 +33,7 @@ try:
     dataset_names.remove("ETTm2")
 
     # model_names.remove("PSAGAN")
+    # model_names.remove("FIDE")
     model_names.remove("FourierDiffusionMLP")
     model_names.remove("FourierDiffusionLSTM")
 
@@ -41,6 +45,7 @@ except:
 
 print("All available datasets: ", dataset_names)
 print("All available models: ", model_names)
+
 
 def parse_args():
     parser = ArgumentParser()
@@ -158,15 +163,16 @@ def main():
                     )
                     continue
 
-                if os.path.exists(
-                    os.path.join(
-                        DEFAULT_ROOT_DIR, f"{model_name}_{dataset_name}_metrics_insample.csv"
-                    )
-                ):
-                    print(
-                        f"Model {model_name} on dataset {dataset_name} already tested. Skipping."
-                    )
-                    continue
+                # if os.path.exists(
+                #     os.path.join(
+                #         DEFAULT_ROOT_DIR,
+                #         f"{model_name}_{dataset_name}_metrics_insample.csv",
+                #     )
+                # ):
+                #     print(
+                #         f"Model {model_name} on dataset {dataset_name} already tested. Skipping."
+                #     )
+                #     continue
 
                 dm = data_cls(**args)
 
@@ -210,24 +216,70 @@ def main():
 
                     model = model_cls.load_from_checkpoint(model_ckpt, strict=False)
 
+                    # Only for FIDE, need to fit a GEV model for sampling
+                    if model_name == "FIDE":
+                        real_data = dm.train_dataloader().dataset.data
+                        block_maxima_real_data_value, block_maxima_real_data_pos = (
+                            torch.max(real_data, dim=1)
+                        )
+                        block_maxima_real_data_value = (
+                            block_maxima_real_data_value.reshape(-1, 1, 1)
+                        )
+                        block_maxima_real_data_pos = block_maxima_real_data_pos.reshape(
+                            -1, 1, 1
+                        )
+                        block_maxima_real_data = block_maxima_real_data_value  # torch.cat((block_maxima_real_data_value, block_maxima_real_data_pos), dim=1)
+                        num_samples = block_maxima_real_data.shape[0]
+
+                        block_maxima_real_data_value = (
+                            block_maxima_real_data_value.cpu().numpy().reshape(-1)
+                        )
+                        block_maxima_real_data_pos = (
+                            block_maxima_real_data_pos.cpu().numpy().reshape(-1)
+                        )
+                        gev_model = fitting_gev_and_sampling(
+                            block_maxima_real_data_value, num_samples
+                        )
+
+                        # self.gev_model = gev_model
+
                     # model testing
                     model.eval()
-                    model.to(f"cuda:{gpu}")
+                    if model_name == "FourierFlow":
+                        model.to("cpu")
+                    else:
+                        model.to(f"cuda:{gpu}")
+                    
+                    dataset = dm.train_dataloader().dataset
+                    y_real = dataset.data
+                    dl = torch.utils.data.DataLoader(dataset, batch_size=args['inference_batch_size'], shuffle=False)
+                    
+                    
                     dm.setup("test")
-                    y_pred, y_real = [], []
-                    all_num_samples = 0
+                    y_pred = []
+                    # all_num_samples = 0
                     # Insample performance
-                    for test_batch in dm.train_dataloader():
-                    # for test_batch in dm.test_dataloader():
-                        y_real.append(test_batch["seq"])
+                    for test_batch in dl:
+                        # y_real.append(test_batch["seq"])
                         for k in test_batch:
-                            test_batch[k] = test_batch[k].to(f"cuda:{gpu}")
+                            if model_name == "FourierFlow":
+                                test_batch[k] = test_batch[k].to("cpu")
+                            else:
+                                test_batch[k] = test_batch[k].to(f"cuda:{gpu}")
                         # try:
-                        samples = model.sample(
-                            n_sample=test_batch["seq"].shape[0],
-                            condition=None,
-                            **test_batch,
-                        )
+                        if model_name == "FIDE":
+                            samples = model.sample(
+                                n_sample=test_batch["seq"].shape[0],
+                                condition=None,
+                                **test_batch,
+                                gev_model=gev_model,
+                            )
+                        else:
+                            samples = model.sample(
+                                n_sample=test_batch["seq"].shape[0],
+                                condition=None,
+                                **test_batch,
+                            )
 
                         if model_name == "PSAGAN":
                             samples = torch.nn.functional.interpolate(
@@ -250,14 +302,14 @@ def main():
                             print("has nan in samples, try again")
                             samples = torch.nan_to_num(samples)
                         y_pred.append(samples.detach())
-                        all_num_samples += samples.shape[0]
-                        if all_num_samples >= 10000:
-                            break
+                        # all_num_samples += samples.shape[0]
+                        # if all_num_samples >= 10000:
+                            # break
                     # print(y_pred)
                     y_pred = torch.cat(y_pred, dim=0).cpu()
-                    y_real = torch.cat(y_real, dim=0).cpu()
+                    # y_real = torch.cat(y_real, dim=0).cpu()
                     print(y_pred.shape)
-                    print(y_real.shape)
+                    # print(y_real.shape)
                     assert y_pred.shape == y_real.shape
                     print("Generated samples shape:", y_pred.shape)
                     torch.save(
@@ -267,14 +319,19 @@ def main():
                             f"{model_name}_{dataset_name}_y_pred.pt",
                         ),
                     )
-                    if not os.path.exists(os.path.join(
-                        DEFAULT_ROOT_DIR,
-                        f"{dataset_name}_y_real.pt",
-                    )):
-                        torch.save(y_real, os.path.join(
+                    if not os.path.exists(
+                        os.path.join(
                             DEFAULT_ROOT_DIR,
                             f"{dataset_name}_y_real.pt",
-                        ))
+                        )
+                    ):
+                        torch.save(
+                            y_real,
+                            os.path.join(
+                                DEFAULT_ROOT_DIR,
+                                f"{dataset_name}_y_real.pt",
+                            ),
+                        )
                     cfid_score = cfid.context_fid(
                         # train_data=train_data.numpy(),
                         ori_data=y_real.numpy(),
@@ -313,7 +370,7 @@ def main():
                     pd.DataFrame(avg_metrics, index=[0]).to_csv(
                         os.path.join(
                             DEFAULT_ROOT_DIR,
-                            f"{model_name}_{dataset_name}_metrics_insample.csv",
+                            f"{model_name}_{dataset_name}_metrics_insample_alltrain.csv",
                         ),
                         index=False,
                     )

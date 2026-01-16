@@ -33,10 +33,11 @@ def context_fid(
     on every time series dataset. Then calculate FID using the trained representative learning model.
 
     Args:
-        train_data (np.ndarray): Time series training dataset. Used for training TS2Vec model.
         ori_data (np.ndarray): Time series test dataset.
         gen_data (np.ndarray): Generated time series.
         device (str, optional): Computing device. Defaults to "cpu".
+        ts2vec_path (str, optional): The saving path of ts2vec model. If `ts2vec_path` is given but `train_data` is not given, then we will try load ts2vec model from `ts2vec_path`. If both `ts2vec_path` and `train_data` are given, we will train a ts2vec model and save it to `ts2vec_path`.
+        train_data (np.ndarray, optional): Time series training dataset. Used for training TS2Vec model. If `train_data` is given but `ts2vec_path` is not given, we will train a ts2vec model but don't save it.
 
     """
     if ts2vec_path is None and train_data is None:

@@ -374,6 +374,7 @@ class TimeVQVAE(BaseModel):
     def configure_optimizers(self):
         # assert self.trainer.max_steps > 0, "Trainer max_steps must be set in TimeVQVAE"
         self.total_steps = self.trainer.estimated_stepping_batches
+        print(self.total_steps)
         # print(self.total_steps)
         stage1_param = (
             list(self.encoder_h.parameters())
