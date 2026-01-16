@@ -117,10 +117,11 @@ on every time series dataset. Then calculate FID using the trained representativ
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>train_data</strong> (<em>np.ndarray</em>) – Time series training dataset. Used for training TS2Vec model.</p></li>
 <li><p><strong>ori_data</strong> (<em>np.ndarray</em>) – Time series test dataset.</p></li>
 <li><p><strong>gen_data</strong> (<em>np.ndarray</em>) – Generated time series.</p></li>
 <li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – Computing device. Defaults to “cpu”.</p></li>
+<li><p><strong>ts2vec_path</strong> (<em>str</em><em>, </em><em>optional</em>) – The saving path of ts2vec model. If <cite>ts2vec_path</cite> is given but <cite>train_data</cite> is not given, then we will try load ts2vec model from <cite>ts2vec_path</cite>. If both <cite>ts2vec_path</cite> and <cite>train_data</cite> are given, we will train a ts2vec model and save it to <cite>ts2vec_path</cite>.</p></li>
+<li><p><strong>train_data</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – Time series training dataset. Used for training TS2Vec model. If <cite>train_data</cite> is given but <cite>ts2vec_path</cite> is not given, we will train a ts2vec model but don’t save it.</p></li>
 </ul>
 </dd>
 </dl>

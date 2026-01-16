@@ -724,6 +724,10 @@ the model goes back to training mode and gradients are enabled.</p>
 <p class="admonition-title">Note</p>
 <p>Only support for univariate time series.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>During inference, a GEV model is needed. If you are separate training and inference into two stages, then a GEV model is needed to be fitted again on training dataset.</p>
+</div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>The original paper claimed an innovation on regularization on loss function.
