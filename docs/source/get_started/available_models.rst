@@ -33,7 +33,7 @@ Available Models
      - 
      - 
      - ✅
-   * - `KoVAE <https://arxiv.org/abs/2305.19480>`_
+   * - `KoVAE <https://arxiv.org/abs/2310.02619>`_
      - VAE
      - ✅
      - 

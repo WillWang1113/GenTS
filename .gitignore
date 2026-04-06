@@ -180,3 +180,6 @@ test/test*.py
 test/syn_continue_train.py
 *.csv
 test/time*.py
+test/run_syn_eval_parallel.sh
+test/syn_eval.py
+notebooks/my_notebook.ipynb
