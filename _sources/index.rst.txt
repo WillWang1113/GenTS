@@ -24,6 +24,7 @@
    tutorials/synthesis_with_irregular_data
    tutorials/class_label_guidance
    tutorials/customization
+   tutorials/scale_up
 
 .. toctree::
    :name: API docs

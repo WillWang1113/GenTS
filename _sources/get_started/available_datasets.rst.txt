@@ -30,67 +30,67 @@ Available Datasets
      - 
      - 2
      - Physics
-   * - Stocks
+   * - `Stocks <https://finance.yahoo.com/quote/GOOG/history/?guccounter=1&guce_referrer=aHR0cHM6Ly93d3cuZ29vZ2xlLmNvbS8&guce_referrer_sig=AQAAAItg_cTf-Qqq-o8JkhX8sFlI5jjnjbuwEtUM9yei8HImkUYslPS6NF8xw-f8TZ0hMpiRXNC-A-KhQmrhLZzeb-75add2NFj8GKZixCElhjzP0Pju6Y3n7nGrQ0bgDTWwWlJ0i0nQSxoOIRGuJOJzW6MTbeHhZnasz_FNCvgAEcY5>`_
      - 1 day
      - 6
      - 
      - 
      - Financial
-   * - Energy
+   * - `Energy <https://archive.ics.uci.edu/dataset/374/appliances+energy+prediction>`_
      - 10 min
      - 28
      - 
      - 
      - Energy
-   * - ETT
+   * - `ETT dataset <https://github.com/zhouhaoyi/ETDataset>`_
      - 1 hour/15 min
      - 7
      - 
      - 
      - Energy
-   * - Electricity
+   * - `Electricity dataset <https://archive.ics.uci.edu/dataset/321/electricityloaddiagrams20112014>`_
      - 1 hour
      - 321
      - 
      - 
      - Energy
-   * - Traffic
+   * - `Traffic dataset <http://pems.dot.ca.gov>`_
      - 1 hour
      - 862
      - 
      - 
      - Traffic
-   * - Exchange
+   * - `Exchange <https://github.com/laiguokun/multivariate-time-series-data>`_
      - 1 day
      - 8
      - 
      - 
      - Financial
-   * - MoJoCo
+   * - `MoJoCo <https://github.com/google-deepmind/mujoco>`_
      - continuous
      - 14
      - 
      - 
      - Physics
-   * - Physionet
+   * - `Physionet <https://www.physionet.org/content/challenge-2012/1.0.0/>`_
      - 1 min - 1 hour
      - 35
      - ✅
      - 2
      - Healthcare
-   * - ECG
+   * - `ECG <https://www.timeseriesclassification.com/description.php?Dataset=ECG5000>`_
      - ~700 Hz
      - 1
      - 
      - 5
      - Healthcare
-   * - Air quality
+   * - `AirQuality <https://zenodo.org/records/4656719>`_
      - 1 hour
      - 6
      - ✅
      - 
      - Environment
-   * - Weather
+   * - `Weather <https://www.bgc-jena.mpg.de/wetter/>`_
      - 10 min
      - 6
      - 
