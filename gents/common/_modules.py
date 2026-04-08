@@ -368,6 +368,144 @@ class MLPDecoder(nn.Module):
         return x.reshape(-1, self.seq_len, self.seq_dim)
 
 
+#########################################
+########### RNN Enc Dec #################
+#########################################
+
+
+class RNNEncoder(nn.Module):
+    def __init__(
+        self,
+        seq_len,
+        seq_dim,
+        latent_dim,
+        hidden_size=128,
+        num_layers=1,
+        dropout=0.0,
+        rnn_type="gru",
+        **kwargs,
+    ):
+        super().__init__()
+        self.rnn = RNNLayer(
+            in_dim=seq_dim,
+            hidden_size=hidden_size,
+            out_dim=latent_dim,
+            num_layers=num_layers,
+            dropout=dropout,
+            rnn_type=rnn_type,
+        )
+
+    def forward(self, x):
+        # x: (batch, seq_len, seq_dim) -> take last hidden state -> (batch, latent_dim)
+        out = self.rnn(x)
+        return out[:, -1, :]
+
+
+class RNNDecoder(nn.Module):
+    def __init__(
+        self,
+        seq_len,
+        seq_dim,
+        latent_dim,
+        hidden_size=128,
+        num_layers=1,
+        dropout=0.0,
+        rnn_type="gru",
+        **kwargs,
+    ):
+        super().__init__()
+        self.seq_len = seq_len
+        self.seq_dim = seq_dim
+        self.proj_in = nn.Linear(latent_dim, hidden_size)
+        self.rnn = RNNLayer(
+            in_dim=hidden_size,
+            hidden_size=hidden_size,
+            out_dim=seq_dim,
+            num_layers=num_layers,
+            dropout=dropout,
+            rnn_type=rnn_type,
+        )
+
+    def forward(self, z):
+        # z: (batch, latent_dim) -> repeat across seq_len -> decode
+        h = self.proj_in(z).unsqueeze(1).repeat(1, self.seq_len, 1)
+        out = self.rnn(h)
+        return out
+
+
+###############################################
+########### Transformer Enc Dec ###############
+###############################################
+
+
+class TransformerEncoder(nn.Module):
+    def __init__(
+        self,
+        seq_len,
+        seq_dim,
+        latent_dim,
+        d_model=64,
+        nhead=4,
+        num_layers=2,
+        dim_feedforward=128,
+        dropout=0.1,
+        **kwargs,
+    ):
+        super().__init__()
+        self.input_proj = nn.Linear(seq_dim, d_model)
+        self.pos_embed = nn.Parameter(torch.randn(1, seq_len, d_model) * 0.02)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+            batch_first=True,
+        )
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        self.out_proj = nn.Linear(d_model * seq_len, latent_dim)
+
+    def forward(self, x):
+        # x: (batch, seq_len, seq_dim)
+        x = self.input_proj(x) + self.pos_embed
+        x = self.transformer(x)
+        x = x.flatten(1)
+        return self.out_proj(x)
+
+
+class TransformerDecoder(nn.Module):
+    def __init__(
+        self,
+        seq_len,
+        seq_dim,
+        latent_dim,
+        d_model=64,
+        nhead=4,
+        num_layers=2,
+        dim_feedforward=128,
+        dropout=0.1,
+        **kwargs,
+    ):
+        super().__init__()
+        self.seq_len = seq_len
+        self.seq_dim = seq_dim
+        self.latent_proj = nn.Linear(latent_dim, d_model * seq_len)
+        self.pos_embed = nn.Parameter(torch.randn(1, seq_len, d_model) * 0.02)
+        decoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+            batch_first=True,
+        )
+        self.transformer = nn.TransformerEncoder(decoder_layer, num_layers=num_layers)
+        self.out_proj = nn.Linear(d_model, seq_dim)
+
+    def forward(self, z):
+        # z: (batch, latent_dim)
+        x = self.latent_proj(z).view(-1, self.seq_len, self.latent_proj.out_features // self.seq_len)
+        x = x + self.pos_embed
+        x = self.transformer(x)
+        return self.out_proj(x)
 
 
 ###############################
@@ -475,3 +613,30 @@ class LabelEmbedder(nn.Module):
             labels = self.token_drop(labels, force_drop_ids)
         embeddings = self.embedding_table(labels)
         return embeddings
+
+
+#####################################
+###### Backbone Registry ############
+#####################################
+
+BACKBONE_REGISTRY = {
+    "mlp": (MLPEncoder, MLPDecoder),
+    "rnn": (RNNEncoder, RNNDecoder),
+    "transformer": (TransformerEncoder, TransformerDecoder),
+}
+
+
+def get_backbone(backbone: str):
+    """Get (EncoderClass, DecoderClass) by backbone name.
+
+    Args:
+        backbone: One of 'mlp', 'rnn', 'transformer'.
+
+    Returns:
+        Tuple of (EncoderClass, DecoderClass).
+    """
+    if backbone not in BACKBONE_REGISTRY:
+        raise ValueError(
+            f"Unknown backbone '{backbone}'. Choose from {list(BACKBONE_REGISTRY.keys())}"
+        )
+    return BACKBONE_REGISTRY[backbone]

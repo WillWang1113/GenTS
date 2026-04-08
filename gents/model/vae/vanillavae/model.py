@@ -4,22 +4,25 @@ from torchvision.ops import MLP
 
 from gents.model.base import BaseModel
 from gents.common._losses import kl_loss
-# from src.utils.losses import kl_loss
 
-from gents.common._modules import MLPDecoder, MLPEncoder, LabelEmbedder
+from gents.common._modules import get_backbone, LabelEmbedder
 
 
 class VanillaVAE(BaseModel):
-    """Vanilla Variational Autoencoder (VAE) model with MLP encoder and decoder.
+    """Vanilla Variational Autoencoder (VAE) model with flexible backbone.
 
-    For conditional generation, an extra MLP is used for embedding conditions.
+    For conditional generation, an extra encoder is used for embedding conditions.
 
     Args:
         seq_len (int): Target sequence length
         seq_dim (int): Target sequence dimension, for univariate time series, set as 1
         condition (str, optional): Given condition type, should be one of `ALLOW_CONDITION`. Defaults to None.
         latent_dim (int, optional): Latent variable dimension. Defaults to 128.
-        hidden_size_list (list, optional): Hidden size for encoder and decoder. Defaults to [64, 128, 256].
+        backbone (str, optional): Backbone type, one of 'mlp', 'rnn', 'transformer'. Defaults to 'mlp'.
+        backbone_params (dict, optional): Backbone-specific hyperparameters. Defaults to None.
+            For 'mlp': hidden_size_list (list)
+            For 'rnn': hidden_size (int), num_layers (int), dropout (float), rnn_type (str)
+            For 'transformer': d_model (int), nhead (int), num_layers (int), dim_feedforward (int), dropout (float)
         w_kl (float, optional): Loss weight of KL div. Defaults to 1e-4.
         lr (float, optional): Learning rate. Defaults to 1e-3.
         weight_decay (float, optional): Weight decay. Defaults to 1e-5.
@@ -34,7 +37,8 @@ class VanillaVAE(BaseModel):
         seq_dim: int,
         condition: str = None,
         latent_dim: int = 128,
-        hidden_size_list: list = [64, 128, 256],
+        backbone: str = "mlp",
+        backbone_params: dict = None,
         w_kl: float = 1e-4,
         lr: float = 1e-3,
         weight_decay: float = 1e-5,
@@ -42,21 +46,22 @@ class VanillaVAE(BaseModel):
     ):
         super().__init__(seq_len, seq_dim, condition, **kwargs)
         self.save_hyperparameters()
-        # print(self.hparams)
-        # self.hiddens = hidden_size_list.copy()
-        self.encoder = MLPEncoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
-        # self.hiddens.reverse()
-        self.decoder = MLPDecoder(seq_len, seq_dim, latent_dim, hidden_size_list[::-1], **kwargs)
+
+        EncoderCls, DecoderCls = get_backbone(backbone)
+        bp = backbone_params or {}
+
+        self.encoder = EncoderCls(seq_len, seq_dim, latent_dim, **bp, **kwargs)
+        self.decoder = DecoderCls(seq_len, seq_dim, latent_dim, **bp, **kwargs)
         self.cond_net = None
         self.condition = condition
         if condition:
             if condition == "predict":
-                self.cond_net = MLPEncoder(
-                    self.obs_len, seq_dim, latent_dim, hidden_size_list[::-1], **kwargs
+                self.cond_net = EncoderCls(
+                    self.obs_len, seq_dim, latent_dim, **bp, **kwargs
                 )
             elif condition == "impute":
-                self.cond_net = MLPEncoder(
-                    seq_len, seq_dim, latent_dim, hidden_size_list[::-1], **kwargs
+                self.cond_net = EncoderCls(
+                    seq_len, seq_dim, latent_dim, **bp, **kwargs
                 )
             elif condition == "class":
                 self.cond_net = LabelEmbedder(

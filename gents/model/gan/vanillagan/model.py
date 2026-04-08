@@ -5,16 +5,20 @@ from ._backbones import Generator, Discriminator
 
 
 class VanillaGAN(BaseModel):
-    """Vanilla Wasserstein GAN with MLP Generator and Discriminator.
+    """Vanilla Wasserstein GAN with flexible backbone for Generator and Discriminator.
     
-    For conditional generation, an extra MLP is used for embedding conditions.
+    For conditional generation, an extra encoder network is used for embedding conditions.
     
     Args:
         seq_len (int): Target sequence length
         seq_dim (int): Target sequence dimension, for univariate time series, set as 1
         condition (str, optional): Given conditions, should be one of `ALLOW_CONDITION`. Defaults to None.
         latent_dim (int, optional): Latent dimension for z. Defaults to 128.
-        hidden_size_list (list, optional): Hidden size for encoder and decoder. Defaults to [64, 128, 256].
+        backbone (str, optional): Backbone type, one of 'mlp', 'rnn', 'transformer'. Defaults to 'mlp'.
+        backbone_params (dict, optional): Backbone-specific hyperparameters. Defaults to None.
+            For 'mlp': hidden_size_list (list)
+            For 'rnn': hidden_size (int), num_layers (int), dropout (float), rnn_type (str)
+            For 'transformer': d_model (int), nhead (int), num_layers (int), dim_feedforward (int), dropout (float)
         clip_value (float, optional): Gradient clip value. Defaults to 0.01.
         n_critic (int, optional): D/G update times. Defaults to 5.
         lr (float, optional): Learning rate. Defaults to 1e-3.
@@ -30,7 +34,8 @@ class VanillaGAN(BaseModel):
         seq_dim: int,
         condition: str = None,
         latent_dim: int = 128,
-        hidden_size_list: list = [64, 128, 256],
+        backbone: str = "mlp",
+        backbone_params: dict = None,
         clip_value: float = 0.01,
         n_critic: int = 5,
         lr: float = 1e-3,
@@ -43,10 +48,17 @@ class VanillaGAN(BaseModel):
         self.automatic_optimization = False
 
         # networks
-        gen_param = self.hparams_initial.copy()
-        self.discriminator = Discriminator(**self.hparams_initial)
-        gen_param['hidden_size_list'].reverse()
-        self.generator = Generator(**gen_param)
+        params = dict(
+            seq_len=seq_len,
+            seq_dim=seq_dim,
+            latent_dim=latent_dim,
+            backbone=backbone,
+            backbone_params=backbone_params,
+            condition=condition,
+            **kwargs,
+        )
+        self.generator = Generator(**params)
+        self.discriminator = Discriminator(**params)
 
     def training_step(self, batch, batch_idx):
         x = batch["seq"][:, -self.hparams_initial.seq_len :]

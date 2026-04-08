@@ -1,27 +1,28 @@
 from torch import nn
 
-from gents.common._modules import MLPDecoder, MLPEncoder, LabelEmbedder
+from gents.common._modules import get_backbone, LabelEmbedder
 
 
 class Generator(nn.Module):
     def __init__(
-        self, seq_len, seq_dim, latent_dim, hidden_size_list=[256, 128, 64], **kwargs
+        self, seq_len, seq_dim, latent_dim, backbone="mlp", backbone_params=None, **kwargs
     ):
         super().__init__()
-        self.dec = MLPDecoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
+        EncoderCls, DecoderCls = get_backbone(backbone)
+        bp = backbone_params or {}
+
+        self.dec = DecoderCls(seq_len, seq_dim, latent_dim, **bp, **kwargs)
+
         condition = kwargs.get("condition")
         if condition:
             if condition == "predict":
-                # assert kwargs.get("obs_len") is not None
                 obs_len = kwargs.get("obs_len")
-                self.cond_net = MLPEncoder(
-                    obs_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                self.cond_net = EncoderCls(
+                    obs_len, seq_dim, latent_dim, **bp, **kwargs
                 )
             elif condition == "impute":
-                # assert kwargs.get('obs_len') is not None
-                # obs_len = kwargs.get('obs_len')
-                self.cond_net = MLPEncoder(
-                    seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                self.cond_net = EncoderCls(
+                    seq_len, seq_dim, latent_dim, **bp, **kwargs
                 )
             elif condition == "class":
                 self.cond_net = LabelEmbedder(
@@ -40,12 +41,16 @@ class Discriminator(nn.Module):
         seq_len,
         seq_dim,
         latent_dim,
-        hidden_size_list=[64, 128, 256],
+        backbone="mlp",
+        backbone_params=None,
         last_sigmoid=False,
         **kwargs,
     ):
         super().__init__()
-        self.enc = MLPEncoder(seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs)
+        EncoderCls, _ = get_backbone(backbone)
+        bp = backbone_params or {}
+
+        self.enc = EncoderCls(seq_len, seq_dim, latent_dim, **bp, **kwargs)
         self.out_mlp = nn.Sequential(
             nn.Linear(latent_dim, latent_dim),
             nn.LeakyReLU(),
@@ -57,18 +62,14 @@ class Discriminator(nn.Module):
         condition = kwargs.get("condition")
         if condition:
             if condition == "predict":
-                # assert kwargs.get("obs_len") is not None
                 obs_len = kwargs.get("obs_len")
-                self.cond_net = MLPEncoder(
-                    obs_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                self.cond_net = EncoderCls(
+                    obs_len, seq_dim, latent_dim, **bp, **kwargs
                 )
             elif condition == "impute":
-                # assert kwargs.get('obs_len') is not None
-                # obs_len = kwargs.get('obs_len')
-                self.cond_net = MLPEncoder(
-                    seq_len, seq_dim, latent_dim, hidden_size_list, **kwargs
+                self.cond_net = EncoderCls(
+                    seq_len, seq_dim, latent_dim, **bp, **kwargs
                 )
-                
             elif condition == "class":
                 self.cond_net = LabelEmbedder(
                     kwargs.get("class_num"), latent_dim, dropout_prob=0.0
