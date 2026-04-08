@@ -583,7 +583,7 @@
    "id": "52ce2ae6",
    "metadata": {},
    "source": [
-    "## 5. Performance Comparison <a id=\"6-comparison\"></a>\n",
+    "## 6. Performance Comparison <a id=\"6-comparison\"></a>\n",
     "\n",
     "Let's visualize the results from all experiments."
    ]
