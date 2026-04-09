@@ -31,7 +31,7 @@ def _condition_shape_check(
             raise ValueError(
                 "The batch size of the given condition should be the same as n_sample or just 1."
             )
-    elif cond_type in ["predict", "impute"]:
+    elif cond_type in ["predict", "impute", "super_resolution"]:
         if condition is None:
             raise ValueError("Condition should not be None for prediction.")
 
@@ -54,7 +54,7 @@ class BaseModel(ABC, LightningModule):
     Args:
         seq_len (int): Target sequence length
         seq_dim (int): Target sequence dimension, for univariate time series, set as 1
-        condition (str): Possible condition type, choose from [None, 'predict','impute', 'class']. None standards for unconditional generation.
+        condition (str): Possible condition type, choose from [None, 'predict', 'impute', 'class', 'super_resolution']. None standards for unconditional generation.
         **kwargs: Additional arguments for the model
     """
 
@@ -89,6 +89,21 @@ class BaseModel(ABC, LightningModule):
             elif class_num < 2:
                 raise ValueError("class_num should be greater than 2.")
             self.class_num = class_num
+
+        if condition == "super_resolution":
+            sr_factor = kwargs.get("sr_factor")
+            if sr_factor is None:
+                raise ValueError("sr_factor should be provided for super-resolution.")
+            elif sr_factor < 2:
+                raise ValueError("sr_factor should be >= 2.")
+            elif seq_len % sr_factor != 0:
+                raise ValueError("seq_len must be divisible by sr_factor.")
+            self.sr_factor = sr_factor
+
+            sr_type = kwargs.get("sr_type", "subsample")
+            if sr_type not in ("subsample", "average"):
+                raise ValueError("sr_type must be 'subsample' or 'average'.")
+            self.sr_type = sr_type
 
         self.condition = condition
 

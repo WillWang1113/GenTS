@@ -43,7 +43,9 @@ class LSTMDiscriminator(nn.Module):
         self.hidden_dim = hidden_size
 
         self.lstm = nn.LSTM(in_dim, hidden_size, num_layers, batch_first=True)
-        self.linear = nn.Sequential(nn.Linear(hidden_size, 1), nn.Sigmoid())
+        self.linear = nn.Sequential(nn.Linear(hidden_size, 1))
+        if kwargs.get("last_sigmoid", False):
+            self.linear.append(nn.Sigmoid())
 
     def forward(self, x):
         x = x.reshape(x.shape[0], 1, x.shape[1])
@@ -63,7 +65,8 @@ class Discriminator(nn.Module):
         )
         # last dropout layer pop
         self.model.pop(-1)
-        self.model.append(torch.nn.Sigmoid())
+        if kwargs.get("last_sigmoid", False):
+            self.model.append(torch.nn.Sigmoid())
 
     def forward(self, x):
         output = self.model(x.flatten(1))

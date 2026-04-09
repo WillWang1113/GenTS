@@ -183,3 +183,4 @@ test/time*.py
 test/run_syn_eval_parallel.sh
 test/syn_eval.py
 notebooks/my_notebook.ipynb
+results_scale_up/

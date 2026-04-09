@@ -26,7 +26,7 @@ class VanillaGAN(BaseModel):
         **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
     """
 
-    ALLOW_CONDITION = [None, "predict", "impute", "class"]
+    ALLOW_CONDITION = [None, "predict", "impute", "class", "super_resolution"]
 
     def __init__(
         self,

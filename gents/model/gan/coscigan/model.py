@@ -71,7 +71,11 @@ class COSCIGAN(BaseModel):
         self.central_disc = cd_cls(seq_dim * seq_len, **kwargs)
         self.gamma = gamma
         self.lr = lr
-        self.loss_fn = nn.BCELoss()
+        if kwargs.get("last_sigmoid", False):
+            self.loss_fn = nn.BCELoss()
+        else:
+            self.loss_fn = nn.BCEWithLogitsLoss()
+        # self.loss_fn = nn.BCELoss()
 
     def configure_optimizers(self):
         optims = [

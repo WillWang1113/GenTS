@@ -39,8 +39,8 @@ class MaskedLinear(nn.Module):
     ):
         super(MaskedLinear, self).__init__()
         self.linear = nn.Linear(in_features, out_features)
-        if condition in ['predict', 'impute']:
-            assert cond_in_features is not None, "cond_in_features must be provided for condition 'predict' or 'impute'."
+        if condition in ['predict', 'impute', 'super_resolution']:
+            assert cond_in_features is not None, "cond_in_features must be provided for condition 'predict', 'impute', or 'super_resolution'."
             
             self.cond_linear = nn.Linear(cond_in_features, out_features, bias=False)
         elif condition == "class":

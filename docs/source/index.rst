@@ -21,8 +21,9 @@
    
    tutorials/time_series_forecasting
    tutorials/missing_value_imputation
-   tutorials/synthesis_with_irregular_data
    tutorials/class_label_guidance
+   tutorials/time_series_super_resolution
+   tutorials/synthesis_with_irregular_data
    tutorials/customization
    tutorials/scale_up
 

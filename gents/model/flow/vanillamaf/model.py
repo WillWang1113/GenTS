@@ -24,7 +24,7 @@ class VanillaMAF(BaseModel):
         **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
     """
 
-    ALLOW_CONDITION = [None, "predict", "impute", "class"]
+    ALLOW_CONDITION = [None, "predict", "impute", "class", "super_resolution"]
 
     def __init__(
         self,
@@ -44,6 +44,9 @@ class VanillaMAF(BaseModel):
             cond_input = cond_seq_len * seq_dim
         elif condition == "impute":
             cond_seq_len = seq_len
+            cond_input = cond_seq_len * seq_dim
+        elif condition == "super_resolution":
+            cond_seq_len = seq_len // self.sr_factor
             cond_input = cond_seq_len * seq_dim
         elif condition == "class":
             cond_input = self.class_num

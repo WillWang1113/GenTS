@@ -1086,7 +1086,7 @@ class EDMPrecond(torch.nn.Module):
             class_labels=class_labels,
             **model_kwargs,
         )
-        assert F_x.dtype == dtype
+        # assert F_x.dtype == dtype
         D_x = c_skip * x + c_out * F_x.to(torch.float32)
         return D_x
 

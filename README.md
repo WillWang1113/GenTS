@@ -3,6 +3,13 @@
 
 `GenTS` is an open-source library for researchers to conduct generative time series analysis, which covers **(class label-guided) synthesis**, **forecasting** and **imputation**. 
 
+## 📰 News
+- **2025-04-09**: Added computational overhead analysis comparing memory and runtime across representative models.
+- **2025-04-09**: Added Super-resolution support for Vanilla models with a tutorial.
+- **2025-04-08**: Added GenTS acceleration tutorial based on `lightning`.
+- **2025-04-06**: Added selectable Predictive Score and Discriminative Score backbones (now we have GRU, CNN, Transformer).
+
+
 ## ✨ Highlights
 Based on `lightning`, `GenTS` provides a modular code base to benchmark different models on various datasets in a easy way. Specifically, we feature on:
 

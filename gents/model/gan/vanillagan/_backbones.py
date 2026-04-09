@@ -24,6 +24,11 @@ class Generator(nn.Module):
                 self.cond_net = EncoderCls(
                     seq_len, seq_dim, latent_dim, **bp, **kwargs
                 )
+            elif condition == "super_resolution":
+                lr_len = seq_len // kwargs.get("sr_factor")
+                self.cond_net = EncoderCls(
+                    lr_len, seq_dim, latent_dim, **bp, **kwargs
+                )
             elif condition == "class":
                 self.cond_net = LabelEmbedder(
                     kwargs.get("class_num"), latent_dim, dropout_prob=0.0
@@ -69,6 +74,11 @@ class Discriminator(nn.Module):
             elif condition == "impute":
                 self.cond_net = EncoderCls(
                     seq_len, seq_dim, latent_dim, **bp, **kwargs
+                )
+            elif condition == "super_resolution":
+                lr_len = seq_len // kwargs.get("sr_factor")
+                self.cond_net = EncoderCls(
+                    lr_len, seq_dim, latent_dim, **bp, **kwargs
                 )
             elif condition == "class":
                 self.cond_net = LabelEmbedder(

@@ -29,7 +29,7 @@ class VanillaDDPM(BaseModel):
         **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
     """
 
-    ALLOW_CONDITION = [None, "predict", "impute", "class"]
+    ALLOW_CONDITION = [None, "predict", "impute", "class", "super_resolution"]
 
     def __init__(
         self,
@@ -76,6 +76,10 @@ class VanillaDDPM(BaseModel):
             cond_n_class = None
         elif self.condition == "impute":
             cond_seq_len = seq_len
+            cond_seq_chnl = seq_dim
+            cond_n_class = None
+        elif self.condition == "super_resolution":
+            cond_seq_len = seq_len // self.sr_factor
             cond_seq_chnl = seq_dim
             cond_n_class = None
         elif self.condition == "class":

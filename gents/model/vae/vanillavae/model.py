@@ -29,7 +29,7 @@ class VanillaVAE(BaseModel):
         **kwargs: Arbitrary keyword arguments, e.g. obs_len, class_num, etc.
     """
 
-    ALLOW_CONDITION = [None, "predict", "impute", "class"]
+    ALLOW_CONDITION = [None, "predict", "impute", "class", "super_resolution"]
 
     def __init__(
         self,
@@ -62,6 +62,11 @@ class VanillaVAE(BaseModel):
             elif condition == "impute":
                 self.cond_net = EncoderCls(
                     seq_len, seq_dim, latent_dim, **bp, **kwargs
+                )
+            elif condition == "super_resolution":
+                lr_len = seq_len // kwargs.get("sr_factor")
+                self.cond_net = EncoderCls(
+                    lr_len, seq_dim, latent_dim, **bp, **kwargs
                 )
             elif condition == "class":
                 self.cond_net = LabelEmbedder(

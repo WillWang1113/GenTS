@@ -49,7 +49,7 @@ class TSDataset(Dataset):
         super().__init__()
         assert data.dim() == 3
         assert add_coeffs in [None, "linear", "cubic_spline"]
-        assert condition in [None, "predict", "impute", "class"]
+        assert condition in [None, "predict", "impute", "class", "super_resolution"]
         self.data = data
         self.class_labels = class_label
         # data_mask indicates original missing values
@@ -128,6 +128,20 @@ class TSDataset(Dataset):
             # will have a target mask for loss computation
             cond_data = data.clone()
             cond_data[~condition_mask] = torch.nan
+        elif condition == "super_resolution":
+            sr_factor = kwargs.get("sr_factor")
+            if sr_factor is None:
+                raise ValueError("sr_factor should be provided for super-resolution.")
+            elif sr_factor < 2:
+                raise ValueError("sr_factor should be >= 2.")
+            sr_type = kwargs.get("sr_type", "subsample")
+            # condition data is downsampled (low-resolution) time series
+            if sr_type == "average":
+                # reshape (N, T, D) -> (N, T//sr_factor, sr_factor, D) -> mean
+                n, t, d = data.shape
+                cond_data = data[:, :t // sr_factor * sr_factor].reshape(n, -1, sr_factor, d).mean(dim=2)
+            else:
+                cond_data = data[:, ::sr_factor]
         elif condition == "class":
             # condition data is class label
             cond_data = class_label.long()
@@ -223,7 +237,7 @@ class BaseDataModule(LightningDataModule, ABC):
         assert np.allclose(sum(self.split), 1.0)
         self.kwargs = kwargs
 
-        assert condition in [None, "predict", "impute", "class"]
+        assert condition in [None, "predict", "impute", "class", "super_resolution"]
         if condition == "predict":
             assert kwargs.get("obs_len", None) is not None
             self.obs_len = kwargs.get("obs_len")
@@ -231,6 +245,10 @@ class BaseDataModule(LightningDataModule, ABC):
             assert kwargs.get("missing_rate", None) is not None
             self.missing_rate = kwargs.get("missing_rate")
             self.missing_type = kwargs.get("missing_type")
+        elif condition == "super_resolution":
+            assert kwargs.get("sr_factor", None) is not None
+            self.sr_factor = kwargs.get("sr_factor")
+            self.sr_type = kwargs.get("sr_type", "subsample")
         self.total_seq_len = (
             seq_len + self.obs_len if self.obs_len is not None else seq_len
         )
