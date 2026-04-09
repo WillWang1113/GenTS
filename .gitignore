@@ -163,7 +163,7 @@ cython_debug/
 .vscode
 test_data/
 lightning_logs/
-*.png
+/*.png
 misc/
 notebooks/
 nohup.out

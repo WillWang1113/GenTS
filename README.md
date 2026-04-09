@@ -134,8 +134,6 @@ GenTS included 25+ state-of-the-art generative time series models (and their var
  <!--          |       <!--        |         GANF          |        Flow        |         -          | AD             | :white_circle: | --> 
 
 
-
-
 ##  📝 Datasets
 GenTS preset over 10 widely used time series generation datasets, from multiple domains and resoulutions. Some of them come naturally with missing values and class labels, supporting to benchmark different kinds of models.
 
@@ -156,39 +154,17 @@ GenTS preset over 10 widely used time series generation datasets, from multiple 
 | Air quality | 1 hour         | 6         | :white_check_mark: | -           | Environment |
 | Weather     | 10 min         | 6         | -                  | -           | Environment |
 
-<!-- ## Arena (TODO: experiments + webpage?)
 
-Till XX 2025, the top three models for different tasks are:
+GenTS supports arbitrary `seq_len` and `seq_dim` settings for datasets and models. The computational overheads of space and time could vary depending on specific model designs. On single NVIDIA GeForce RTX 3080 Ti, we measured the training/inference GPU memory/time overheads of representative models (`batch_size=32` and `inference_batch_size=16`) with different `seq_len` and `seq_dim` combination. The full results shown below:
 
-| Model Rank | Synthesis | Forecasting | Imputation |
-| :--------: | :-------: | :---------: | :--------: |
-|    1st     |     -     |      -      |     -      |
-|    2nd     |     -     |      -      |     -      |
-|    3rd     |     -     |      -      |     -      |
- -->
+![hh](./assets/computation.png "hh")
 
+It reveals space-time trade-offs in high-dimensional cases. COSCIGAN hits severe memory limits (OOM) in large `seq_dim`  but infers fast. VanillaMAF trains fastest yet suffers catastrophic inference latency. Conversely, DiffusionTS occupies memory by `seq_len`, and TimeVQVAE offer the most balanced scaling capabilities.
 
 ## 🔧 Custormization
 Our `BaseModel` and datamodules  `BaseData` are based on `lightning`,
 
 One can easily join `GenTS` following the `lightning.LightningModule` and `lightning.DataModule`. Please refer to our document's [tutorial on custormization](https://willwang1113.github.io/GenTS/tutorials/customization.html) for details, or [this website](https://lightning.ai/docs/pytorch/stable/common/lightning_module.html).
-
-
-<!-- 
-
-## TODO-list
-- [x] Flow-based model (5.15)
-- [x] ODE-based model (5.15)
-- [x] Evaluation (5.31)
-- [x] Model testing (6.15)
-- [x] Benchmark datasets (6.15)
-- [ ] tutorials (whole pipline for predicting, synthesis with missing values, imputation)
-- [ ] doc files (dataset logic and model hyperparameter explain)
-- [ ] pypi? optional
-- [ ] Project webpage for benchmarking? [Example](https://huggingface.co/spaces/Salesforce/GIFT-Eval)
-
- -->
-
 
 
 
