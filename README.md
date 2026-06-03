@@ -4,6 +4,7 @@
 `GenTS` is an open-source library for researchers to conduct generative time series analysis, which covers **(class label-guided) synthesis**, **forecasting** and **imputation**. 
 
 ## 📰 News
+- **2025-05-19**: Introduction to GenTS and the according benchmark on generative time series models can be found in [our paper](https://arxiv.org/abs/2605.17804).
 - **2025-04-09**: Added computational overhead analysis comparing memory and runtime across representative models.
 - **2025-04-09**: Added Super-resolution support for Vanilla models with a tutorial.
 - **2025-04-08**: Added GenTS acceleration tutorial based on `lightning`.
